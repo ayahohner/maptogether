@@ -528,3 +528,11 @@ export const matchEdgeRegex = (edgeComponentName: string) => {
     )})?$`,
   ].join("");
 };
+
+/** A line that is just the link between `a` and `b`, written either way round. */
+export const matchEdgeBetweenRegex = (a: string, b: string) => {
+  const ws = `(?:${C("Whitespace")})?`;
+  const link = (from: string, to: string) =>
+    `${escapeRegex(from)}${ws}\\.(?:${C("ParenOpen")}.*?${C("ParenClose")})?${ws}${escapeRegex(to)}`;
+  return `^${ws}(?:${link(a, b)}|${link(b, a)})${ws}(?:${C("Comment")})?$`;
+};

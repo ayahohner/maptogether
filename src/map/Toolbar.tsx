@@ -10,7 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 import { keys } from "../app/keys";
-import { state } from "../state/State";
+import { hasSelection, state } from "../state/State";
 import { activeTool, setTool, tools, type Tool } from "../state/Tools";
 import { MAX_SCALE, MIN_SCALE, viewport } from "./viewport";
 
@@ -77,7 +77,7 @@ const keepFocus = (e: MouseEvent) => e.preventDefault();
 
 function Toolbar({ onUndo, onRedo, onDelete }: MapControlsProps) {
   const active = activeTool(useSnapshot(tools));
-  const hasSelection = useSnapshot(state.selection).selectionItems.size > 0;
+  const selected = hasSelection(useSnapshot(state.selection));
   return (
     <div role="toolbar" aria-label="Map tools" aria-orientation="vertical" className="map-toolbar float">
       {toolItems.map((item) => (
@@ -91,7 +91,7 @@ function Toolbar({ onUndo, onRedo, onDelete }: MapControlsProps) {
       <hr className="map-toolbar-rule" />
       <ControlButton label="Undo" keys={[keys.undo]} icon={ArrowUturnLeftIcon} onClick={onUndo} />
       <ControlButton label="Redo" keys={[keys.redo]} icon={ArrowUturnRightIcon} onClick={onRedo} />
-      {hasSelection && <ControlButton label="Delete" keys={[keys.delete]} icon={TrashIcon} onClick={onDelete} />}
+      {selected && <ControlButton label="Delete" keys={[keys.delete]} icon={TrashIcon} onClick={onDelete} />}
     </div>
   );
 }

@@ -133,7 +133,7 @@ describe("mouse", () => {
     expect(actions.place).toHaveBeenCalledWith({ x: 50, y: 0 });
     time = 1000;
     tap(at(5));
-    expect(actions.select).toHaveBeenCalledWith("A");
+    expect(actions.select).toHaveBeenCalledWith("A", { x: 5, y: 0 }, false);
   });
 
   it("doesn't treat a drag with a tool as a click", () => {
@@ -165,12 +165,12 @@ describe("touch", () => {
     gestures.move(touchAt(54));
     gestures.up(touchAt(54));
     expect(actions.pan).not.toHaveBeenCalled();
-    expect(actions.select).toHaveBeenCalledWith(undefined);
+    expect(actions.select).toHaveBeenCalledWith(undefined, { x: 54, y: 0 }, true);
   });
 
   it("taps to select, and double-taps to rename or create", () => {
     tap(touchAt(5));
-    expect(actions.select).toHaveBeenCalledWith("A");
+    expect(actions.select).toHaveBeenCalledWith("A", { x: 5, y: 0 }, true);
     time = 200;
     tap(touchAt(9, 10));
     expect(actions.edit).toHaveBeenCalledWith("A", { x: 9, y: 10 });

@@ -2,11 +2,11 @@ import Combokeys from "combokeys";
 
 import { isApple } from "./common/BrowserPlatform";
 
-import { deleteComponents, undoManager } from "../editor/Editor";
+import { deleteSelection, undoManager } from "../editor/Editor";
 
-import { state, stopSelecting } from "../state/State";
+import { stopSelecting } from "../state/State";
 import { releaseHeld } from "../state/Tools";
-import { bindToolShortcuts } from "./shortcuts";
+import { bindToolShortcuts, isEditable } from "./shortcuts";
 
 var combokeys = new Combokeys(document.documentElement);
 // Allow hotkeys when focused on inputs
@@ -37,13 +37,7 @@ export const initializeUserEvents = () => {
   combokeys.bind(
     ["del", "backspace"],
     (e: KeyboardEvent) => {
-      if (
-        !(e.target as Element).classList.contains("cm-content") &&
-        !(e.target as Element).classList.contains("componentInput")
-      ) {
-        // Delete item
-        deleteComponents(Array.from(state.selection.selectionItems.values()));
-      }
+      if (!isEditable(e.target)) deleteSelection();
     },
     "keydown"
   );

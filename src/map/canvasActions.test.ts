@@ -8,7 +8,10 @@ const store = vi.hoisted(() => ({
   linkTo: vi.fn(),
   pressCanvas: vi.fn(),
   pressComponent: vi.fn(),
+  pressEdge: vi.fn(),
   releaseDrag: vi.fn(),
+  // One link, from (0, 100) to (200, 100) in world coordinates.
+  edgeSegments: vi.fn(() => [{ key: "Kettle->Power", start: { x: 0, y: 100 }, stop: { x: 200, y: 100 } }]),
   replaceSelection: vi.fn(),
 }));
 vi.mock("../editor/Editor", () => editor);
@@ -70,11 +73,24 @@ it("presses and drags in world coordinates", () => {
   expect(store.releaseDrag).toHaveBeenCalled();
 });
 
-it("selects one component or clears, and links", () => {
+it("presses a link near the pointer, allowing for zoom", () => {
   const actions = canvasActions(map);
-  actions.select("Kettle");
+  actions.press(undefined, { x: 50, y: 105 }, true);
+  expect(store.pressEdge).toHaveBeenCalledWith("Kettle->Power", { x: 50, y: 105 }, true);
+  actions.press(undefined, { x: 50, y: 108 }, false);
+  expect(store.pressCanvas).toHaveBeenCalledWith({ x: 50, y: 108 }, false);
+  Object.assign(viewport, { scale: 0.5 });
+  actions.press(undefined, { x: 25, y: 52 }, false);
+  expect(store.pressEdge).toHaveBeenLastCalledWith("Kettle->Power", { x: 50, y: 104 }, false);
+});
+
+it("selects one component, a link or nothing on a tap, and links", () => {
+  const actions = canvasActions(map);
+  actions.select("Kettle", { x: 5, y: 5 }, true);
   expect(store.replaceSelection).toHaveBeenCalledWith(["Kettle"]);
-  actions.select(undefined);
+  actions.select(undefined, { x: 50, y: 112 }, true);
+  expect(store.replaceSelection).toHaveBeenLastCalledWith([], ["Kettle->Power"]);
+  actions.select(undefined, { x: 50, y: 112 }, false);
   expect(store.clearSelection).toHaveBeenCalled();
   actions.link("Kettle");
   expect(store.linkTo).toHaveBeenCalledWith("Kettle");

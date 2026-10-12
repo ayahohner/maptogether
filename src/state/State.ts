@@ -2,6 +2,7 @@ import { proxy, subscribe } from "valtio/vanilla";
 import { proxySet } from "valtio/utils";
 
 import { ComponentT } from "../map/components/types";
+import { fractionInside, rectBetween, type Segment } from "../map/segments";
 import { graph, NodeAttributes, updateComponentPositionOffset } from "./Graph";
 
 import { appendText, replaceCoordinates } from "../editor/Editor";
@@ -25,6 +26,8 @@ export interface StateT {
   };
   selection: {
     selectionItems: Set<ComponentT["nodeKey"]>;
+    /** Selected links, by their lines' keys ("needer->needed"). */
+    edgeItems: Set<string>;
   };
   selectDrag: {
     isSelecting: boolean;
@@ -46,7 +49,7 @@ export const state = proxy<StateT>({
     initialLinkTarget: undefined,
     isLinkModeEnabled: false,
   },
-  selection: { selectionItems: proxySet() },
+  selection: { selectionItems: proxySet(), edgeItems: proxySet() },
   selectDrag: {
     isSelecting: false,
     selectionStartPoint: undefined,
@@ -102,43 +105,61 @@ export const nodeInSelection = (
   return nodeX >= left && nodeX <= right && nodeY >= bottom && nodeY <= top;
 };
 
+/** Each link's line, from the components' drawn positions. */
+export const edgeSegments = (): Segment[] =>
+  graph.mapEdges((_edge, link, _source, _target, source, target) => ({
+    key: link.nodeKey,
+    start: source.component.position,
+    stop: target.component.position,
+  }));
+
+/** Links more than half inside the marquee, so a box around one component skips its links. */
+const edgesInSelection = () => {
+  const rect = rectBetween(state.selectDrag.selectionStartPoint!, state.selectDrag.selectionCurrentPoint!);
+  return edgeSegments()
+    .filter(({ start, stop }) => fractionInside(start, stop, rect) > 0.5)
+    .map(({ key }) => key);
+};
+
 export const updateSelectionPoint = (location: PointLike) => {
   state.selectDrag.selectionCurrentPoint = location;
-  replaceSelection(graph.filterNodes(nodeInSelection));
+  replaceSelection(graph.filterNodes(nodeInSelection), edgesInSelection());
 };
 
 export const addUpdateSelectionPoint = (location: PointLike) => {
   state.selectDrag.selectionCurrentPoint = location;
-  addToSelection(graph.filterNodes(nodeInSelection));
+  addToSelection(graph.filterNodes(nodeInSelection), edgesInSelection());
 };
 
 export const clearSelection = () => {
   state.selection.selectionItems.clear();
+  state.selection.edgeItems.clear();
 };
 
 export const removeFromSelection = (item: ComponentT["nodeKey"]) =>
   state.selection.selectionItems.delete(item);
 
-export const addToSelection = (items: ComponentT["nodeKey"][]) => {
-  items.forEach((item) => {
-    state.selection.selectionItems.add(item);
-  });
+export const addToSelection = (items: ComponentT["nodeKey"][], edges: string[] = []) => {
+  items.forEach((item) => state.selection.selectionItems.add(item));
+  edges.forEach((edge) => state.selection.edgeItems.add(edge));
 };
 
-export const replaceSelection = (newSelection: ComponentT["nodeKey"][]) => {
-  state.selection.selectionItems.clear();
-  newSelection.forEach((item) => state.selection.selectionItems.add(item));
+export const replaceSelection = (newSelection: ComponentT["nodeKey"][], edges: string[] = []) => {
+  clearSelection();
+  addToSelection(newSelection, edges);
 };
 
-export const xorSelection = (inputSelection: ComponentT["nodeKey"][]) => {
-  inputSelection.forEach((item) => {
-    if (state.selection.selectionItems.has(item)) {
-      state.selection.selectionItems.delete(item);
-    } else {
-      state.selection.selectionItems.add(item);
-    }
-  });
+const toggle = (set: Set<string>, item: string) => {
+  if (!set.delete(item)) set.add(item);
 };
+
+export const xorSelection = (inputSelection: ComponentT["nodeKey"][], edges: string[] = []) => {
+  inputSelection.forEach((item) => toggle(state.selection.selectionItems, item));
+  edges.forEach((edge) => toggle(state.selection.edgeItems, edge));
+};
+
+export const hasSelection = (selection: StateT["selection"] = state.selection) =>
+  selection.selectionItems.size + selection.edgeItems.size > 0;
 
 export const startPotentialTranslation = (location: PointLike) => {
   state.translateDrag.translationStartPoint = location;
@@ -197,6 +218,13 @@ export const pressComponent = (
   if (additive) return xorSelection([nodeKey]);
   if (!state.selection.selectionItems.has(nodeKey)) replaceSelection([nodeKey]);
   startPotentialTranslation(point);
+};
+
+/** Press on a link: select it (or toggle it when adding); dragging draws a marquee. */
+export const pressEdge = (edgeKey: string, point: PointLike, additive: boolean) => {
+  if (additive) xorSelection([], [edgeKey]);
+  else replaceSelection([], [edgeKey]);
+  startPotentialSelect(point);
 };
 
 /** Movement (px) before a press becomes a move or a marquee. */

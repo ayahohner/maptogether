@@ -4,8 +4,10 @@ import {
   clearSelection,
   dragTo,
   linkTo,
+  edgeSegments,
   pressCanvas,
   pressComponent,
+  pressEdge,
   releaseDrag,
   replaceSelection,
 } from "../state/State";
@@ -13,6 +15,7 @@ import { activeTool, setTool } from "../state/Tools";
 import { FloatingTextInput } from "./components/FloatingTextInput";
 import type { CanvasActions } from "./gestures";
 import { hitComponent, type Hittable } from "./hitTest";
+import { hitSegment } from "./segments";
 import { panView, toWorld, viewport, zoomView, type Point } from "./viewport";
 
 /** What the actions need of the map (MapSingleton). */
@@ -53,16 +56,31 @@ const rename = (map: MapView, nodeKey: string, p: Point) =>
 
 const vibrate = () => navigator.vibrate?.(10);
 
+/** How far (screen px) from a link a press still picks it. */
+const linkReach = (touch: boolean) => (touch ? 14 : 6);
+
 export function canvasActions(map: MapView): CanvasActions {
   const world = (p: Point) => toWorld(viewport, p);
+  const linkAt = (p: Point, touch: boolean) =>
+    hitSegment(edgeSegments(), world(p), linkReach(touch) / viewport.scale);
+  const pressEmpty = (p: Point, additive: boolean) => {
+    const link = linkAt(p, false);
+    if (link) pressEdge(link, world(p), additive);
+    else pressCanvas(world(p), additive);
+  };
+  const tap = (p: Point, touch: boolean) => {
+    const link = linkAt(p, touch);
+    if (link) replaceSelection([], [link]);
+    else clearSelection();
+  };
   return {
     tool: () => activeTool(),
     hit: (p) => hitComponent(map.components(), p),
     press: (nodeKey, p, additive) =>
-      nodeKey ? pressComponent(nodeKey, world(p), additive) : pressCanvas(world(p), additive),
+      nodeKey ? pressComponent(nodeKey, world(p), additive) : pressEmpty(p, additive),
     drag: (p, additive) => dragTo(world(p), additive),
     release: releaseDrag,
-    select: (nodeKey) => (nodeKey ? replaceSelection([nodeKey]) : clearSelection()),
+    select: (nodeKey, p, touch) => (nodeKey ? replaceSelection([nodeKey]) : tap(p, touch)),
     link: linkTo,
     edit: (nodeKey, p) => (nodeKey ? rename(map, nodeKey, p) : create(map, p)),
     place: (p) => {

@@ -32,6 +32,7 @@ const mouseHelp = ({ mod, undo, redo }: KeyLabels): HelpSection[] => [
     title: "Select and move",
     rows: [
       { action: "Move", how: ["Drag a component or selection"] },
+      { action: "Select a link", how: ["Click the line"] },
       { action: "Select several", how: ["Drag on empty canvas;", { key: "Shift" }, "adds"] },
       { action: "Delete", how: [{ key: "Delete" }, "or", { key: "Backspace" }] },
       { action: "Undo / redo", how: [...keycaps(undo), "/", ...keycaps(redo)] },
@@ -59,7 +60,7 @@ const touchHelp: HelpSection[] = [
   {
     title: "Select and move",
     rows: [
-      { action: "Select", how: ["Tap a component"] },
+      { action: "Select", how: ["Tap a component or link"] },
       { action: "Move", how: ["Press and hold a component, then drag"] },
       { action: "Delete", how: ["Select it, then tap the bin in the toolbar"] },
     ],

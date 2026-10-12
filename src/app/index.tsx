@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 import {
   editorView,
   awareness,
-  deleteComponents,
+  deleteSelection,
   replaceText,
   room,
   undoManager,
@@ -22,7 +22,7 @@ import { openAbout } from "../onboarding/about";
 import { initializeOnboarding } from "../onboarding";
 import { trackHelpTopic } from "../state/Ui";
 
-import { setEditorText, state } from "../state/State";
+import { setEditorText } from "../state/State";
 
 import { initializeHistoryMonkeypatch } from "./utilities/HistoryMonkeypatch";
 import { initializePanelResizer } from "./components/PanelResizer";
@@ -84,7 +84,7 @@ const run = async (elementId: string) => {
   initializeCanvasControls(MapSingleton.canvas, MapSingleton.mapView, {
     undo: () => undoManager.undo(),
     redo: () => undoManager.redo(),
-    deleteSelection: () => deleteComponents([...state.selection.selectionItems]),
+    deleteSelection,
   });
 
   MapSingleton.handleResize();

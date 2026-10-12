@@ -13,8 +13,8 @@ export interface CanvasActions {
   press(nodeKey: string | undefined, p: Point, additive: boolean): void;
   drag(p: Point, additive: boolean): void;
   release(): void;
-  /** Select one component, or clear the selection. */
-  select(nodeKey: string | undefined): void;
+  /** Tap: select one component, or a link or nothing at `p`. */
+  select(nodeKey: string | undefined, p: Point, touch: boolean): void;
   link(nodeKey: string | undefined): void;
   /** Rename a component, or name a new one at `p`. */
   edit(nodeKey: string | undefined, p: Point): void;
@@ -180,13 +180,13 @@ export class Gestures {
   private tap(press: Press, p: Point) {
     const tool = this.actions.tool();
     if (this.isRepeat(p, press.touch) && tool === "select") return this.actions.edit(press.nodeKey, p);
-    if (press.mode === "pending") this.toolTap(tool, press.nodeKey, p);
+    if (press.mode === "pending") this.toolTap(tool, press, p);
   }
 
-  private toolTap(tool: Tool, nodeKey: string | undefined, p: Point) {
+  private toolTap(tool: Tool, { nodeKey, touch }: Press, p: Point) {
     if (tool === "link") return this.actions.link(nodeKey);
     if (tool === "component" && !nodeKey) return this.actions.place(p);
-    if (tool !== "hand") this.actions.select(nodeKey);
+    if (tool !== "hand") this.actions.select(nodeKey, p, touch);
   }
 
   /** A second tap close in time and place to the last; a third starts over. */

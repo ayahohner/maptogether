@@ -6,7 +6,13 @@ const graph = vi.hoisted(() => ({
   filterNodes: vi.fn((): string[] => []),
   areNeighbors: vi.fn(() => false),
   getNodeAttribute: vi.fn(() => ({ x: 1, y: 2 })),
+  // Calls back like graphology: (edge, attributes, source, target, sourceAttributes, targetAttributes).
+  mapEdges: vi.fn((fn: (...args: any[]) => unknown) => links.map(([key, start, stop]) =>
+    fn(key, { nodeKey: key }, "", "", { component: { position: start } }, { component: { position: stop } }),
+  )),
 }));
+/** Links on the map: key, start and end. */
+let links: [string, { x: number; y: number }, { x: number; y: number }][] = [];
 const editor = vi.hoisted(() => ({ appendText: vi.fn(), replaceCoordinates: vi.fn() }));
 const updateComponentPositionOffset = vi.hoisted(() => vi.fn());
 vi.mock("./Graph", () => ({ graph, updateComponentPositionOffset }));
@@ -16,19 +22,24 @@ import {
   dragTo,
   followActiveTool,
   linkTo,
+  hasSelection,
   pressCanvas,
   pressComponent,
+  pressEdge,
   releaseDrag,
   replaceSelection,
   setInitialLinkTarget,
   state,
+  xorSelection,
 } from "./State";
 import { holdLink, releaseHeld, setTool } from "./Tools";
 
 const selected = () => [...state.selection.selectionItems];
+const selectedLinks = () => [...state.selection.edgeItems];
 
 beforeEach(() => {
   vi.clearAllMocks();
+  links = [];
   releaseDrag();
   replaceSelection([]);
   setTool("select");
@@ -96,6 +107,39 @@ it("draws a marquee once past the threshold, replacing or adding to the selectio
   expect(selected()).toEqual(["C"]);
   releaseDrag();
   expect(state.selectDrag.isSelecting).toBe(false);
+});
+
+it("selects a link on its own, or toggles it when adding, then can draw a marquee", () => {
+  replaceSelection(["A"], ["B->C"]);
+  pressEdge("A->B", { x: 1, y: 1 }, false);
+  expect([selected(), selectedLinks()]).toEqual([[], ["A->B"]]);
+  pressEdge("B->C", { x: 1, y: 1 }, true);
+  pressEdge("A->B", { x: 1, y: 1 }, true);
+  expect(selectedLinks()).toEqual(["B->C"]);
+  expect(state.selectDrag.selectionStartPoint).toEqual({ x: 1, y: 1 });
+});
+
+it("marquee-selects links more than half inside it", () => {
+  links = [
+    ["A->B", { x: 0, y: 5 }, { x: 100, y: 5 }],
+    ["B->C", { x: 0, y: 50 }, { x: 100, y: 50 }],
+  ];
+  pressCanvas({ x: -10, y: 0 }, false);
+  dragTo({ x: 40, y: 60 }, false);
+  dragTo({ x: 50, y: 60 }, false);
+  expect(selectedLinks()).toEqual([]);
+  dragTo({ x: 51, y: 10 }, false);
+  expect(selectedLinks()).toEqual(["A->B"]);
+  dragTo({ x: 60, y: 60 }, true);
+  expect(selectedLinks()).toEqual(["A->B", "B->C"]);
+});
+
+it("counts links as a selection, and clears them with components", () => {
+  expect(hasSelection()).toBe(false);
+  xorSelection([], ["A->B"]);
+  expect(hasSelection()).toBe(true);
+  pressCanvas({ x: 0, y: 0 }, false);
+  expect(hasSelection()).toBe(false);
 });
 
 it("ignores drags without a press", () => {

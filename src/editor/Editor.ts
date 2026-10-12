@@ -27,6 +27,7 @@ import {
 } from "../state/State";
 import MapSingleton from "../map/components/MapSingleton";
 import { togetherScriptLinter } from "./TogetherScriptLinter";
+import { deletionRanges } from "./deletions";
 import { generateRandomAnimal } from "../user/utilities/generateRandomAnimal";
 import { rerenderGraph } from "../state/Graph";
 import { resolveRoom } from "../app/room";
@@ -295,53 +296,14 @@ export const renameComponent = (oldName: string, newName: string) => {
   });
 };
 
-export const deleteComponents = (names: string[]) => {
-  if (names.length === 0) return;
-
-  let changes: ChangeSpec[] = [];
-
-  names.forEach((name: string) => {
-    const componentSearchCursor = new RegExpCursor(
-      editorView.state.doc,
-      matchComponentRegex(name),
-      {}
-    );
-
-    for (const next of componentSearchCursor) {
-      changes.push({
-        from: next.from,
-        to: next.to,
-        insert: "",
-      });
-    }
-
-    const edgeSearchCursor = new RegExpCursor(
-      editorView.state.doc,
-      matchEdgeRegex(name),
-      {}
-    );
-
-    for (const next of edgeSearchCursor) {
-      // NOTE: may need to revise regex to match full line of edge.
-      changes.push({
-        from: next.from,
-        to: next.to,
-        insert: "",
-      });
-    }
+/** Deletes the selected components (with their links) and links from the text. */
+export const deleteSelection = () => {
+  const changes = deletionRanges(editorView.state.doc.toString(), {
+    components: [...state.selection.selectionItems],
+    edges: [...state.selection.edgeItems],
   });
-
-  if (changes.length === 0) {
-    throw new Error(
-      `RenameComponentError: "${names}" not found in text document. State sync lost or regex error.`
-    );
-  }
-
   clearSelection();
-
-  editorView.dispatch({
-    changes,
-  });
+  if (changes.length) editorView.dispatch({ changes });
 };
 
 /* ======== Events ======== */
