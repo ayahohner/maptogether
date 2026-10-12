@@ -6,8 +6,10 @@ import { Line } from "../map/components/Line";
 import { ComponentT, LineT } from "../map/components/types";
 
 import { state, setInitialLinkTarget } from "./State";
-import { BaseTogetherVisitor, parseToCST } from "../parser/TogetherParser";
-import { disableErrorMode, enableErrorMode } from "../editor/Editor";
+import type { CstNode } from "chevrotain";
+import { BaseTogetherVisitor } from "../parser/TogetherParser";
+import { parseMap } from "../parser/lenient";
+import { showMapOutOfDate } from "../editor/Editor";
 
 export type NodeAttributes = {
   type: "normal";
@@ -335,27 +337,19 @@ export class TogetherVisitorToGraph extends BaseTogetherVisitor {
 
 const visitorInstance = new TogetherVisitorToGraph(graph);
 
-let wasRerenderError = false;
-
+/** Draws the map from its text, leaving out lines that don't parse. */
 export const rerenderGraph = () => {
-  let isError = false;
+  const { cst } = parseMap(state.editor.editorText); // <-State
+  showMapOutOfDate(!cst); // ->Editor
+  if (cst) drawGraph(cst);
+};
 
+const drawGraph = (cst: CstNode) => {
   try {
-    visitorInstance.visit(parseToCST(state.editor.editorText)); // <-State
+    visitorInstance.visit(cst);
     MapSingleton.renderIndicator.reset();
-  } catch (e: any) {
-    enableErrorMode(); // ->Editor
-
-    wasRerenderError = true;
-    isError = true;
-
+  } catch (e) {
     console.error(e);
-  }
-
-  if (wasRerenderError && !isError) {
-    disableErrorMode(); // ->Editor
-
-    wasRerenderError = false;
   }
 };
 

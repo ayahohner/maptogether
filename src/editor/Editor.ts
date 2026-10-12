@@ -56,6 +56,10 @@ const Theme = EditorView.theme({
   ".cm-gutterElement": {
     userSelect: "none",
   },
+  // Lines left off the map because they don't parse.
+  ".cm-lintRange-error": {
+    backgroundColor: "rgba(220, 38, 38, 0.08)",
+  },
   ".cm-ySelectionInfo": {
     fontFamily: "'JetBrains Mono', Consolas, Courier New, monospace",
     fontWeight: "400",
@@ -134,14 +138,9 @@ export const editorView = new EditorView({
 });
 
 /* ========= Actions ========= */
-export const enableErrorMode = (): void => {
-  const editorDiv = document.getElementById("editor");
-  editorDiv!.style.backgroundColor = "rgba(255, 0, 0, 0.05)";
-};
-
-export const disableErrorMode = (): void => {
-  const editorDiv = document.getElementById("editor");
-  editorDiv!.style.backgroundColor = "transparent";
+/** Tints the editor when the map can't follow the text (too many errors). */
+export const showMapOutOfDate = (outOfDate: boolean): void => {
+  document.getElementById("editor")!.classList.toggle("map-out-of-date", outOfDate);
 };
 
 /** Replaces the whole map text, as one undoable edit. */

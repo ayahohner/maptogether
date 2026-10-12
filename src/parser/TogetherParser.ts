@@ -6,7 +6,8 @@ import {
   CstNode,
   TokenType,
   ITokenConfig,
-  ILexingError,
+  IRecognitionException,
+  IToken,
   EOF,
 } from "chevrotain";
 
@@ -414,38 +415,40 @@ const parserInstance = new TogetherParser(togetherTokens);
 export const BaseTogetherVisitor =
   parserInstance.getBaseCstVisitorConstructor();
 
-export class TokenError extends Error {
-  column: number | undefined = undefined;
-  length: number | undefined = undefined;
-  line: number | undefined = undefined;
-  offset: number | undefined = undefined;
-  errors: ILexingError[] = [];
-
-  constructor(message: string | undefined, options?: ErrorOptions | undefined) {
-    super(message, options);
-  }
+export interface ParseProblem {
+  /** 1-based line number. */
+  line: number;
+  message: string;
 }
 
-export const parseToCST = (text: string) => {
-  // Initiate parse from top level aka default rule ("default")
-  let tokenized = TogetherLexer.tokenize(text);
+export interface ParseResult {
+  /** Undefined when the text couldn't be tokenized. */
+  cst: CstNode | undefined;
+  problems: ParseProblem[];
+}
 
+const isLine = (line: number | undefined): line is number => (line ?? 0) >= 1;
+
+/** The line an error is on. End-of-input errors belong to the token before, or else the last line. */
+const problemAt = (e: IRecognitionException): ParseProblem => {
+  const previous = (e as { previousToken?: IToken }).previousToken?.startLine;
+  const line = [e.token.startLine, previous].find(isLine) ?? Infinity;
+  return { line, message: e.message };
+};
+
+/**
+ * Parses map text. Reports every tokenizing error, or else the first parse
+ * error (recovery is off), by line; see `parseLeniently` to get past them.
+ */
+export const tryParse = (text: string): ParseResult => {
+  const tokenized = TogetherLexer.tokenize(text);
   if (tokenized.errors.length > 0) {
-    let error = new TokenError("TokenizingError");
-    error.errors = tokenized.errors;
-    throw error;
+    const problems = tokenized.errors.map((e) => ({ line: e.line ?? Infinity, message: e.message }));
+    return { cst: undefined, problems };
   }
-
   parserInstance.input = tokenized.tokens;
   const cst = parserInstance.default();
-
-  if (parserInstance.errors.length > 0) {
-    parserInstance.errors.forEach((e) => {
-      throw e;
-    });
-  }
-
-  return cst;
+  return { cst, problems: parserInstance.errors.map(problemAt) };
 };
 
 // Disabled until implement AST

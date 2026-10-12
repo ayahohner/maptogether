@@ -68,6 +68,10 @@ body {
   font-family: var(--font-mono);
 }
 
+#editor.map-out-of-date {
+  background-color: rgb(255 0 0 / 0.05);
+}
+
 .cm-editor {
   max-height: 100%;
 }

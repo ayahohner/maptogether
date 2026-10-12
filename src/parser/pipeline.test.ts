@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { parseToCST } from "./TogetherParser";
+import { tryParse } from "./TogetherParser";
 
 const pipelineChildren = (text: string) => {
-  const cst: any = parseToCST(text);
+  const cst: any = tryParse(text).cst;
   const pipeline = cst.children.statement[0].children.componentDeclaration[0].children.pipeline[0];
   return (pipeline.children.statement ?? []).map(
     (s: any) => s.children.componentDeclaration[0].children.Identifier[0].image,
