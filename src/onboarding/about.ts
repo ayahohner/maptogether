@@ -28,7 +28,8 @@ export function initializeAbout(dialog: HTMLDialogElement, options: AboutOptions
     dialog.close();
     options.onDemo();
   });
-  if (isFirstVisit(options.storage)) dialog.showModal();
+  // index.html may already have opened it, before the app loaded.
+  if (isFirstVisit(options.storage) && !dialog.open) dialog.showModal();
 }
 
 export const openAbout = () =>

@@ -3,11 +3,73 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MapTogether.io - Multiplayer Wardley Mapping</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>MapTogether: Multiplayer Wardley Mapping Tool, Free Online</title>
+  <meta name="description"
+    content="Draw Wardley maps with your team in real time. MapTogether is a free online Wardley mapping tool: share a link, see live cursors, and edit the map as a diagram or as text." />
+  <link rel="canonical" href="https://maptogether.io/" />
+  <meta name="theme-color" content="#ffffff" />
+
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="MapTogether" />
+  <meta property="og:url" content="https://maptogether.io/" />
+  <meta property="og:title" content="MapTogether: Multiplayer Wardley mapping in your browser" />
+  <meta property="og:description"
+    content="A free, online Wardley mapping tool for teams. Share a link and map together in real time, with no sign-up." />
+  <meta property="og:image" content="https://maptogether.io/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="A Wardley map being edited by two people in MapTogether" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://maptogether.io/#website",
+          "name": "MapTogether",
+          "url": "https://maptogether.io/"
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://maptogether.io/#app",
+          "name": "MapTogether",
+          "url": "https://maptogether.io/",
+          "description": "A free, multiplayer Wardley mapping tool that runs in the browser. Teams edit the same Wardley map in real time, on a canvas or as plain text.",
+          "applicationCategory": "BusinessApplication",
+          "applicationSubCategory": "Wardley mapping",
+          "operatingSystem": "Any (runs in a web browser)",
+          "browserRequirements": "Requires JavaScript and WebGL",
+          "isAccessibleForFree": true,
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+          "image": "https://maptogether.io/og-image.png",
+          "featureList": [
+            "Real-time multiplayer editing with live cursors",
+            "Shareable map links with no sign-up",
+            "Canvas and plain-text editing kept in sync",
+            "Evolution stages, dependencies and pipelines",
+            "Automatic saving",
+            "Works on desktop, tablets and phones"
+          ],
+          "about": {
+            "@type": "Thing",
+            "name": "Wardley map",
+            "sameAs": "https://en.wikipedia.org/wiki/Wardley_map"
+          },
+          "isPartOf": { "@id": "https://maptogether.io/#website" }
+        }
+      ]
+    }
+  </script>
+
   <link rel="preconnect" href="https://fonts.bunny.net" />
   <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700|jetbrains-mono:400&display=swap" rel="stylesheet" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <script>
     !(function () {
       var analytics = (window.analytics = window.analytics || []);
@@ -228,6 +290,14 @@
       </div>
     </form>
   </dialog>
+  <!-- Open the welcome before the app loads so first-time visitors see it at once. -->
+  <script>
+    try {
+      var about = document.getElementById("about");
+      about.dataset.map = location.pathname === "/" ? "new" : "shared";
+      if (localStorage.getItem("shouldShowHelp") !== "false") about.showModal();
+    } catch (e) {}
+  </script>
 
   <noscript>
     <p class="noscript">MapTogether is an interactive Wardley mapping tool and needs JavaScript to run.</p>

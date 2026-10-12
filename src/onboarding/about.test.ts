@@ -31,6 +31,13 @@ it("welcomes first-time visitors and remembers when they dismiss it", () => {
   expect(isFirstVisit(store)).toBe(false);
 });
 
+it("leaves the welcome open if the page already opened it", () => {
+  const dialog = mount();
+  dialog.showModal();
+  initializeAbout(dialog, { storage: storage(), isNewMap: true, onDemo: vi.fn() });
+  expect(dialog.open).toBe(true);
+});
+
 it("stays closed for returning visitors until opened from the menu", () => {
   const dialog = mount();
   initializeAbout(dialog, { storage: storage("false"), isNewMap: false, onDemo: vi.fn() });

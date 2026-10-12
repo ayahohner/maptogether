@@ -16,6 +16,7 @@ import { setEditorText } from "../state/State";
 import { initializeHistoryMonkeypatch } from "./utilities/HistoryMonkeypatch";
 import { initializePanelResizer } from "./components/PanelResizer";
 import { initializeUserEvents } from "./UserEvents";
+import { keepMapOutOfSearch } from "./seo";
 
 import "./index.css";
 
@@ -38,6 +39,8 @@ import "./index.css";
 initializeHistoryMonkeypatch();
 
 initializeUserEvents();
+
+keepMapOutOfSearch(room.isNew);
 
 const run = async (elementId: string) => {
   // Pixi v8 initializes asynchronously; wait for it before touching the
