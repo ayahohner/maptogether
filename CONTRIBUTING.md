@@ -20,6 +20,7 @@ yarn dev       # app on http://localhost:5173, using the deployed relay
 | `yarn test` | Vitest in watch mode |
 | `yarn coverage` | One Vitest run with coverage |
 | `yarn quality` | Code quality gate (see below) |
+| `yarn version:check` | Semver check (see below) |
 | `yarn relay:dev` | Local relay on `:8787` |
 | `yarn relay:deploy` | Deploy the relay (needs `CLOUDFLARE_API_TOKEN`) |
 | `yarn test:live` | WebRTC and saving against the deployed relay |
@@ -71,6 +72,23 @@ maintainability index above 75, and every edited file an MI above 75
 
 It runs automatically before `git push` (`.githooks/pre-push`, enabled by
 `yarn install`). Use `--verbose` to see every function, `--help` for options.
+
+## Versioning
+
+MapTogether follows [semver](https://semver.org). The version in
+`package.json` is shown in the app's menu. Any change to shipped files
+(`src/`, `public/`, `examples/`, `relay/src/`, `index.html`; tests don't count)
+must raise it:
+
+- **patch**: bug fixes only.
+- **minor**: new features. Existing maps, links and map text still work.
+- **major**: existing maps, links or map text no longer work as before, for
+  example a syntax change that old maps don't parse under.
+
+`yarn version:check` compares `package.json` with the merge-base with `main`.
+It runs before `git push` and on every pull request
+([Version check](.github/workflows/version.yml)). Bump once per branch, not per
+commit.
 
 ## README screenshot
 

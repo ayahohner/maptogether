@@ -76,8 +76,9 @@
     "relay:dev": "wrangler dev -c relay/wrangler.jsonc",
     "relay:deploy": "wrangler deploy -c relay/wrangler.jsonc",
     "quality": "node scripts/quality-gate.mjs",
+    "version:check": "node scripts/version-check.mjs",
     "postinstall": "git config core.hooksPath .githooks 2>/dev/null || true",
     "test:live": "LIVE_RELAY=${LIVE_RELAY:-https://wmaps-relay.innerlattice.workers.dev} vitest run src/sync/relay.live.test.ts"
   },
-  "version": "3.2.0"
+  "version": "3.3.0"
 }
