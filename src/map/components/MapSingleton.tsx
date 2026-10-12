@@ -57,7 +57,7 @@ class MapSingleton extends Application {
   private async initialize(): Promise<void> {
     await this.init({
       // Transparent so the stage dividers beneath the canvas show through;
-      // #map supplies the 0xf0f0f0 background.
+      // #map supplies the canvas background.
       backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,

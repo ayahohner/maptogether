@@ -4,8 +4,12 @@ import MapSingleton from "../map/components/MapSingleton";
 
 import { initializeCanvasPresence } from "../map/CanvasPresence";
 import { MapAxes, StageDividers } from "../map/MapAxes";
-import { editorView, awareness } from "../editor/Editor";
-import { ProjectMenu } from "../menu";
+import { editorView, awareness, replaceText, room } from "../editor/Editor";
+import { TopBar } from "../menu";
+import { HelpLauncher } from "../help/HelpLauncher";
+import { openAbout } from "../onboarding/about";
+import { initializeOnboarding } from "../onboarding";
+import { trackHelpTopic } from "../state/Ui";
 
 import { setEditorText } from "../state/State";
 
@@ -64,7 +68,20 @@ const run = async (elementId: string) => {
   // Render once even if graph is empty
   MapSingleton.dirty = true;
 
-  createRoot(document.getElementById("projectMenu")!).render(<ProjectMenu />);
+  initializeChrome();
 };
 
-run("map");
+/** Top bar, help, and the About dialog that welcomes first-time visitors. */
+const initializeChrome = () => {
+  const openDemo = initializeOnboarding(
+    room,
+    { text: () => editorView.state.doc.toString(), replace: replaceText },
+    document.getElementById("about") as HTMLDialogElement,
+    localStorage,
+  );
+  createRoot(document.getElementById("topBar")!).render(
+    <TopBar onAbout={openAbout} onDemo={openDemo} />,
+  );
+  createRoot(document.getElementById("overlays")!).render(<HelpLauncher />);
+  trackHelpTopic();
+};

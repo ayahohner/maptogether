@@ -29,13 +29,11 @@ import MapSingleton from "../map/components/MapSingleton";
 import { togetherScriptLinter } from "./TogetherScriptLinter";
 import { generateRandomAnimal } from "../user/utilities/generateRandomAnimal";
 import { rerenderGraph } from "../state/Graph";
-import { nanoid } from "../app/utilities/NanoId";
+import { resolveRoom } from "../app/room";
 
-let room = document.location.pathname.replace("/", "");
-if (!room) {
-  room = nanoid(8);
-  history.replaceState({}, "", room);
-}
+export const room = resolveRoom(document.location, (path) =>
+  history.replaceState({}, "", path),
+);
 
 const Theme = EditorView.theme({
   "&": {
@@ -88,7 +86,7 @@ export const undoManager = new Y.UndoManager(yText, { captureTimeout: 350 });
 
 export const awareness = new Awareness(yDoc);
 
-connectSync(yDoc, awareness, room, { onStatus: (status) => { collaboration.status = status; } })
+connectSync(yDoc, awareness, room.id, { onStatus: (status) => { collaboration.status = status; } })
   .then((sync) => {
     if (import.meta.env.VITE_DEBUG_ENABLED === "true") (window as any).__sync = sync;
   })
@@ -144,6 +142,13 @@ export const enableErrorMode = (): void => {
 export const disableErrorMode = (): void => {
   const editorDiv = document.getElementById("editor");
   editorDiv!.style.backgroundColor = "transparent";
+};
+
+/** Replaces the whole map text, as one undoable edit. */
+export const replaceText = (text: string) => {
+  editorView.dispatch({
+    changes: { from: 0, to: editorView.state.doc.length, insert: text },
+  });
 };
 
 export const appendText = (text: string) => {
