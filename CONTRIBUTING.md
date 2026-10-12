@@ -34,7 +34,9 @@ of that one text:
    (`src/parser/TogetherParser.ts`) into a graphology graph (`src/state/Graph.ts`).
 3. The graph is drawn with PixiJS (`src/map/`).
 4. Canvas interactions (adding, moving, renaming, linking, deleting) edit the
-   text, which flows back through the same path.
+   text, which flows back through the same path. Pointer input, mouse and
+   touch, goes through `src/map/gestures.ts`; the tools live in
+   `src/state/Tools.ts` and the pan and zoom in `src/map/viewport.ts`.
 
 UI state uses valtio (`src/state/State.ts`); the menu is React with Headless UI
 and Tailwind (`src/menu/`).

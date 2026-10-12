@@ -43,15 +43,17 @@ a picture one person emails around.
 2. Double-click the canvas, type a component name, and press Enter.
 3. Click **Share** to copy the link and send it to your team.
 
-| To | Do this |
-| --- | --- |
-| Add a component | Double-click the canvas, type a name, press Enter |
-| Rename a component | Double-click it |
-| Link two components | Hold Ctrl/Cmd, click the first, then the second |
-| Move components | Drag them |
-| Select several | Drag on the empty canvas; hold Shift to add to the selection |
-| Delete | Select, then press Delete or Backspace |
-| Start a new map | Click **New** |
+| To | With a mouse | On a touch screen |
+| --- | --- | --- |
+| Add a component | Double-click the canvas, or pick the component tool (C) and click | Double-tap the canvas |
+| Rename a component | Double-click it | Double-tap it |
+| Link two components | Hold Ctrl/Cmd, or pick the link tool (L), then click both | Tap the link tool, then tap both |
+| Move components | Drag them | Press and hold, then drag |
+| Select | Click; drag on the empty canvas or hold Shift for several | Tap a component |
+| Pan | Scroll, drag with Space held, or pick the pan tool (H) | Drag with one finger |
+| Zoom | Ctrl/Cmd + scroll, or the zoom buttons | Pinch |
+| Delete | Select, then press Delete or Backspace | Select, then tap the bin in the toolbar |
+| Start a new map | Click **New** | Tap **New** |
 
 ## Try the sample map
 
