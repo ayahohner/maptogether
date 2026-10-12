@@ -1,7 +1,7 @@
 {
   "name": "MapTogether",
   "short_name": "MapTogether",
-  "description": "Multiplayer Wardley mapping in your browser.",
+  "description": "Collaborative Wardley mapping in your browser.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

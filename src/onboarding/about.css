@@ -162,14 +162,8 @@
   line-height: 1.6;
 }
 
-.about-more summary {
-  color: var(--color-ink);
-  font-weight: 500;
-  cursor: pointer;
-}
-
 .about-more h2 {
-  margin: 16px 0 4px;
+  margin: 0 0 4px;
   color: var(--color-ink);
   font-size: 15px;
   font-weight: 600;
@@ -177,6 +171,10 @@
 
 .about-more p {
   margin: 0 0 8px;
+}
+
+.about-more p + h2 {
+  margin-top: 16px;
 }
 
 .about-more a {

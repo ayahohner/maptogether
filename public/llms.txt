@@ -1,6 +1,6 @@
 # MapTogether
 
-> MapTogether (https://maptogether.io) is a free, multiplayer Wardley mapping tool that runs in the browser. Teams edit the same Wardley map in real time, on a canvas or as plain text, with no account or install.
+> MapTogether (https://maptogether.io) is a free, collaborative (multiplayer) Wardley mapping tool that runs in the browser. Teams edit the same Wardley map in real time, on a canvas or as plain text, with no account or install.
 
 ## What it does
 

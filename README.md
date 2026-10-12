@@ -1,6 +1,6 @@
 # MapTogether
 
-**Multiplayer Wardley Mapping in your browser.** Open a link, start mapping, and
+**Collaborative Wardley mapping in your browser.** Open a link, start mapping, and
 see your team's edits and cursors live.
 
 [![Open maptogether.io](https://img.shields.io/website?url=https%3A%2F%2Fmaptogether.io&label=maptogether.io&up_message=live&style=flat-square)](https://maptogether.io)

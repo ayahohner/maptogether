@@ -35,11 +35,12 @@ templates, draw.io) and will follow as links and usage grow.
 ## Done in this change
 
 - **Title, description and canonical** aimed at the tool searches.
-  Title: "MapTogether: Multiplayer Wardley Mapping Tool, Free Online".
+  Title: "MapTogether: Collaborative Wardley Mapping Tool, Free Online".
 - **Crawlable intro.** The About dialog (also the first-visit welcome) is
-  static HTML in `index.html`, with the H1 "Multiplayer Wardley mapping, right
+  static HTML in `index.html`, with the H1 "Collaborative Wardley mapping, right
   in your browser", a plain description, features, and a short "What is a
-  Wardley map?" section. Crawlers that don't run JavaScript (Bing in part, most
+  Wardley map?" section, always expanded. The dialog is `open` in the HTML
+  itself, so it is visible even before any script runs. Crawlers that don't run JavaScript (Bing in part, most
   AI crawlers) read it in the raw HTML; Google sees it rendered, since it
   visits as a first-time user. An inline script opens it before the app
   bundle loads, so it is also the page's fast LCP element.

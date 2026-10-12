@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>MapTogether: Multiplayer Wardley Mapping Tool, Free Online</title>
+  <title>MapTogether: Collaborative Wardley Mapping Tool, Free Online</title>
   <meta name="description"
     content="Draw Wardley maps with your team in real time. MapTogether is a free online Wardley mapping tool: share a link, see live cursors, and edit the map as a diagram or as text." />
   <link rel="canonical" href="https://maptogether.io/" />
@@ -17,7 +17,7 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="MapTogether" />
   <meta property="og:url" content="https://maptogether.io/" />
-  <meta property="og:title" content="MapTogether: Multiplayer Wardley mapping in your browser" />
+  <meta property="og:title" content="MapTogether: Collaborative Wardley mapping in your browser" />
   <meta property="og:description"
     content="A free, online Wardley mapping tool for teams. Share a link and map together in real time, with no sign-up." />
   <meta property="og:image" content="https://maptogether.io/og-image.png" />
@@ -41,7 +41,7 @@
           "@id": "https://maptogether.io/#app",
           "name": "MapTogether",
           "url": "https://maptogether.io/",
-          "description": "A free, multiplayer Wardley mapping tool that runs in the browser. Teams edit the same Wardley map in real time, on a canvas or as plain text.",
+          "description": "A free, collaborative Wardley mapping tool that runs in the browser. Teams edit the same Wardley map in real time, on a canvas or as plain text.",
           "applicationCategory": "BusinessApplication",
           "applicationSubCategory": "Wardley mapping",
           "operatingSystem": "Any (runs in a web browser)",
@@ -185,7 +185,7 @@
 
   <!-- About MapTogether: the first-visit welcome, also opened from the menu.
        Static so search engines and link previews can read it. -->
-  <dialog id="about" class="about" aria-labelledby="about-title">
+  <dialog id="about" class="about" aria-labelledby="about-title" open>
     <form method="dialog" class="about-card">
       <button class="about-close icon-btn" value="close" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
@@ -232,11 +232,11 @@
 
       <div class="about-body">
         <p class="about-eyebrow">Free &middot; No sign-up &middot; Real-time</p>
-        <h1 id="about-title">Multiplayer Wardley mapping, right in your browser</h1>
+        <h1 id="about-title">Collaborative Wardley mapping, right in your browser</h1>
         <p class="about-lede">
           MapTogether is a free, online Wardley mapping tool for teams. Share a link and
-          everyone works on the same map at once, with live cursors, a plain-text editor
-          and automatic saving.
+          everyone edits the same map at once, multiplayer, with live cursors, a plain-text
+          editor and automatic saving.
         </p>
 
         <ul class="about-features">
@@ -266,8 +266,7 @@
           Instructions are always in the <span class="about-help-dot">?</span> button in the bottom-right corner.
         </p>
 
-        <details class="about-more">
-          <summary>New to Wardley mapping?</summary>
+        <section class="about-more" aria-label="New to Wardley mapping?">
           <h2>What is a Wardley map?</h2>
           <p>
             A Wardley map is a picture of a business strategy. Its vertical axis is a value chain:
@@ -286,17 +285,22 @@
             The value of a map is the conversation it starts. In MapTogether the whole team edits one map in
             real time, in a workshop or remotely, instead of passing a picture around.
           </p>
-        </details>
+        </section>
       </div>
     </form>
   </dialog>
-  <!-- Open the welcome before the app loads so first-time visitors see it at once. -->
+  <!-- The welcome is open in the HTML itself, for crawlers and before the app
+       loads. Show it as a modal to first-time visitors and close it for others. -->
   <script>
+    var about = document.getElementById("about");
+    about.dataset.map = location.pathname === "/" ? "new" : "shared";
+    var welcomed = false;
     try {
-      var about = document.getElementById("about");
-      about.dataset.map = location.pathname === "/" ? "new" : "shared";
-      if (localStorage.getItem("shouldShowHelp") !== "false") about.showModal();
+      welcomed = localStorage.getItem("shouldShowHelp") === "false";
     } catch (e) {}
+    // Not close(): its "close" event would count as dismissing the welcome.
+    about.removeAttribute("open");
+    if (!welcomed) about.showModal();
   </script>
 
   <noscript>
