@@ -88,3 +88,5 @@ const initializeChrome = () => {
   createRoot(document.getElementById("overlays")!).render(<HelpLauncher />);
   trackHelpTopic();
 };
+
+run("map");

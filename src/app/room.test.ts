@@ -26,6 +26,12 @@ it("starts a new map from the demo when asked", () => {
   expect(room.wantsDemo).toBe(true);
 });
 
+it("reads the demo query before replacing a live location's URL", () => {
+  const location = { pathname: "/", search: "?demo" };
+  const replace = (path: string) => Object.assign(location, { pathname: path, search: "" });
+  expect(resolveRoom(location, replace, () => "d").wantsDemo).toBe(true);
+});
+
 it("generates an 8-character id by default", () => {
   expect(resolveRoom({ pathname: "/", search: "" }, vi.fn()).id).toHaveLength(8);
 });

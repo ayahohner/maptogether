@@ -23,8 +23,9 @@ export function resolveRoom(
 ): Room {
   const existing = location.pathname.replace("/", "");
   if (existing) return { id: existing, isNew: false, wantsDemo: false };
+  // Read the query first: `location` may be live, and replacing the URL clears it.
+  const wantsDemo = new URLSearchParams(location.search).has(DEMO_QUERY);
   const id = makeId();
   replaceUrl(`/${id}`);
-  const wantsDemo = new URLSearchParams(location.search).has(DEMO_QUERY);
   return { id, isNew: true, wantsDemo };
 }
