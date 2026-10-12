@@ -47,7 +47,11 @@ const run = async (elementId: string) => {
   // renderer or appending the canvas.
   await MapSingleton.ready;
 
-  initializePanelResizer(document.getElementById("editorContainer"));
+  initializePanelResizer(
+    document.getElementById("editorContainer")!,
+    document.getElementById("resize")!,
+    MapSingleton.handleResize,
+  );
 
   setEditorText(editorView.state.doc.toString());
 
