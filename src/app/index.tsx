@@ -6,6 +6,7 @@ import {
   editorView,
   awareness,
   deleteSelection,
+  mapLink,
   replaceText,
   room,
   undoManager,
@@ -99,12 +100,18 @@ const run = async (elementId: string) => {
 const initializeChrome = () => {
   const openDemo = initializeOnboarding(
     room,
-    { text: () => editorView.state.doc.toString(), replace: replaceText },
+    {
+      text: () => editorView.state.doc.toString(),
+      replace: (text) => {
+        mapLink.setUnedited(text);
+        replaceText(text);
+      },
+    },
     document.getElementById("about") as HTMLDialogElement,
     localStorage,
   );
   createRoot(document.getElementById("topBar")!).render(
-    <TopBar onAbout={openAbout} onDemo={openDemo} />,
+    <TopBar onAbout={openAbout} onDemo={openDemo} onShare={mapLink.create} />,
   );
   createRoot(document.getElementById("overlays")!).render(<HelpLauncher />);
   trackHelpTopic();

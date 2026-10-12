@@ -39,7 +39,7 @@ a picture one person emails around.
 
 ## Get started
 
-1. Go to **[maptogether.io](https://maptogether.io)**. You land on a new, empty map.
+1. Go to **[maptogether.io](https://maptogether.io)**. You land on a blank map. It is saved, with its own link, as soon as you edit it.
 2. Double-click the canvas, type a component name, and press Enter.
 3. Click **Share** to copy the link and send it to your team.
 

@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useSnapshot } from "valtio";
-import { collaboration } from "../sync/presence";
-import type { SyncStatus } from "../sync/SaveStatus";
+import { collaboration, type CollaborationStatus } from "../sync/presence";
 
-const labels = {
+const labels: Record<CollaborationStatus, string> = {
+  draft: "Not saved yet: edit the map or share it to save it",
   connecting: "Connecting…",
   saving: "Saving changes…",
   saved: "Saved",
@@ -53,7 +53,7 @@ export function CollaborationBadge() {
   );
 }
 
-function SyncLight({ status }: { status: SyncStatus }) {
+function SyncLight({ status }: { status: CollaborationStatus }) {
   return (
     <span className={`sync-light sync-${status}`} role="img" aria-label={labels[status]} />
   );

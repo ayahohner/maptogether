@@ -1,37 +1,63 @@
 import { expect, it, vi } from "vitest";
-import { resolveRoom } from "./room";
+import { mapLifecycle, resolveRoom } from "./room";
 
 it("keeps the map id from the URL path", () => {
-  const replace = vi.fn();
-  expect(resolveRoom({ pathname: "/abc123", search: "?demo" }, replace)).toEqual({
+  expect(resolveRoom({ pathname: "/abc123", search: "?demo" })).toEqual({
     id: "abc123",
     isNew: false,
     wantsDemo: false,
   });
-  expect(replace).not.toHaveBeenCalled();
 });
 
-it("creates a new map on the root URL and moves the URL to it", () => {
-  const replace = vi.fn();
-  expect(resolveRoom({ pathname: "/", search: "" }, replace, () => "new1")).toEqual({
-    id: "new1",
-    isNew: true,
-    wantsDemo: false,
-  });
-  expect(replace).toHaveBeenCalledWith("/new1");
+it("treats the root URL as a draft with no id yet", () => {
+  expect(resolveRoom({ pathname: "/", search: "" })).toEqual({ isNew: true, wantsDemo: false });
+  expect(resolveRoom({ pathname: "/", search: "?demo" }).wantsDemo).toBe(true);
 });
 
-it("starts a new map from the demo when asked", () => {
-  const room = resolveRoom({ pathname: "/", search: "?demo" }, vi.fn(), () => "d");
-  expect(room.wantsDemo).toBe(true);
+const hooks = () => ({ connect: vi.fn(), created: vi.fn(), makeId: () => "new1" });
+
+it("connects an existing map straight away", () => {
+  const h = hooks();
+  const lifecycle = mapLifecycle({ id: "abc", isNew: false, wantsDemo: false }, h);
+  expect(h.connect).toHaveBeenCalledWith("abc");
+  expect(lifecycle.create()).toBe("/abc");
+  lifecycle.textChanged(() => "Tea [1, 2]");
+  expect(h.created).not.toHaveBeenCalled();
+  expect(h.connect).toHaveBeenCalledOnce();
 });
 
-it("reads the demo query before replacing a live location's URL", () => {
-  const location = { pathname: "/", search: "?demo" };
-  const replace = (path: string) => Object.assign(location, { pathname: path, search: "" });
-  expect(resolveRoom(location, replace, () => "d").wantsDemo).toBe(true);
+it("creates a draft map on its first edit, once", () => {
+  const h = hooks();
+  const room = resolveRoom({ pathname: "/", search: "" });
+  const lifecycle = mapLifecycle(room, h);
+  lifecycle.textChanged(() => "  \n");
+  expect(h.connect).not.toHaveBeenCalled();
+  lifecycle.textChanged(() => "Tea");
+  lifecycle.textChanged(() => "Tea [1, 2]");
+  expect(room.id).toBe("new1");
+  expect(h.created).toHaveBeenCalledOnce();
+  expect(h.created).toHaveBeenCalledWith("/new1");
+  expect(h.connect).toHaveBeenCalledWith("new1");
+});
+
+it("doesn't count loading the demo as an edit", () => {
+  const h = hooks();
+  const lifecycle = mapLifecycle({ isNew: true, wantsDemo: true }, h);
+  lifecycle.setUnedited("Demo");
+  lifecycle.textChanged(() => "Demo");
+  expect(h.connect).not.toHaveBeenCalled();
+  lifecycle.textChanged(() => "Demo!");
+  expect(h.connect).toHaveBeenCalledOnce();
+});
+
+it("creates a draft map when it is shared", () => {
+  const h = hooks();
+  expect(mapLifecycle({ isNew: true, wantsDemo: false }, h).create()).toBe("/new1");
+  expect(h.connect).toHaveBeenCalledWith("new1");
 });
 
 it("generates an 8-character id by default", () => {
-  expect(resolveRoom({ pathname: "/", search: "" }, vi.fn()).id).toHaveLength(8);
+  const room = resolveRoom({ pathname: "/", search: "" });
+  mapLifecycle(room, { connect: vi.fn(), created: vi.fn() }).create();
+  expect(room.id).toHaveLength(8);
 });

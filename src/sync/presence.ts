@@ -9,8 +9,11 @@ export interface ConnectedUser {
   self: boolean;
 }
 
+/** "draft": a new map that isn't saved or shared until someone edits it. */
+export type CollaborationStatus = SyncStatus | "draft";
+
 export const collaboration = proxy<{
-  status: SyncStatus;
+  status: CollaborationStatus;
   users: ConnectedUser[];
 }>({
   status: "connecting",

@@ -30,11 +30,10 @@ import { togetherScriptLinter } from "./TogetherScriptLinter";
 import { deletionRanges } from "./deletions";
 import { generateRandomAnimal } from "../user/utilities/generateRandomAnimal";
 import { rerenderGraph } from "../state/Graph";
-import { resolveRoom } from "../app/room";
+import { mapLifecycle, resolveRoom } from "../app/room";
+import { keepMapOutOfSearch } from "../app/seo";
 
-export const room = resolveRoom(document.location, (path) =>
-  history.replaceState({}, "", path),
-);
+export const room = resolveRoom(document.location);
 
 const Theme = EditorView.theme({
   "&": {
@@ -91,11 +90,22 @@ export const undoManager = new Y.UndoManager(yText, { captureTimeout: 350 });
 
 export const awareness = new Awareness(yDoc);
 
-connectSync(yDoc, awareness, room.id, { onStatus: (status) => { collaboration.status = status; } })
-  .then((sync) => {
-    if (import.meta.env.VITE_DEBUG_ENABLED === "true") (window as any).__sync = sync;
-  })
-  .catch((err) => { collaboration.status = "error"; console.error("[sync] failed to connect", err); });
+const startSync = (id: string) =>
+  connectSync(yDoc, awareness, id, { onStatus: (status) => { collaboration.status = status; } })
+    .then((sync) => {
+      if (import.meta.env.VITE_DEBUG_ENABLED === "true") (window as any).__sync = sync;
+    })
+    .catch((err) => { collaboration.status = "error"; console.error("[sync] failed to connect", err); });
+
+/** Saves and shares the map; a new map starts once it's edited or shared. */
+if (!room.id) collaboration.status = "draft";
+export const mapLink = mapLifecycle(room, {
+  connect: (id) => void startSync(id),
+  created: (path) => {
+    history.replaceState({}, "", path);
+    keepMapOutOfSearch(false);
+  },
+});
 
 let username = localStorage.getItem("username");
 if (!username) {
@@ -127,6 +137,7 @@ const startState = EditorState.create({
     yCollab(yText, awareness, { undoManager }),
     EditorView.updateListener.of((e) => {
       if (e.docChanged) {
+        mapLink.textChanged(() => e.state.doc.toString());
         handleEditorChange(e.state.doc.toString());
       }
     }),

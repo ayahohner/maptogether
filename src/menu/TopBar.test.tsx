@@ -8,7 +8,7 @@ vi.mock("../app/utilities/Clipboard", () => ({ copyTextToClipboard: vi.fn() }));
 
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
-const props = { onAbout: vi.fn(), onDemo: vi.fn() };
+const props = { onAbout: vi.fn(), onDemo: vi.fn(), onShare: vi.fn() };
 
 beforeEach(async () => {
   (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -48,6 +48,7 @@ it("shows the brand, people, a new map link and sharing", () => {
 it("confirms when the share link is copied", async () => {
   const share = [...host.querySelectorAll("button")].find((b) => b.textContent === "Share")!;
   await act(async () => share.click());
+  expect(props.onShare).toHaveBeenCalledOnce();
   expect(share.textContent).toBe("Link copied");
 });
 

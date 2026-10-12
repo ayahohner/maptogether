@@ -20,9 +20,11 @@ const ISSUES_URL = "https://github.com/ayahohner/wmaps/issues";
 export interface TopBarProps {
   onAbout: () => void;
   onDemo: () => void;
+  /** Creates the map if it's still a draft, so the copied link works. */
+  onShare: () => void;
 }
 
-export function TopBar({ onAbout, onDemo }: TopBarProps) {
+export function TopBar({ onAbout, onDemo, onShare }: TopBarProps) {
   return (
     <nav className="flex h-full items-center gap-2 px-3 sm:px-4" aria-label="Map">
       <Brand />
@@ -32,7 +34,7 @@ export function TopBar({ onAbout, onDemo }: TopBarProps) {
           <PlusIcon aria-hidden="true" />
           <span className="max-sm:hidden">New map</span>
         </a>
-        <ShareButton />
+        <ShareButton onShare={onShare} />
         <OverflowMenu onAbout={onAbout} onDemo={onDemo} />
       </div>
     </nav>
@@ -51,9 +53,10 @@ function Brand() {
   );
 }
 
-function ShareButton() {
+function ShareButton({ onShare }: Pick<TopBarProps, "onShare">) {
   const [copied, setCopied] = useState(false);
   const share = () => {
+    onShare();
     copyTextToClipboard(document.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
@@ -66,7 +69,7 @@ function ShareButton() {
   );
 }
 
-function OverflowMenu({ onAbout, onDemo }: TopBarProps) {
+function OverflowMenu({ onAbout, onDemo }: Omit<TopBarProps, "onShare">) {
   return (
     <Menu>
       <MenuButton className="icon-btn" aria-label="More">

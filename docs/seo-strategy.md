@@ -5,9 +5,16 @@ by the AI answer engines that increasingly answer those searches for them.
 
 ## The constraint
 
-MapTogether drops visitors straight into a new map: `/` creates a map and moves
-the URL to `/<map-id>`. That is the right product experience, but it means the
-site has only one public page, and every other URL is somebody's private map.
+MapTogether drops visitors straight into a blank map at `/`. That map is a
+draft: it gets its own `/<map-id>` URL, is saved, and connects to the relay only
+when someone first edits it (the text is the source of truth, and dragging on
+the canvas edits the text) or clicks Share. Loading the demo isn't an edit.
+So crawlers and people who only look create no maps and cost no relay calls,
+and `/` stays one stable, indexable URL. Even so the site has only one public
+page, and every other URL is somebody's private map.
+
+There is deliberately no separate `/about` page: it would duplicate the home
+page's content and split its ranking signals. The About text lives in `/`.
 
 So the plan is:
 

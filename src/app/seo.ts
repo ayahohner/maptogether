@@ -3,6 +3,7 @@
  * `/<map-id>` URL and holds a team's private work, so map pages ask search
  * engines not to index them. They drop the canonical link too, since Google
  * treats noindex plus a canonical to another page as a mixed signal.
+ * A draft map at `/` stays indexable until it is created.
  */
 export function keepMapOutOfSearch(isNewMap: boolean, doc: Document = document) {
   if (isNewMap) return;

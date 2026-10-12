@@ -4,7 +4,7 @@
 
 ## What it does
 
-- Opening https://maptogether.io creates a new map with its own URL. Anyone with the link can edit it at the same time; everyone sees each other's named cursors.
+- Opening https://maptogether.io starts a blank map; it gets its own URL as soon as you edit it or click Share. Anyone with the link can edit it at the same time; everyone sees each other's named cursors.
 - Maps can be drawn on the canvas (double-click to add a component, drag to move, hold Cmd/Ctrl and click two components to link them) or written in the text editor beside it. Both views stay in sync.
 - The evolution axis is marked Genesis, Custom, Product and Commodity. Dependencies and pipelines are supported.
 - Maps save automatically. It works on desktop browsers, tablets and phones.
