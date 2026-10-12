@@ -3,6 +3,8 @@
  * touch. Each step is a list of parts: plain words, or keys to draw as
  * keycaps ({ key }).
  */
+import type { KeyLabels } from "../app/keys";
+
 export type Input = "mouse" | "touch";
 export type Part = string | { key: string };
 export interface HelpRow {
@@ -14,7 +16,10 @@ export interface HelpSection {
   rows: HelpRow[];
 }
 
-const mouseHelp = (mod: string): HelpSection[] => [
+/** "⌘ ⇧ Z" as keycaps. */
+const keycaps = (keys: string): Part[] => keys.split(" ").map((key) => ({ key }));
+
+const mouseHelp = ({ mod, undo, redo }: KeyLabels): HelpSection[] => [
   {
     title: "Create",
     rows: [
@@ -29,7 +34,7 @@ const mouseHelp = (mod: string): HelpSection[] => [
       { action: "Move", how: ["Drag a component or selection"] },
       { action: "Select several", how: ["Drag on empty canvas;", { key: "Shift" }, "adds"] },
       { action: "Delete", how: [{ key: "Delete" }, "or", { key: "Backspace" }] },
-      { action: "Undo / redo", how: [{ key: mod }, { key: "Z" }, "/", { key: mod }, { key: "Shift" }, { key: "Z" }] },
+      { action: "Undo / redo", how: [...keycaps(undo), "/", ...keycaps(redo)] },
     ],
   },
   {
@@ -69,8 +74,8 @@ const touchHelp: HelpSection[] = [
   },
 ];
 
-export const canvasHelp = (input: Input, mod: string) =>
-  input === "touch" ? touchHelp : mouseHelp(mod);
+export const canvasHelp = (input: Input, keys: KeyLabels) =>
+  input === "touch" ? touchHelp : mouseHelp(keys);
 
 export interface SyntaxExample {
   title: string;

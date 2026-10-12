@@ -306,6 +306,17 @@ describe("bindGestures", () => {
     expect(document.activeElement).not.toBe(field);
   });
 
+  it("stops middle-button autoscroll", () => {
+    bindGestures(canvas, target as unknown as Gestures);
+    const press = (button: number) => {
+      const event = new MouseEvent("mousedown", { button, cancelable: true });
+      canvas.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+    expect(press(1)).toBe(true);
+    expect(press(0)).toBe(false);
+  });
+
   it("feeds wheels, zooming with a modifier", () => {
     bindGestures(canvas, target as unknown as Gestures);
     const wheel = new WheelEvent("wheel", { deltaY: 4, ctrlKey: true, cancelable: true });

@@ -4,11 +4,10 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels, Transition } from "@headle
 import { CodeBracketIcon, CursorArrowRaysIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 import { closeHelp, setHelpTopic, toggleHelp, ui, type HelpTopic } from "../state/Ui";
-import { isApple } from "../app/common/BrowserPlatform";
+import { keys } from "../app/keys";
 import { canvasHelp, syntaxHelp, type Input, type Part } from "./topics";
 
 const topics: HelpTopic[] = ["canvas", "code"];
-const modKey = isApple ? "⌘" : "Ctrl";
 const prefersTouch = () => window.matchMedia?.("(pointer: coarse)").matches ?? false;
 
 /** The floating ? button in the corner and the help panel it opens. */
@@ -97,7 +96,7 @@ function CanvasHelp() {
   const other: Input = input === "touch" ? "mouse" : "touch";
   return (
     <div className="px-4 pt-1 pb-4">
-      {canvasHelp(input, modKey).map((section) => (
+      {canvasHelp(input, keys).map((section) => (
         <section key={section.title} className="mt-3">
           <h3 className="help-heading">{section.title}</h3>
           <dl className="divide-y divide-line/70">

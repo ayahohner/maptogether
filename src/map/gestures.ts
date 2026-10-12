@@ -249,6 +249,8 @@ export function bindGestures(canvas: HTMLElement, gestures: Gestures) {
       gestures.down(input(e));
       canvas.setPointerCapture?.(e.pointerId);
     }],
+    // The middle button pans; don't let Windows browsers start autoscrolling.
+    ["mousedown", (e: MouseEvent) => e.button === 1 && e.preventDefault()],
     ["pointermove", (e: PointerEvent) => gestures.move(input(e))],
     ["pointerup", (e: PointerEvent) => gestures.up(input(e))],
     ["pointercancel", (e: PointerEvent) => gestures.cancel(input(e))],

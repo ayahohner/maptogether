@@ -9,14 +9,13 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 
-import { isApple } from "../app/common/BrowserPlatform";
+import { keys } from "../app/keys";
 import { state } from "../state/State";
 import { activeTool, setTool, tools, type Tool } from "../state/Tools";
 import { MAX_SCALE, MIN_SCALE, viewport } from "./viewport";
 
 type Icon = ComponentType<SVGProps<SVGSVGElement>>;
 
-const mod = isApple ? "⌘" : "Ctrl";
 const ZOOM_STEP = 1.25;
 
 const SelectIcon: Icon = (props) => (
@@ -51,7 +50,7 @@ const toolItems: ToolItem[] = [
   { tool: "select", label: "Select", keys: ["V"], icon: SelectIcon },
   { tool: "hand", label: "Pan", keys: ["H"], icon: HandRaisedIcon },
   { tool: "component", label: "Component", keys: ["C"], icon: ComponentIcon },
-  { tool: "link", label: "Link", keys: ["L", `hold ${mod}`], icon: LinkToolIcon },
+  { tool: "link", label: "Link", keys: ["L", `hold ${keys.mod}`], icon: LinkToolIcon },
 ];
 
 export interface MapControlsProps {
@@ -90,9 +89,9 @@ function Toolbar({ onUndo, onRedo, onDelete }: MapControlsProps) {
         />
       ))}
       <hr className="map-toolbar-rule" />
-      <ControlButton label="Undo" keys={[`${mod} Z`]} icon={ArrowUturnLeftIcon} onClick={onUndo} />
-      <ControlButton label="Redo" keys={[`${mod} ⇧ Z`]} icon={ArrowUturnRightIcon} onClick={onRedo} />
-      {hasSelection && <ControlButton label="Delete" keys={["⌫"]} icon={TrashIcon} onClick={onDelete} />}
+      <ControlButton label="Undo" keys={[keys.undo]} icon={ArrowUturnLeftIcon} onClick={onUndo} />
+      <ControlButton label="Redo" keys={[keys.redo]} icon={ArrowUturnRightIcon} onClick={onRedo} />
+      {hasSelection && <ControlButton label="Delete" keys={[keys.delete]} icon={TrashIcon} onClick={onDelete} />}
     </div>
   );
 }
