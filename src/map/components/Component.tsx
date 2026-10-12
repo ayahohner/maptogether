@@ -4,16 +4,7 @@ import { Rectangle } from "./Rectangle";
 
 import { ComponentT } from "./types";
 
-import {
-  state,
-  setInitialLinkTarget,
-  subscribe,
-  StateT,
-} from "../../state/State";
-
-import { graph } from "../../state/Graph";
-
-import { appendText } from "../../editor/Editor";
+import { state, subscribe, StateT } from "../../state/State";
 
 import MapSingleton from "./MapSingleton";
 import { PipelineContainer } from "./PipelineContainer";
@@ -266,35 +257,6 @@ export const Component = (config: IComponentConfig) => {
   const linkingUnsub = subscribe(state.linking, () =>
     renderComponent(g, state)
   );
-
-  // TODO: Move into MapSingleton and use event delegation.
-  component.on("pointerdown", (e) => {
-    // Note: e.target should be the component because events don't bubble
-    // in pixi
-    const target = e.target as ComponentT;
-    // If ctrl pressed
-    if (state.linking.isLinkModeEnabled) {
-      if (!state.linking.initialLinkTarget) {
-        setInitialLinkTarget(target.nodeKey); //->State
-        return;
-      } else if (
-        state.linking.initialLinkTarget &&
-        state.linking.initialLinkTarget !== target.nodeKey
-      ) {
-        // ^ If not trying to link a component to itself
-        if (
-          !graph.hasEdge(target.nodeKey, state.linking.initialLinkTarget)
-        )
-          //<-Graph
-          // TODO: this string should be borrowed from Parser
-          appendText(
-            `\n${state.linking.initialLinkTarget}.${target.nodeKey}`
-          ); //->Editor
-      }
-    }
-    // Reset if clicking self component or not holding control
-    setInitialLinkTarget(undefined); //->State
-  });
 
   component.on("removed", () => {
     selectionUnsub();

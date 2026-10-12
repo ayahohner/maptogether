@@ -4,7 +4,8 @@ import { proxySet } from "valtio/utils";
 import { ComponentT } from "../map/components/types";
 import { graph, NodeAttributes, updateComponentPositionOffset } from "./Graph";
 
-import { replaceCoordinates } from "../editor/Editor";
+import { appendText, replaceCoordinates } from "../editor/Editor";
+import { activeTool, tools } from "./Tools";
 
 /** Plain coordinate pair. Kept as a plain object (not a Pixi Point) so it is
  *  safe to store in valtio state — valtio deep-proxies class instances and
@@ -68,10 +69,6 @@ export const setInitialLinkTarget = (
   nodeKey: ComponentT["nodeKey"] | undefined
 ) => {
   state.linking.initialLinkTarget = nodeKey;
-};
-
-export const setIsLinkModeEnabled = (enabled: boolean) => {
-  state.linking.isLinkModeEnabled = enabled;
 };
 
 export const startPotentialSelect = (location: PointLike) => {
@@ -182,5 +179,78 @@ export const updateTranslationPoint = (location: PointLike) => {
   state.translateDrag.translationLastPoint =
     state.translateDrag.translationCurrentPoint;
 };
+
+/* ===== Canvas gestures (points in world coordinates) ===== */
+
+/** Press on empty canvas: clear the selection (unless adding) and start a marquee. */
+export const pressCanvas = (point: PointLike, additive: boolean) => {
+  if (!additive) clearSelection();
+  startPotentialSelect(point);
+};
+
+/** Press on a component: select it (or toggle it when adding) and start a move. */
+export const pressComponent = (
+  nodeKey: ComponentT["nodeKey"],
+  point: PointLike,
+  additive: boolean
+) => {
+  if (additive) return xorSelection([nodeKey]);
+  if (!state.selection.selectionItems.has(nodeKey)) replaceSelection([nodeKey]);
+  startPotentialTranslation(point);
+};
+
+/** Movement (px) before a press becomes a move or a marquee. */
+const DRAG_THRESHOLD = 3;
+const pastThreshold = (a: PointLike, b: PointLike) =>
+  Math.abs(a.x - b.x) + Math.abs(a.y - b.y) >= DRAG_THRESHOLD;
+
+/** Pointer moved while pressed: continue the move or marquee it started. */
+export const dragTo = (point: PointLike, additive: boolean) => {
+  const { translationStartPoint } = state.translateDrag;
+  if (translationStartPoint) return dragTranslation(translationStartPoint, point);
+  const { selectionStartPoint } = state.selectDrag;
+  if (selectionStartPoint) dragMarquee(selectionStartPoint, point, additive);
+};
+
+const dragTranslation = (start: PointLike, point: PointLike) => {
+  if (state.translateDrag.isTranslating) updateTranslationPoint(point);
+  else if (pastThreshold(start, point)) startTranslation(point);
+};
+
+const dragMarquee = (start: PointLike, point: PointLike, additive: boolean) => {
+  if (!state.selectDrag.isSelecting) {
+    if (pastThreshold(start, point)) startSelecting(point);
+  } else if (additive) addUpdateSelectionPoint(point);
+  else updateSelectionPoint(point);
+};
+
+/** End of a press: commit any move and drop the marquee. */
+export const releaseDrag = () => {
+  stopSelecting();
+  stopTranslation();
+};
+
+/**
+ * Link tool: the first component picked is the source, the second the
+ * component it needs. Picking empty canvas or the source again starts over.
+ */
+export const linkTo = (nodeKey: ComponentT["nodeKey"] | undefined) => {
+  const from = state.linking.initialLinkTarget;
+  if (nodeKey && !from) return setInitialLinkTarget(nodeKey);
+  if (nodeKey && from && from !== nodeKey && !graph.areNeighbors(from, nodeKey)) {
+    appendText(`\n${from}.${nodeKey}`); // ->Editor
+  }
+  setInitialLinkTarget(undefined);
+};
+
+/** Link mode (and its styling) follows the active tool. */
+export const followActiveTool = () => {
+  const enabled = activeTool() === "link";
+  if (enabled === state.linking.isLinkModeEnabled) return;
+  state.linking.isLinkModeEnabled = enabled;
+  state.linking.initialLinkTarget = undefined;
+};
+
+subscribe(tools, followActiveTool, true);
 
 export { subscribe };

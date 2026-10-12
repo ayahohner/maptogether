@@ -2,10 +2,11 @@ import Combokeys from "combokeys";
 
 import { isApple } from "./common/BrowserPlatform";
 
-import MapSingleton from "../map/components/MapSingleton";
 import { deleteComponents, undoManager } from "../editor/Editor";
 
-import { setIsLinkModeEnabled, state, stopSelecting } from "../state/State";
+import { state, stopSelecting } from "../state/State";
+import { releaseHeld } from "../state/Tools";
+import { bindToolShortcuts } from "./shortcuts";
 
 var combokeys = new Combokeys(document.documentElement);
 // Allow hotkeys when focused on inputs
@@ -14,7 +15,7 @@ combokeys.stopCallback = () => false;
 const ctrlCmd = isApple ? "command" : "ctrl";
 
 const resetInteractiveStates = () => {
-  setIsLinkModeEnabled(false);
+  releaseHeld();
   stopSelecting();
 };
 
@@ -31,8 +32,7 @@ export const initializeUserEvents = () => {
       undoManager.redo();
     }
   });
-  combokeys.bind(ctrlCmd, () => setIsLinkModeEnabled(true), "keydown");
-  combokeys.bind(ctrlCmd, () => setIsLinkModeEnabled(false), "keyup");
+  bindToolShortcuts();
 
   combokeys.bind(
     ["del", "backspace"],
@@ -48,7 +48,5 @@ export const initializeUserEvents = () => {
     "keydown"
   );
 
-  window.addEventListener("mouseup", MapSingleton.handleMouseUp);
-  window.addEventListener("resize", MapSingleton.handleResize);
   window.addEventListener("blur", resetInteractiveStates);
 };

@@ -88,3 +88,20 @@ it("renders remote presence safely, tracks users independently of pointers, and 
   deliver();
   expect(collaboration.users).toHaveLength(1);
 });
+
+it("shares pointers in map coordinates when the view is panned or zoomed", () => {
+  const awareness = peer();
+  const parent = document.createElement("div");
+  const canvas = document.createElement("canvas");
+  parent.append(canvas);
+  document.body.append(parent);
+  canvas.getBoundingClientRect = () =>
+    ({ left: 0, top: 0, width: 400, height: 200 }) as DOMRect;
+  // Zoomed in 2× on the top-left corner.
+  const toWorld = (p: { x: number; y: number }) => ({ x: p.x / 2, y: p.y / 2 });
+  cleanups.push(initializeCanvasPresence(canvas, awareness, toWorld));
+  canvas.dispatchEvent(
+    new PointerEvent("pointermove", { clientX: 400, clientY: 200, pointerType: "mouse" }),
+  );
+  expect(awareness.getLocalState()?.mapPointer).toEqual({ x: 50, y: 50 });
+});

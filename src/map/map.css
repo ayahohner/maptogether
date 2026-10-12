@@ -8,7 +8,16 @@
 }
 
 /* Inline rename / create field placed over the canvas. */
+.componentInputContainer {
+  position: absolute;
+  z-index: 100;
+  display: flex;
+}
+
 .componentInput {
+  field-sizing: content;
+  min-width: 2ch;
+  font-size: 15px;
   border: none;
   border-radius: 4px;
   padding: 1px 4px;
@@ -22,11 +31,19 @@
   outline: none;
 }
 
+/* iOS zooms the page to focus fields set below 16px. */
+@media (pointer: coarse) {
+  .componentInput { font-size: 16px; }
+}
+
 /* Positioned so it stacks above the stage dividers inserted before it. */
 #map canvas { position: relative; }
-.canvas-presence { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.canvas-presence { position: absolute; inset: 0; pointer-events: none; }
+/* Overlays pan and zoom with the canvas (see viewport.ts); cursors keep their size. */
+.canvas-presence, .map-axes { transform: var(--view); transform-origin: 0 0; }
 .remote-pointer {
   position: absolute; line-height: 1.3;
+  transform: scale(calc(1 / var(--zoom, 1))); transform-origin: 0 0;
   /* Match the 50 ms canvas presence publish interval. */
   transition: left 50ms linear, top 50ms linear;
 }

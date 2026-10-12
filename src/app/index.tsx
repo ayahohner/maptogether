@@ -1,17 +1,28 @@
 import { createRoot } from "react-dom/client";
 
+// Load the editor first: it and State import each other, and the editor
+// reads State as it loads.
+import {
+  editorView,
+  awareness,
+  deleteComponents,
+  replaceText,
+  room,
+  undoManager,
+} from "../editor/Editor";
 import MapSingleton from "../map/components/MapSingleton";
 
 import { initializeCanvasPresence } from "../map/CanvasPresence";
 import { MapAxes, StageDividers } from "../map/MapAxes";
-import { editorView, awareness, replaceText, room } from "../editor/Editor";
+import { initializeCanvasControls } from "../map/canvasControls";
+import { toWorld, viewport } from "../map/viewport";
 import { TopBar } from "../menu";
 import { HelpLauncher } from "../help/HelpLauncher";
 import { openAbout } from "../onboarding/about";
 import { initializeOnboarding } from "../onboarding";
 import { trackHelpTopic } from "../state/Ui";
 
-import { setEditorText } from "../state/State";
+import { setEditorText, state } from "../state/State";
 
 import { initializeHistoryMonkeypatch } from "./utilities/HistoryMonkeypatch";
 import { initializePanelResizer } from "./components/PanelResizer";
@@ -68,7 +79,13 @@ const run = async (elementId: string) => {
   MapSingleton.canvas.after(axes);
   createRoot(axes).render(<MapAxes />);
 
-  initializeCanvasPresence(MapSingleton.canvas, awareness);
+  initializeCanvasPresence(MapSingleton.canvas, awareness, (p) => toWorld(viewport, p));
+
+  initializeCanvasControls(MapSingleton.canvas, MapSingleton.mapView, {
+    undo: () => undoManager.undo(),
+    redo: () => undoManager.redo(),
+    deleteSelection: () => deleteComponents([...state.selection.selectionItems]),
+  });
 
   MapSingleton.handleResize();
 

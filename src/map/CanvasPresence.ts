@@ -13,10 +13,17 @@ export function validPointer(value: any): value is { x: number; y: number } {
   );
 }
 
-/** Ephemeral map coordinates, separate from editor selection and the saved doc. */
+type Point = { x: number; y: number };
+
+/**
+ * Ephemeral map coordinates, separate from editor selection and the saved doc.
+ * `toWorld` undoes the local pan and zoom, so pointers are shared in map
+ * coordinates and line up for everyone whatever their view.
+ */
 export function initializeCanvasPresence(
   canvas: HTMLCanvasElement,
   awareness: Awareness,
+  toWorld: (p: Point) => Point = (p) => p,
 ) {
   const overlay = document.createElement("div");
   overlay.className = "canvas-presence";
@@ -57,9 +64,10 @@ export function initializeCanvasPresence(
   const move = (event: PointerEvent) => {
     if (event.pointerType === "touch") return;
     const rect = canvas.getBoundingClientRect();
+    const world = toWorld({ x: event.clientX - rect.left, y: event.clientY - rect.top });
     const point = {
-      x: (100 * (event.clientX - rect.left)) / rect.width,
-      y: 100 * (1 - (event.clientY - rect.top) / rect.height),
+      x: (100 * world.x) / rect.width,
+      y: 100 * (1 - world.y / rect.height),
     };
     if (validPointer(point)) publish(point);
     else leave();

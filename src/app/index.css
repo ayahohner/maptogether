@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./design.css";
 @import "../map/map.css";
+@import "../map/toolbar.css";
 @import "../menu/menu.css";
 @import "../onboarding/about.css";
 @import "../help/help.css";

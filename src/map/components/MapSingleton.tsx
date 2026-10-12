@@ -1,30 +1,14 @@
 import throttle from "lodash/throttle";
 import { Application, Container, BitmapFont } from "pixi.js";
-import { appendText, renameComponent } from "../../editor/Editor";
+import { subscribe } from "valtio/vanilla";
 
-import { graph, rerenderGraph } from "../../state/Graph";
-import { FloatingTextInput, OnSubmitHandler } from "./FloatingTextInput";
+import { rerenderGraph } from "../../state/Graph";
 
 import { RenderIndicator } from "../utilities/RenderIndicator";
-import {
-  clearSelection,
-  replaceSelection,
-  startPotentialSelect,
-  startSelecting,
-  state,
-  stopSelecting,
-  updateSelectionPoint,
-  xorSelection,
-  addUpdateSelectionPoint,
-  startPotentialTranslation,
-  stopTranslation,
-  startTranslation,
-  updateTranslationPoint,
-  PointLike,
-} from "../../state/State";
+import { applyView, viewport } from "../viewport";
+import type { MapView } from "../canvasActions";
 
 import { SelectionHandler } from "./SelectionHandler";
-import { ComponentT, LineT } from "./types";
 
 class MapSingleton extends Application {
   static _instance: MapSingleton;
@@ -35,6 +19,8 @@ class MapSingleton extends Application {
 
   renderIndicator = new RenderIndicator();
 
+  /** Panned and zoomed by the viewport; holds everything drawn on the map. */
+  world = new Container();
   graphContainer = new Container();
   dirty: boolean = false;
 
@@ -98,181 +84,28 @@ class MapSingleton extends Application {
     });
 
     // A container to hold all components, lines, text
-    this.stage.addChild(this.graphContainer);
+    this.stage.addChild(this.world);
+    this.world.addChild(this.graphContainer);
     this.graphContainer.sortableChildren = true; // make zIndex work
-    this.stage.addChild(SelectionHandler());
+    this.world.addChild(SelectionHandler());
+    subscribe(viewport, this.applyView, true);
 
     if (this.renderIndicator.enabled) this.stage.addChild(this.renderIndicator.r);
-
-    this.canvas.addEventListener("mousedown", (e: MouseEvent) => {
-      const cursorPosition = { x: e.offsetX, y: e.offsetY };
-
-      const element = this.hitTest(cursorPosition);
-
-      if (e.detail % 1 === 0) {
-        /* canvas */
-        if (!element) {
-          if (!e.shiftKey) {
-            clearSelection();
-          }
-
-          startPotentialSelect(cursorPosition);
-          this.canvas.addEventListener(
-            "mousemove",
-            this.handleSelectDrag,
-            false
-          );
-          /* component */
-        } else if (element.nodeKey) {
-          if (!e.shiftKey) {
-            if (!state.selection.selectionItems.has(element.nodeKey)) {
-              replaceSelection([element.nodeKey]);
-            }
-            // start potential drag
-            startPotentialTranslation(cursorPosition);
-            this.canvas.addEventListener(
-              "mousemove",
-              this.handleSelectionTranslate,
-              false
-            );
-          } else {
-            xorSelection([element.nodeKey]);
-          }
-        }
-      }
-
-      if (e.detail % 2 === 0) {
-        if (!element) {
-          const mouseX = e.offsetX;
-          const mouseY = e.offsetY;
-
-          const handleInputSubmit: OnSubmitHandler = (e) => {
-            const target = e.target as HTMLInputElement;
-            if (!graph.hasNode(target.value)) {
-              // <-Graph
-              const coords = this.rendererToWardleyCoords(mouseX, mouseY);
-              // TODO: This string should come from Parser
-              appendText(`\n${target.value} [${coords[1]},${coords[0]}]`); // ->Editor
-            } else {
-              console.error(
-                "ComponentRenameError: the new name for the component already exists in the map."
-              );
-            }
-          };
-
-          FloatingTextInput(
-            MapSingleton._parentElement,
-            mouseX,
-            mouseY,
-            handleInputSubmit
-          ); // ->UI
-        } else if (element && element.nodeKey) {
-          const handleInputSubmit: OnSubmitHandler = (e) => {
-            const target = e.target as HTMLInputElement;
-            if (!graph.hasNode(target.value)) {
-              // <-Graph
-              renameComponent(element.nodeKey, target.value); // ->Editor
-            }
-          };
-
-          FloatingTextInput(
-            MapSingleton._parentElement as HTMLDivElement,
-            cursorPosition.x,
-            cursorPosition.y,
-            handleInputSubmit,
-            element.nodeKey
-          ); // ->UI
-        }
-      }
-    });
   }
 
-  /**
-   * Manual hit test: Pixi v8 removed `renderer.plugins.interaction.hitTest`,
-   * so find the topmost component (by zIndex, then child order) whose bounds
-   * contain the point. Connection lines are excluded: their nodeKey is an
-   * edge key (e.g. "A->B"), not a node, and their rectangular bounds would
-   * otherwise swallow clicks on empty space.
-   */
-  private hitTest(p: PointLike): ComponentT | undefined {
-    // Highest zIndex first; on ties prefer later siblings, matching Pixi's
-    // paint order (later siblings render on top).
-    const ranked = this.graphContainer.children
-      .map((child, index) => ({ child, index }))
-      .sort(
-        (a, b) =>
-          (b.child.zIndex ?? 0) - (a.child.zIndex ?? 0) || b.index - a.index
-      );
-    for (const { child } of ranked) {
-      const component = child as ComponentT;
-      if (component.nodeKey === undefined) continue;
-      if ((component as unknown as LineT).updateLine !== undefined) continue;
-      const bounds = component.getBounds();
-      if (
-        p.x >= bounds.x &&
-        p.x <= bounds.x + bounds.width &&
-        p.y >= bounds.y &&
-        p.y <= bounds.y + bounds.height
-      ) {
-        return component;
-      }
-    }
-    return undefined;
+  private applyView = () => {
+    applyView(this.world, MapSingleton._parentElement, viewport);
+    this.dirty = true;
+  };
+
+  /** The map as the canvas gestures see it. */
+  get mapView(): MapView {
+    return {
+      element: MapSingleton._parentElement,
+      components: () => this.graphContainer.children,
+      size: () => this.screen,
+    };
   }
-
-  handleSelectionTranslate = (e: MouseEvent) => {
-    let currentPosition = { x: e.offsetX, y: e.offsetY };
-    if (state.translateDrag.translationStartPoint) {
-      if (
-        !state.translateDrag.translationCurrentPoint &&
-        Math.abs(
-          currentPosition.x - state.translateDrag.translationStartPoint.x
-        ) +
-          Math.abs(
-            currentPosition.y - state.translateDrag.translationStartPoint.y
-          ) >=
-          3
-      ) {
-        startTranslation(currentPosition);
-      } else if (state.translateDrag.isTranslating) {
-        updateTranslationPoint(currentPosition);
-      }
-    }
-  };
-
-  handleSelectDrag = (e: MouseEvent) => {
-    let currentPosition = { x: e.offsetX, y: e.offsetY };
-    if (state.selectDrag.selectionStartPoint) {
-      if (
-        !state.selectDrag.selectionCurrentPoint &&
-        Math.abs(currentPosition.x - state.selectDrag.selectionStartPoint.x) +
-          Math.abs(
-            currentPosition.y - state.selectDrag.selectionStartPoint.y
-          ) >=
-          3
-      ) {
-        startSelecting(currentPosition);
-      } else if (state.selectDrag.selectionCurrentPoint) {
-        if (e.shiftKey) {
-          addUpdateSelectionPoint(currentPosition);
-        } else {
-          updateSelectionPoint(currentPosition);
-        }
-      }
-    }
-  };
-
-  // using window because we want to be able to stop clicking even outside of the canvas.
-  handleMouseUp = (e: MouseEvent) => {
-    stopSelecting();
-    stopTranslation();
-    this.canvas.removeEventListener("mousemove", this.handleSelectDrag, false);
-    this.canvas.removeEventListener(
-      "mousemove",
-      this.handleSelectionTranslate,
-      false
-    );
-  };
 
   // Resize container on window resize
   // (manually place throughout app because ResizerObserver makes flashes)
