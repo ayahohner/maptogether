@@ -18,7 +18,7 @@ const mouseHelp = (mod: string): HelpSection[] => [
   {
     title: "Create",
     rows: [
-      { action: "Add a component", how: ["Double-click the canvas, or", { key: "C" }] },
+      { action: "Add a component", how: ["Double-click the canvas, or", { key: "C" }, "and click"] },
       { action: "Rename a component", how: ["Double-click it"] },
       { action: "Link two components", how: ["Hold", { key: mod }, "and click both, or", { key: "L" }] },
     ],
@@ -35,7 +35,7 @@ const mouseHelp = (mod: string): HelpSection[] => [
   {
     title: "Navigate",
     rows: [
-      { action: "Pan", how: ["Scroll, or drag with", { key: "Space" }, "held"] },
+      { action: "Pan", how: ["Scroll, drag with", { key: "Space" }, "held, or", { key: "H" }] },
       { action: "Zoom", how: ["Pinch, or", { key: mod }, "+ scroll"] },
       { action: "Back to normal tool", how: [{ key: "V" }, "or", { key: "Esc" }] },
     ],
@@ -62,7 +62,7 @@ const touchHelp: HelpSection[] = [
   {
     title: "Navigate",
     rows: [
-      { action: "Pan", how: ["Drag with one finger"] },
+      { action: "Pan", how: ["Drag the canvas with one finger"] },
       { action: "Zoom", how: ["Pinch with two fingers"] },
       { action: "Show the code", how: ["Tap the divider on the right edge"] },
     ],
