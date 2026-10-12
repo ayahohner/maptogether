@@ -374,11 +374,13 @@ class TogetherParser extends CstParser {
 
     $.pipeline = $.RULE("pipeline", () => {
       $.CONSUME(BraceOpen);
-      $.OPTION(() => $.CONSUME(Newline));
+      // Blank lines are allowed anywhere inside, as at the top level.
       $.MANY(() => {
-        $.SUBRULE($.statement);
+        $.OR([
+          { ALT: () => $.CONSUME(Newline) },
+          { ALT: () => $.SUBRULE($.statement) },
+        ]);
       });
-      $.OPTION1(() => $.CONSUME1(Newline));
       $.CONSUME(BraceClose);
     });
 
