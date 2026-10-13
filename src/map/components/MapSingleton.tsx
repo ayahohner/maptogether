@@ -34,10 +34,10 @@ class MapSingleton extends Application {
       backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,
-      // Twice the CSS resolution, for sharp lines on high-density screens.
-      resolution: 2,
+      resolution: devicePixelRatio,
       resizeTo: this.parent,
     });
+    this.followPixelRatio();
 
     // The ticker callback in setup() renders instead, and only when `dirty`.
     this.ticker.remove(this.render, this);
@@ -62,10 +62,12 @@ class MapSingleton extends Application {
       style: {
         fill: "#000000",
         fontFamily: LABEL_FONT,
-        // Drawn at the renderer's resolution, so labels stay sharp.
-        fontSize: 16 * this.renderer.resolution,
+        fontSize: 16,
         fontWeight: "normal",
       },
+      // The atlas is drawn once, so at least twice the CSS resolution keeps
+      // labels sharp on a denser screen than the one the page opened on.
+      resolution: Math.max(2, devicePixelRatio),
       chars:
         "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~1234567890!@#$%^&?*-=_+()[]{}<>,./;':\"\\| ",
     });
@@ -90,6 +92,20 @@ class MapSingleton extends Application {
       components: () => this.graphContainer.children,
       size: () => this.screen,
     };
+  }
+
+  /** Renders at the screen's pixel density, which changes when the window moves to another screen or the page is zoomed. */
+  private followPixelRatio() {
+    const query = matchMedia(`(resolution: ${devicePixelRatio}dppx)`);
+    query.addEventListener(
+      "change",
+      () => {
+        this.renderer.resize(this.parent.clientWidth, this.parent.clientHeight, devicePixelRatio);
+        this.dirty = true;
+        this.followPixelRatio();
+      },
+      { once: true },
+    );
   }
 
   /**
