@@ -2,7 +2,7 @@ import { Graphics } from "pixi.js";
 
 import { state, subscribe } from "../../state/State";
 import MapSingleton from "./MapSingleton";
-import { LineT } from "./types";
+import type { LineT } from "./types";
 
 const strokes = {
   normal: { width: 1, color: 0x000000, alpha: 1 },

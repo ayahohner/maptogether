@@ -1,9 +1,9 @@
 import { proxy, subscribe } from "valtio/vanilla";
 import { proxySet } from "valtio/utils";
 
-import { ComponentT } from "../map/components/types";
+import type { ComponentT } from "../map/components/types";
 import { fractionInside, rectBetween, type Segment } from "../map/segments";
-import { graph, NodeAttributes, updateComponentPositionOffset } from "./Graph";
+import { graph, type NodeAttributes, updateComponentPositionOffset } from "./Graph";
 
 import { appendText, replaceCoordinates } from "../editor/Editor";
 import { activeTool, tools } from "./Tools";
@@ -88,15 +88,15 @@ export const stopSelecting = () => {
 };
 
 export const nodeInSelection = (nodeKey: string, nodeAttributes: NodeAttributes) => {
-  let startX = state.selectDrag.selectionStartPoint!.x;
-  let startY = state.selectDrag.selectionStartPoint!.y;
-  let curX = state.selectDrag.selectionCurrentPoint!.x;
-  let curY = state.selectDrag.selectionCurrentPoint!.y;
-  let [left, right] = startX <= curX ? [startX, curX] : [curX, startX];
-  let [bottom, top] = startY <= curY ? [startY, curY] : [curY, startY];
+  const startX = state.selectDrag.selectionStartPoint!.x;
+  const startY = state.selectDrag.selectionStartPoint!.y;
+  const curX = state.selectDrag.selectionCurrentPoint!.x;
+  const curY = state.selectDrag.selectionCurrentPoint!.y;
+  const [left, right] = startX <= curX ? [startX, curX] : [curX, startX];
+  const [bottom, top] = startY <= curY ? [startY, curY] : [curY, startY];
 
-  let nodeX = nodeAttributes.coordinates.x;
-  let nodeY = nodeAttributes.coordinates.y;
+  const nodeX = nodeAttributes.coordinates.x;
+  const nodeY = nodeAttributes.coordinates.y;
   return nodeX >= left && nodeX <= right && nodeY >= bottom && nodeY <= top;
 };
 

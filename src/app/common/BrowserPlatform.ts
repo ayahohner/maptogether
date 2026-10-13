@@ -1,12 +1,12 @@
 function getPlatform() {
   // 2022 way of detecting. Note : this userAgentData feature is available only in secure contexts (HTTPS)
   if (
-    // @ts-ignore
+    // @ts-expect-error
     typeof navigator.userAgentData !== "undefined" &&
-    // @ts-ignore
+    // @ts-expect-error
     navigator.userAgentData != null
   ) {
-    // @ts-ignore
+    // @ts-expect-error
     return navigator.userAgentData.platform;
   }
   // Deprecated but still works for most of the browser

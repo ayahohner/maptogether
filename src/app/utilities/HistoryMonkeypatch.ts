@@ -1,5 +1,5 @@
 // MonkeyPatch history API to create new location change event
-export const initializeHistoryMonkeypatch = function () {
+export const initializeHistoryMonkeypatch = () => {
   const pushState = history.pushState;
   const replaceState = history.replaceState;
 
@@ -15,7 +15,7 @@ export const initializeHistoryMonkeypatch = function () {
     window.dispatchEvent(new Event("locationchange"));
   };
 
-  window.addEventListener("popstate", function () {
+  window.addEventListener("popstate", () => {
     window.dispatchEvent(new Event("locationchange"));
   });
 };

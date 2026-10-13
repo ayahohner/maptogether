@@ -2,9 +2,9 @@ import {
   createToken,
   Lexer,
   CstParser,
-  ParserMethod,
-  CstNode,
-  TokenTypeDictionary,
+  type ParserMethod,
+  type CstNode,
+  type TokenTypeDictionary,
 } from "chevrotain";
 
 // ================ Types ================
@@ -59,7 +59,7 @@ const NewLine = createToken({
 const StringLiteral = createToken({
   name: "StringLiteral",
   pattern:
-    /[a-zA-Z0-9_\+:\?!@#$%^&\*\(\)\{\}\/\`~]+([ -]+[a-zA-Z0-9_\+:\?!@#$%^&\*\(\)\{\}\/\`~]+)*/,
+    /[a-zA-Z0-9_+:?!@#$%^&*(){}/`~]+([ -]+[a-zA-Z0-9_+:?!@#$%^&*(){}/`~]+)*/,
 });
 
 const NumberLiteral = createToken({
@@ -121,65 +121,62 @@ class WardleyParser extends CstParser {
     });
 
     this.t = wardleyTokensMap;
-
-    // shorthand for easier writing and comprehension
-    const $ = this;
     const t = this.t;
 
-    $.wardley = $.RULE("wardley", () => {
-      $.MANY(() => {
-        $.OR([
-          { ALT: () => $.CONSUME(t.Comment) },
-          { ALT: () => $.SUBRULE($.declaration) },
-          { ALT: () => $.CONSUME(t.NewLine) },
-          { ALT: () => $.CONSUME(t.Whitespace) },
+    this.wardley = this.RULE("wardley", () => {
+      this.MANY(() => {
+        this.OR([
+          { ALT: () => this.CONSUME(t.Comment) },
+          { ALT: () => this.SUBRULE(this.declaration) },
+          { ALT: () => this.CONSUME(t.NewLine) },
+          { ALT: () => this.CONSUME(t.Whitespace) },
         ]);
       });
     });
 
-    $.declaration = $.RULE("declaration", () => {
-      $.OR([
-        { ALT: () => $.SUBRULE($.componentDeclaration) },
-        { ALT: () => $.SUBRULE($.pipelineDeclaration) },
-        { ALT: () => $.SUBRULE($.edgeDeclaration) },
+    this.declaration = this.RULE("declaration", () => {
+      this.OR([
+        { ALT: () => this.SUBRULE(this.componentDeclaration) },
+        { ALT: () => this.SUBRULE(this.pipelineDeclaration) },
+        { ALT: () => this.SUBRULE(this.edgeDeclaration) },
       ]);
-      $.OPTION(() => $.CONSUME(t.Whitespace));
+      this.OPTION(() => this.CONSUME(t.Whitespace));
     });
 
-    $.componentDeclaration = $.RULE("componentDeclaration", () => {
-      $.CONSUME(t.Component);
-      $.CONSUME(t.Whitespace);
-      $.CONSUME(t.StringLiteral);
-      $.OPTION(() => $.CONSUME2(t.Whitespace));
-      $.OPTION1(() => $.SUBRULE($.coordinates));
+    this.componentDeclaration = this.RULE("componentDeclaration", () => {
+      this.CONSUME(t.Component);
+      this.CONSUME(t.Whitespace);
+      this.CONSUME(t.StringLiteral);
+      this.OPTION(() => this.CONSUME2(t.Whitespace));
+      this.OPTION1(() => this.SUBRULE(this.coordinates));
     });
 
-    $.pipelineDeclaration = $.RULE("pipelineDeclaration", () => {
-      $.CONSUME(t.Pipeline);
-      $.CONSUME(t.Whitespace);
-      $.CONSUME(t.StringLiteral);
-      $.OPTION(() => $.CONSUME2(t.Whitespace));
-      $.OPTION1(() => $.SUBRULE($.coordinates));
+    this.pipelineDeclaration = this.RULE("pipelineDeclaration", () => {
+      this.CONSUME(t.Pipeline);
+      this.CONSUME(t.Whitespace);
+      this.CONSUME(t.StringLiteral);
+      this.OPTION(() => this.CONSUME2(t.Whitespace));
+      this.OPTION1(() => this.SUBRULE(this.coordinates));
     });
 
-    $.edgeDeclaration = $.RULE("edgeDeclaration", () => {
-      $.CONSUME(t.StringLiteral, { LABEL: "LHS" });
-      $.OPTION(() => $.CONSUME(t.Whitespace));
-      $.CONSUME(t.Edge);
-      $.OPTION1(() => $.CONSUME1(t.Whitespace));
-      $.CONSUME1(t.StringLiteral, { LABEL: "RHS" });
+    this.edgeDeclaration = this.RULE("edgeDeclaration", () => {
+      this.CONSUME(t.StringLiteral, { LABEL: "LHS" });
+      this.OPTION(() => this.CONSUME(t.Whitespace));
+      this.CONSUME(t.Edge);
+      this.OPTION1(() => this.CONSUME1(t.Whitespace));
+      this.CONSUME1(t.StringLiteral, { LABEL: "RHS" });
     });
 
-    $.coordinates = $.RULE("coordinates", () => {
-      $.CONSUME(t.LSquare);
-      $.OPTION(() => $.CONSUME(t.Whitespace));
-      $.CONSUME(t.NumberLiteral, { LABEL: "LHS" });
-      $.OPTION1(() => $.CONSUME1(t.Whitespace));
-      $.CONSUME(t.Comma);
-      $.OPTION2(() => $.CONSUME2(t.Whitespace));
-      $.CONSUME1(t.NumberLiteral, { LABEL: "RHS" });
-      $.OPTION3(() => $.CONSUME3(t.Whitespace));
-      $.CONSUME(t.RSquare);
+    this.coordinates = this.RULE("coordinates", () => {
+      this.CONSUME(t.LSquare);
+      this.OPTION(() => this.CONSUME(t.Whitespace));
+      this.CONSUME(t.NumberLiteral, { LABEL: "LHS" });
+      this.OPTION1(() => this.CONSUME1(t.Whitespace));
+      this.CONSUME(t.Comma);
+      this.OPTION2(() => this.CONSUME2(t.Whitespace));
+      this.CONSUME1(t.NumberLiteral, { LABEL: "RHS" });
+      this.OPTION3(() => this.CONSUME3(t.Whitespace));
+      this.CONSUME(t.RSquare);
     });
     // very important to call this after all the rules have been setup.
     // otherwise the parser may not work correctly as it will lack information
@@ -209,7 +206,7 @@ class WardleyVisitorToAST extends BaseWardleyVisitor {
   }
 
   declaration(ctx: any) {
-    let dec = undefined;
+    let dec ;
     if (ctx.componentDeclaration) {
       dec = this.visit(ctx.componentDeclaration[0]);
     } else if (ctx.pipelineDeclaration) {
@@ -221,7 +218,7 @@ class WardleyVisitorToAST extends BaseWardleyVisitor {
   }
 
   componentDeclaration(ctx: any) {
-    let coordinates = undefined;
+    let coordinates ;
     if (ctx.coordinates) {
       coordinates = this.visit(ctx.coordinates[0]);
     }
@@ -233,7 +230,7 @@ class WardleyVisitorToAST extends BaseWardleyVisitor {
   }
 
   pipelineDeclaration(ctx: any) {
-    let coordinates = undefined;
+    let coordinates ;
     if (ctx.coordinates) {
       coordinates = this.visit(ctx.coordinates[0]);
     }

@@ -1,5 +1,5 @@
 /// local version of nanoid so we don't have to add a dependency for 130 bytes
-export let nanoid = (size = 21) =>
+export const nanoid = (size = 21) =>
   crypto
     .getRandomValues(new Uint8Array(size))
     .reduce(

@@ -3,7 +3,7 @@ import Graph from "graphology";
 import MapSingleton from "../map/components/MapSingleton";
 import { Component } from "../map/components/Component";
 import { Line } from "../map/components/Line";
-import { ComponentT, LineT } from "../map/components/types";
+import type { ComponentT, LineT } from "../map/components/types";
 
 import { state, setInitialLinkTarget } from "./State";
 import type { CstNode } from "chevrotain";
@@ -59,7 +59,7 @@ interface IAddComponentConfig {
 
 // ACTIONS
 export const addComponent = (config: IAddComponentConfig) => {
-  let { x, y, name, type } = config;
+  const { x, y, name, type } = config;
   const component = Component(config); // ->Renderer
 
   // TODO: Find out what characters aren't possible in nodeKeys and prevent them from being used in Identifiers
@@ -255,7 +255,7 @@ export class TogetherVisitorToGraph extends BaseTogetherVisitor {
   }
 
   componentDeclaration(ctx: any, parentComponent?: any) {
-    let children = undefined; // No pipeline
+    let children ; // No pipeline
     if (ctx.pipeline) {
       children = this.visit(ctx.pipeline, ctx);
 
@@ -270,7 +270,7 @@ export class TogetherVisitorToGraph extends BaseTogetherVisitor {
       coordinates = this.visit(ctx.coordinates);
     }
 
-    let parentCoordinates = undefined;
+    let parentCoordinates ;
     if (parentComponent && parentComponent.coordinates) {
       parentCoordinates = this.visit(parentComponent.coordinates);
     } else if (parentComponent) {
@@ -294,7 +294,7 @@ export class TogetherVisitorToGraph extends BaseTogetherVisitor {
   }
 
   pipeline(ctx: any, parentComponent?: Object | undefined) {
-    let components: any[] = [];
+    const components: any[] = [];
 
     if (ctx.statement) {
       ctx.statement.forEach((statement: any) => {
@@ -335,6 +335,6 @@ const drawGraph = (cst: CstNode) => {
   }
 };
 
-graph.on("cleared", function () {
+graph.on("cleared", () => {
   MapSingleton.graphContainer.removeChildren(); // ->Renderer
 });

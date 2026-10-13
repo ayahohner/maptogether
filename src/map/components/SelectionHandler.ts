@@ -4,9 +4,9 @@ import { state, subscribe } from "../../state/State";
 import MapSingleton from "./MapSingleton";
 
 export const SelectionHandler = () => {
-  let component = new Graphics();
+  const component = new Graphics();
 
-  let unsubscribe = subscribe(state.selectDrag, () => {
+  const unsubscribe = subscribe(state.selectDrag, () => {
     if (
       state.selectDrag.isSelecting &&
       state.selectDrag.selectionStartPoint &&

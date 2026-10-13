@@ -21,9 +21,9 @@ export default defineConfig(({ mode }) => {
     return {
       name: "html-env-variables",
       transformIndexHtml(html: string) {
-        return html.replace(/%(.*?)%/g, function (match, p1) {
+        return html.replace(/%(.*?)%/g, (match, p1) => {
           if (env[p1]) {
-            return env[p1].replace(/$[\"\']|[\"\']^/, "");
+            return env[p1].replace(/$["']|["']^/, "");
           } else {
             throw new Error(
               `Vite htmlEnvVariables Error: the environment variable ${p1} is not defined. Check if the variable name is misspelled in your HTML, or if the variable is not defined in your ${mode} environment.`,

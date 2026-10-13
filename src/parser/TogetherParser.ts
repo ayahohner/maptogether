@@ -2,12 +2,12 @@ import {
   createToken,
   Lexer,
   CstParser,
-  ParserMethod,
-  CstNode,
-  TokenType,
-  ITokenConfig,
-  IRecognitionException,
-  IToken,
+  type ParserMethod,
+  type CstNode,
+  type TokenType,
+  type ITokenConfig,
+  type IRecognitionException,
+  type IToken,
   EOF,
 } from "chevrotain";
 
@@ -72,7 +72,7 @@ const StringLiteral = createComposableToken({
 
 const Comment = createComposableToken({
   name: "Comment",
-  pattern: `\/\/.*`,
+  pattern: `//.*`,
   group: Lexer.SKIPPED,
 });
 
@@ -251,89 +251,86 @@ class TogetherParser extends CstParser {
       recoveryEnabled: false,
     });
 
-    // shorthand for easier writing and comprehension
-    const $ = this;
-
-    $.default = $.RULE("default", () => {
-      $.MANY(() => {
-        $.OR([
-          { ALT: () => $.CONSUME(Newline) },
-          { ALT: () => $.SUBRULE($.statement) },
-          { ALT: () => $.CONSUME(Comment) },
+    this.default = this.RULE("default", () => {
+      this.MANY(() => {
+        this.OR([
+          { ALT: () => this.CONSUME(Newline) },
+          { ALT: () => this.SUBRULE(this.statement) },
+          { ALT: () => this.CONSUME(Comment) },
         ]);
       });
     });
 
-    $.statement = $.RULE("statement", () => {
-      $.OR({
+    this.statement = this.RULE("statement", () => {
+      this.OR({
         DEF: [
-          { ALT: () => $.SUBRULE($.command) },
+          { ALT: () => this.SUBRULE(this.command) },
           {
-            GATE: $.BACKTRACK($.edgeDeclaration),
-            ALT: () => $.SUBRULE($.edgeDeclaration),
+            GATE: this.BACKTRACK(this.edgeDeclaration),
+            ALT: () => this.SUBRULE(this.edgeDeclaration),
           },
           {
             // GATE: $.BACKTRACK($.componentDeclaration), // Do we need this?
-            ALT: () => $.SUBRULE($.componentDeclaration),
+            ALT: () => this.SUBRULE(this.componentDeclaration),
           },
-          { ALT: () => $.SUBRULE($.note) },
+          { ALT: () => this.SUBRULE(this.note) },
         ],
         ERR_MSG: "a statement",
       });
-      $.OR1({
-        DEF: [{ ALT: () => $.CONSUME(Newline) }, { ALT: () => $.CONSUME(EOF) }],
+      this.OR1({
+        DEF: [{ ALT: () => this.CONSUME(Newline) }, { ALT: () => this.CONSUME(EOF) }],
         ERR_MSG: "a new line",
       });
     });
 
-    $.command = $.RULE("command", () => {
-      $.CONSUME(Command);
-      $.OPTION(() => $.SUBRULE($.attributes));
+    this.command = this.RULE("command", () => {
+      this.CONSUME(Command);
+      this.OPTION(() => this.SUBRULE(this.attributes));
     });
 
-    $.attributes = $.RULE("attributes", () => {
-      $.CONSUME(ParenOpen);
-      $.MANY(() => {
-        $.OR([
+    this.attributes = this.RULE("attributes", () => {
+      this.CONSUME(ParenOpen);
+      this.MANY(() => {
+        this.OR([
           {
-            ALT: () => $.SUBRULE($.attribute),
+            ALT: () => this.SUBRULE(this.attribute),
           },
           {
-            ALT: () => $.CONSUME(AttributeBreak),
+            ALT: () => this.CONSUME(AttributeBreak),
           },
         ]);
       });
-      $.CONSUME(ParenClose);
+      this.CONSUME(ParenClose);
     });
 
-    $.attribute = $.RULE("attribute", () => {
-      $.CONSUME(AttributeIdentifier, { LABEL: "AttributeName" });
-      $.OPTION(() => {
-        $.CONSUME(Assign);
-        $.OR([
+    this.attribute = this.RULE("attribute", () => {
+      this.CONSUME(AttributeIdentifier, { LABEL: "AttributeName" });
+      this.OPTION(() => {
+        this.CONSUME(Assign);
+        this.OR([
           {
             ALT: () => {
-              $.CONSUME1(AttributeNumberLiteral);
-              $.OPTION1(() => {
-                $.CONSUME(Comma);
-                $.CONSUME2(AttributeNumberLiteral);
+              this.CONSUME1(AttributeNumberLiteral);
+              this.OPTION1(() => {
+                this.CONSUME(Comma);
+                this.CONSUME2(AttributeNumberLiteral);
               });
             },
           },
           {
             ALT: () => {
-              $.CONSUME(StringLiteral);
+              this.CONSUME(StringLiteral);
             },
           },
           {
             ALT: () => {
-              $.AT_LEAST_ONE_SEP({
+              this.AT_LEAST_ONE_SEP({
                 SEP: Comma,
                 DEF: () => {
-                  $.CONSUME1(AttributeIdentifier);
-                  $.OPTION2(() => {
-                    $.CONSUME2(AttributeSubvalueSpecifier);
-                    $.CONSUME3(AttributeNumberLiteral);
+                  this.CONSUME1(AttributeIdentifier);
+                  this.OPTION2(() => {
+                    this.CONSUME2(AttributeSubvalueSpecifier);
+                    this.CONSUME3(AttributeNumberLiteral);
                   });
                 },
               });
@@ -343,54 +340,54 @@ class TogetherParser extends CstParser {
       });
     });
 
-    $.componentDeclaration = $.RULE("componentDeclaration", () => {
-      $.CONSUME(Identifier);
-      $.OPTION(() => {
-        $.CONSUME(DefinitionSpecifier);
-        $.CONSUME(NumberLiteral);
+    this.componentDeclaration = this.RULE("componentDeclaration", () => {
+      this.CONSUME(Identifier);
+      this.OPTION(() => {
+        this.CONSUME(DefinitionSpecifier);
+        this.CONSUME(NumberLiteral);
       });
-      $.OPTION1(() => {
-        $.SUBRULE($.coordinates);
+      this.OPTION1(() => {
+        this.SUBRULE(this.coordinates);
       });
-      $.OPTION2(() => {
-        $.SUBRULE($.attributes);
+      this.OPTION2(() => {
+        this.SUBRULE(this.attributes);
       });
-      $.OPTION3(() => {
-        $.SUBRULE($.pipeline);
+      this.OPTION3(() => {
+        this.SUBRULE(this.pipeline);
       });
     });
 
-    $.edgeDeclaration = $.RULE("edgeDeclaration", () => {
-      $.CONSUME(Identifier, { LABEL: "LHS" });
-      $.CONSUME(EdgeJoin);
-      $.OPTION(() => $.SUBRULE($.attributes));
-      $.CONSUME1(Identifier, { LABEL: "RHS" });
+    this.edgeDeclaration = this.RULE("edgeDeclaration", () => {
+      this.CONSUME(Identifier, { LABEL: "LHS" });
+      this.CONSUME(EdgeJoin);
+      this.OPTION(() => this.SUBRULE(this.attributes));
+      this.CONSUME1(Identifier, { LABEL: "RHS" });
     });
 
-    $.pipeline = $.RULE("pipeline", () => {
-      $.CONSUME(BraceOpen);
+    this.pipeline = this.RULE("pipeline", () => {
+      this.CONSUME(BraceOpen);
       // Blank lines are allowed anywhere inside, as at the top level.
-      $.MANY(() => {
-        $.OR([{ ALT: () => $.CONSUME(Newline) }, { ALT: () => $.SUBRULE($.statement) }]);
+      this.MANY(() => {
+        this.OR([{ ALT: () => this.CONSUME(Newline) }, { ALT: () => this.SUBRULE(this.statement) }]);
       });
-      $.CONSUME(BraceClose);
+      this.CONSUME(BraceClose);
     });
 
-    $.coordinates = $.RULE("coordinates", () => {
-      $.CONSUME(BracketOpen);
-      $.CONSUME(NumberLiteral, { LABEL: "LHS" });
-      $.OPTION1(() => $.CONSUME1(Whitespace));
-      $.CONSUME(Comma);
-      $.OPTION2(() => $.CONSUME2(Whitespace));
-      $.CONSUME1(NumberLiteral, { LABEL: "RHS" });
-      $.CONSUME(BracketClose);
+    this.coordinates = this.RULE("coordinates", () => {
+      this.CONSUME(BracketOpen);
+      this.CONSUME(NumberLiteral, { LABEL: "LHS" });
+      this.OPTION1(() => this.CONSUME1(Whitespace));
+      this.CONSUME(Comma);
+      this.OPTION2(() => this.CONSUME2(Whitespace));
+      this.CONSUME1(NumberLiteral, { LABEL: "RHS" });
+      this.CONSUME(BracketClose);
     });
 
-    $.note = $.RULE("note", () => {
-      $.CONSUME(NoteSpecifier);
-      $.CONSUME(Identifier);
-      $.OPTION1(() => {
-        $.SUBRULE($.coordinates);
+    this.note = this.RULE("note", () => {
+      this.CONSUME(NoteSpecifier);
+      this.CONSUME(Identifier);
+      this.OPTION1(() => {
+        this.SUBRULE(this.coordinates);
       });
     });
 
@@ -452,7 +449,7 @@ export const tryParse = (text: string): ParseResult => {
 
 /* ============ Regexes ============ */
 function escapeRegex(string: string) {
-  return string.replace(/[\/\\^$*+?.()|[\]{}]/g, "\\$&"); // Note: removed '-' as it creates invalid escapes?
+  return string.replace(/[/\\^$*+?.()|[\]{}]/g, "\\$&"); // Note: removed '-' as it creates invalid escapes?
 }
 
 // $.componentDeclaration = $.RULE("componentDeclaration", () => {

@@ -1,17 +1,15 @@
 import * as Y from "yjs";
-// @ts-ignore because no typings
 import { yCollab } from "y-codemirror.next";
 import { Awareness } from "y-protocols/awareness";
 import { bindPresence, collaboration } from "../sync/presence";
 import { connectSync } from "../sync/connect";
 
-import { ChangeSpec, EditorState } from "@codemirror/state";
+import { type ChangeSpec, EditorState } from "@codemirror/state";
 import { basicSetup, EditorView } from "codemirror";
 import { keymap } from "@codemirror/view";
 import { RegExpCursor } from "@codemirror/search";
 import { linter, lintGutter } from "@codemirror/lint";
 
-// @ts-ignore because no typings
 import { vscodeKeymap } from "@replit/codemirror-vscode-keymap";
 
 import debounce from "lodash/debounce";
@@ -187,7 +185,7 @@ export const replaceCoordinates = (componentName: string, x: number, y: number) 
     {},
   );
 
-  let changes = [];
+  const changes = [];
   var coords = MapSingleton.rendererToWardleyCoords(x, y);
 
   for (const next of searchCursor) {
@@ -223,7 +221,7 @@ export const replaceCoordinates = (componentName: string, x: number, y: number) 
 };
 
 export const renameComponent = (oldName: string, newName: string) => {
-  let changes: ChangeSpec[] = [];
+  const changes: ChangeSpec[] = [];
 
   const componentSearchCursor = new RegExpCursor(
     editorView.state.doc,
@@ -315,7 +313,7 @@ export const deleteSelection = () => {
 
 /* ======== Events ======== */
 // Save editor state to browser storage before navigating away
-window.addEventListener("beforeunload", function (e) {
+window.addEventListener("beforeunload", (e) => {
   localStorage.setItem("editorText", editorView.state.doc.toString());
 });
 

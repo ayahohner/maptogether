@@ -2,9 +2,9 @@ import { Graphics, Point, BitmapText, Container } from "pixi.js";
 
 import { Rectangle } from "./Rectangle";
 
-import { ComponentT } from "./types";
+import type { ComponentT } from "./types";
 
-import { state, subscribe, StateT } from "../../state/State";
+import { state, subscribe, type StateT } from "../../state/State";
 
 import MapSingleton from "./MapSingleton";
 import { PipelineContainer } from "./PipelineContainer";
@@ -134,13 +134,13 @@ interface IComponentConfig {
 export const Component = (config: IComponentConfig) => {
   let { x, y, name, parent, labelX, labelY, children } = config;
 
-  let lastComponentStyle: ComponentStyles | undefined = undefined;
+  let lastComponentStyle: ComponentStyles | undefined ;
   let componentStyle: ComponentStyles = "normal";
   if (children) {
     componentStyle = "pipeline";
   }
 
-  let component = new Container() as ComponentT;
+  const component = new Container() as ComponentT;
 
   component.interactiveChildren = true;
   component.eventMode = "static";
@@ -189,8 +189,8 @@ export const Component = (config: IComponentConfig) => {
       right = x;
     }
 
-    let width = right - left + 20;
-    let offset = left - x - 10;
+    const width = right - left + 20;
+    const offset = left - x - 10;
 
     const pipe = PipelineContainer(width);
     pipe.x = offset;
@@ -221,9 +221,9 @@ export const Component = (config: IComponentConfig) => {
   component.addChild(text);
 
   // Draw the node
-  let g = new Graphics();
+  const g = new Graphics();
 
-  let lastInteractionMode: InteractionModes | undefined = undefined;
+  let lastInteractionMode: InteractionModes | undefined ;
   let interactionMode: InteractionModes = "default";
 
   const renderComponent = (g: Graphics, state: StateT) => {
