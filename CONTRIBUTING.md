@@ -16,13 +16,14 @@ yarn dev       # app on http://localhost:5173, using the deployed relay
 | Script | What it does |
 | --- | --- |
 | `yarn dev` | Vite dev server |
+| `yarn dev:local` | Local relay and the dev server against it (see [Multiplayer](#multiplayer)) |
 | `yarn build` / `yarn serve` | Production build and a local preview of it |
 | `yarn test` | Vitest in watch mode |
 | `yarn coverage` | One Vitest run with coverage |
 | `yarn quality` | Code quality gate (see below) |
 | `yarn version:check` | Semver check (see below) |
 | `yarn lint` / `yarn format` | Biome lint and format check / apply fixes |
-| `yarn relay:dev` | Local relay on `:8787` |
+| `yarn relay:dev` | Local relay on `:8787`, for any `localhost` origin |
 | `yarn relay:deploy` | Deploy the relay (needs `CLOUDFLARE_API_TOKEN`) |
 | `yarn test:live` | WebRTC and saving against the deployed relay |
 
@@ -56,9 +57,10 @@ See [relay/README.md](relay/README.md) for the protocol, limits, and deployment.
 | `VITE_SYNC_RELAY_URL` | `https://wmaps-relay.innerlattice.workers.dev` | Signaling and storage relay |
 | `VITE_RENDER_INDICATOR` | unset | `true` draws a render counter in the canvas corner |
 
-To develop against a local relay: `yarn relay:dev`, then run the app with
-`VITE_SYNC_RELAY_URL=http://localhost:8787 yarn dev`. To try multiplayer
-locally, open the same map URL in two browser windows.
+To try multiplayer without the deployed relay, run `yarn dev:local`: it starts
+a local relay on `:8787` and the app against it. Open the same map URL in two
+browser windows. The local relay accepts any `localhost` port and keeps its
+maps in `.wrangler/`.
 
 Deploy relay changes before releasing a client that depends on them. The
 [Deploy Cloudflare relay](.github/workflows/deploy-relay.yml) workflow validates

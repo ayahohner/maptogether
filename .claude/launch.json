@@ -4,8 +4,22 @@
     {
       "name": "dev",
       "runtimeExecutable": "yarn",
-      "runtimeArgs": ["dev", "--port", "5179"],
+      "runtimeArgs": [
+        "dev",
+        "--port",
+        "5179"
+      ],
       "port": 5179
+    },
+    {
+      "name": "local",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": [
+        "dev:local",
+        "--port",
+        "5180"
+      ],
+      "port": 5180
     }
   ]
 }
