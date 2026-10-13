@@ -81,6 +81,10 @@ each commit, `.githooks/pre-commit` runs it on the staged files through
 lint-staged and applies safe fixes; a lint error stops the commit. Pull requests
 run `biome ci`. `index.html` is excluded, because its copy is laid out by hand.
 
+The commit that first formatted the codebase is listed in
+`.git-blame-ignore-revs`. To have `git blame` skip it, run
+`git config blame.ignoreRevsFile .git-blame-ignore-revs` (GitHub skips it already).
+
 ## Versioning
 
 MapTogether follows [semver](https://semver.org). The version in
