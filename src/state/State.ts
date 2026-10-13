@@ -3,7 +3,7 @@ import { proxySet } from "valtio/utils";
 
 import type { ComponentT } from "../map/components/types";
 import { contains, fractionInside, rectBetween, type Segment } from "../map/segments";
-import { graph, type NodeAttributes, updateComponentPositionOffset } from "./Graph";
+import { graph, moveComponentsBy, type NodeAttributes } from "./Graph";
 import { activeTool, tools } from "./Tools";
 
 /** Plain coordinate pair. Kept as a plain object (not a Pixi Point) so it is
@@ -179,16 +179,10 @@ const stopTranslation = (): Move[] => {
 };
 
 const updateTranslationPoint = (location: PointLike) => {
+  const last = state.translateDrag.translationLastPoint!;
+  moveComponentsBy(state.selection.selectionItems, location.x - last.x, location.y - last.y);
   state.translateDrag.translationCurrentPoint = location;
-
-  state.selection.selectionItems.forEach((item) => {
-    updateComponentPositionOffset(
-      item,
-      state.translateDrag.translationCurrentPoint!.x - state.translateDrag.translationLastPoint!.x,
-      state.translateDrag.translationCurrentPoint!.y - state.translateDrag.translationLastPoint!.y,
-    );
-  });
-  state.translateDrag.translationLastPoint = state.translateDrag.translationCurrentPoint;
+  state.translateDrag.translationLastPoint = location;
 };
 
 /* ===== Canvas gestures (points in world coordinates) ===== */

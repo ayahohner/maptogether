@@ -61,17 +61,17 @@ const link = () => graph.getEdgeAttributes(graph.edges()[0]).component;
 it("draws each component at its evolution and visibility", () => {
   drawMap("Kettle [33, 50]\nPower");
   expect(drawn()).toEqual({
-    Kettle: { x: 50, y: 67, inPipeline: false },
-    Power: { x: 10, y: 90, inPipeline: false },
+    Kettle: { x: 50, y: 67 },
+    Power: { x: 10, y: 90 },
   });
 });
 
 it("draws a pipeline's components on the pipeline's row", () => {
   drawMap("Tea [55, 73] {\n  Loose Leaf [20, 56]\n  Tea Bags\n}");
   expect(drawn()).toMatchObject({
-    Tea: { x: 73, y: 45, inPipeline: false },
-    "Loose Leaf": { x: 56, y: 45, inPipeline: true },
-    "Tea Bags": { x: 10, y: 45, inPipeline: true },
+    Tea: { x: 73, y: 45 },
+    "Loose Leaf": { x: 56, y: 45, inPipeline: "Tea" },
+    "Tea Bags": { x: 10, y: 45, inPipeline: "Tea" },
   });
   const tea = vi.mocked(Component).mock.calls.find(([c]) => c.name === "Tea")![0];
   expect(tea.pipeline).toEqual([56, 10]);
@@ -133,7 +133,7 @@ it("draws a pipeline anew when its components change", () => {
   drawMap("Tea [55, 73] {\n  Leaf [20, 30]\n}");
   expect(tea.removeFromParent).toHaveBeenCalled();
   expect(component("Leaf")).toBe(leaf);
-  expect(drawn()).toEqual({ Tea: { x: 73, y: 45, inPipeline: false } });
+  expect(drawn()).toEqual({ Tea: { x: 73, y: 45 } });
 });
 
 it("draws a pipeline anew when it moves, so its box still spans its components", () => {
@@ -142,7 +142,7 @@ it("draws a pipeline anew when it moves, so its box still spans its components",
   vi.clearAllMocks();
   drawMap("Tea [55, 40] {\n  Leaf [20, 56]\n}");
   expect(tea.removeFromParent).toHaveBeenCalled();
-  expect(drawn()).toEqual({ Tea: { x: 40, y: 45, inPipeline: false } });
+  expect(drawn()).toEqual({ Tea: { x: 40, y: 45 } });
   expect(component("Leaf")).toBe(leaf);
 });
 

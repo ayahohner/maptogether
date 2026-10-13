@@ -43,6 +43,20 @@ describe("Component", () => {
     vi.restoreAllMocks();
   });
 
+  it("redraws a pipeline's box around its components as they move", () => {
+    const tea = Component({ name: "Tea", x: 40, y: 60, pipeline: [20, 80] });
+    const box = tea.children[0];
+    expect(box.x).toBe(-30);
+    tea.x = 60;
+    tea.fitPipe([20, 90]);
+    expect(box.x).toBe(-50);
+    expect(box.width).toBeCloseTo(90, 0);
+    // A component without a box has none to redraw.
+    const kettle = Component({ name: "Kettle", x: 40, y: 60 });
+    kettle.fitPipe([20]);
+    expect(kettle.children).toHaveLength(3);
+  });
+
   it("redraws its marker when its mode changes, and stops listening once removed", async () => {
     const kettle = Component({ name: "Kettle", x: 0, y: 0 });
     const redraw = vi.spyOn(marker(kettle), "stroke");

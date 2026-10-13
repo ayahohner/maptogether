@@ -83,7 +83,7 @@ class TogetherVisitorToModel
       x,
       y,
       name,
-      inPipeline: Boolean(parent),
+      inPipeline: parent?.Identifier[0].image,
       pipeline: children?.map((child) => this.rendererX(child.children)),
     });
   }
@@ -181,7 +181,8 @@ const box = (config: ComponentConfig) => JSON.stringify(layoutComponent(config).
 
 /**
  * Whether a component can be moved to its new config rather than drawn anew:
- * the same marker, and for a pipeline, a box in the same place relative to it.
+ * in the same pipeline, the same marker, and for a pipeline, a box in the same
+ * place relative to it.
  */
 const sameShape = (a: ComponentConfig, b: ComponentConfig) =>
   a.inPipeline === b.inPipeline &&

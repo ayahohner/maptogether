@@ -14,7 +14,7 @@ describe("layoutComponent", () => {
   });
 
   it("lowers a pipeline's component into its box, with an angled label in front", () => {
-    expect(layoutComponent({ x: 50, y: 40, name: "Tea Bags", inPipeline: true })).toEqual({
+    expect(layoutComponent({ x: 50, y: 40, name: "Tea Bags", inPipeline: "Tea" })).toEqual({
       y: 52,
       zIndex: 1,
       pipe: undefined,

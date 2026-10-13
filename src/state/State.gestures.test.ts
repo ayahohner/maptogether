@@ -29,8 +29,14 @@ const graph = vi.hoisted(() => ({
 let nodes: Record<string, { x: number; y: number }> = {};
 /** Links on the map: key, start and end. */
 let links: [string, { x: number; y: number }, { x: number; y: number }][] = [];
-const updateComponentPositionOffset = vi.hoisted(() => vi.fn());
-vi.mock("./Graph", () => ({ graph, updateComponentPositionOffset }));
+const moveComponentsBy = vi.hoisted(() => vi.fn());
+vi.mock("./Graph", () => ({ graph, moveComponentsBy }));
+
+/** The last move: which components, and by how much. */
+const lastMove = () => {
+  const [names, x, y] = moveComponentsBy.mock.lastCall!;
+  return [[...names], x, y];
+};
 
 import {
   dragTo,
@@ -100,12 +106,12 @@ it("moves components from the press once past the drag threshold, and returns th
   pressComponent("A", { x: 0, y: 0 }, false);
   dragTo({ x: 1, y: 1 }, false);
   expect(state.translateDrag.isTranslating).toBe(false);
-  expect(updateComponentPositionOffset).not.toHaveBeenCalled();
+  expect(moveComponentsBy).not.toHaveBeenCalled();
   dragTo({ x: 3, y: 0 }, false);
   expect(state.translateDrag.isTranslating).toBe(true);
-  expect(updateComponentPositionOffset).toHaveBeenLastCalledWith("A", 3, 0);
+  expect(lastMove()).toEqual([["A"], 3, 0]);
   dragTo({ x: 5, y: 1 }, false);
-  expect(updateComponentPositionOffset).toHaveBeenLastCalledWith("A", 2, 1);
+  expect(lastMove()).toEqual([["A"], 2, 1]);
   expect(releaseDrag()).toEqual([{ name: "A", x: 1, y: 2 }]);
   expect(state.translateDrag.translationStartPoint).toBeUndefined();
 });

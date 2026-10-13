@@ -5,8 +5,8 @@ export interface ComponentConfig {
   x: number;
   y: number;
   name: string;
-  /** Set for a component inside a pipeline. */
-  inPipeline?: boolean;
+  /** Set for a component inside a pipeline: the pipeline's name. */
+  inPipeline?: string;
   /** Set for a pipeline: the x of each component it holds. */
   pipeline?: number[];
 }

@@ -7,10 +7,11 @@ import {
   type InteractionMode,
   layoutComponent,
   modeOf,
+  pipelineBox,
   squareHalfSide,
 } from "./componentLayout";
 import MapSingleton from "./MapSingleton";
-import { PipelineContainer } from "./PipelineContainer";
+import { drawPipe } from "./PipelineContainer";
 import { Rectangle } from "./Rectangle";
 import type { ComponentT } from "./types";
 
@@ -43,11 +44,16 @@ export const Component = (config: ComponentConfig) => {
   component.zIndex = layout.zIndex;
   component.position.set(config.x, layout.y);
 
+  const pipe = new Graphics();
   if (layout.pipe) {
-    const pipe = PipelineContainer(layout.pipe.width);
-    pipe.x = layout.pipe.offset;
+    drawPipe(pipe, layout.pipe);
     component.addChild(pipe);
   }
+  component.fitPipe = (childXs) => {
+    if (!layout.pipe) return;
+    drawPipe(pipe, pipelineBox(component.x, childXs));
+    MapSingleton.dirty = true;
+  };
 
   component.addChild(...label(config.name, layout.label));
 
