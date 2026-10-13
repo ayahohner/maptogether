@@ -1,7 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
 
-vi.mock("../../state/Graph", () => ({}));
-vi.mock("../../editor/Editor", () => ({}));
 vi.mock("./MapSingleton", () => ({ default: { dirty: false } }));
 
 import { startPotentialSelect, startSelecting, stopSelecting } from "../../state/State";

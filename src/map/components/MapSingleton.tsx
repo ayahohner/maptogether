@@ -1,14 +1,9 @@
-import throttle from "lodash/throttle";
 import { Application, Container, BitmapFont } from "pixi.js";
 import { subscribe } from "valtio/vanilla";
-
-import { rerenderGraph } from "../../state/Graph";
 
 import { RenderIndicator } from "../utilities/RenderIndicator";
 import { applyView, viewport } from "../viewport";
 import type { MapView } from "../canvasActions";
-
-import { SelectionHandler } from "./SelectionHandler";
 
 /** Component labels, in the UI's typeface (see --font-sans). */
 const LABEL_FONT = '"Instrument Sans", sans-serif';
@@ -78,7 +73,6 @@ class MapSingleton extends Application {
     this.stage.addChild(this.world);
     this.world.addChild(this.graphContainer);
     this.graphContainer.sortableChildren = true; // so zIndex applies
-    this.world.addChild(SelectionHandler());
     subscribe(viewport, this.applyView, true);
 
     if (this.renderIndicator.enabled) this.stage.addChild(this.renderIndicator.r);
@@ -99,14 +93,12 @@ class MapSingleton extends Application {
   }
 
   /**
-   * Fits the canvas to #map and redraws the map at the new size. `resizeTo`
-   * follows only window resizes, and the panel divider resizes #map without
-   * one, so the panel resizer calls this too.
+   * Fits the canvas to #map. `resizeTo` follows only window resizes, and the
+   * panel divider resizes #map without one.
    */
-  handleResize = throttle(() => {
+  fitToParent() {
     this.renderer.resize(this.parent.clientWidth, this.parent.clientHeight);
-    rerenderGraph();
-  }, 32);
+  }
 
   /** Pixels from map percentages: x is evolution, y visibility (0 at the bottom). */
   wardleyToRendererCoords(x: number, y: number) {

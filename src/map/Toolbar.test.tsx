@@ -2,8 +2,8 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
+// State loads Graph, which loads the Pixi map.
 vi.mock("../state/Graph", () => ({}));
-vi.mock("../editor/Editor", () => ({}));
 
 import { MapControls, toolHint } from "./Toolbar";
 import { replaceSelection, setInitialLinkTarget } from "../state/State";

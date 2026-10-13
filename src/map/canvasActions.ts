@@ -1,4 +1,4 @@
-import { appendText, renameComponent } from "../editor/Editor";
+import { appendText, moveComponents, renameComponent } from "../editor/Editor";
 import { graph } from "../state/Graph";
 import {
   clearSelection,
@@ -79,9 +79,12 @@ export function canvasActions(map: MapView): CanvasActions {
     press: (nodeKey, p, additive) =>
       nodeKey ? pressComponent(nodeKey, world(p), additive) : pressEmpty(p, additive),
     drag: (p, additive) => dragTo(world(p), additive),
-    release: releaseDrag,
+    release: () => moveComponents(releaseDrag()),
     select: (nodeKey, p, touch) => (nodeKey ? replaceSelection([nodeKey]) : tap(p, touch)),
-    link: linkTo,
+    link: (nodeKey) => {
+      const link = linkTo(nodeKey);
+      if (link) appendText(`\n${link.from}.${link.to}`);
+    },
     edit: (nodeKey, p) => (nodeKey ? rename(map, nodeKey, p) : create(map, p)),
     place: (p) => {
       setTool("select");

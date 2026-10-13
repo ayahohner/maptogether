@@ -13,13 +13,20 @@ import { vscodeKeymap } from "@replit/codemirror-vscode-keymap";
 
 import debounce from "lodash/debounce";
 
-import { renameInSelection, setEditorText, state, subscribe, clearSelection } from "../state/State";
+import {
+  clearSelection,
+  type Move,
+  renameInSelection,
+  setEditorText,
+  state,
+  subscribe,
+} from "../state/State";
 import MapSingleton from "../map/components/MapSingleton";
 import { togetherScriptLinter } from "./TogetherScriptLinter";
 import { deletionRanges } from "./deletions";
 import { coordinateChanges, renameChanges } from "./edits";
 import { generateRandomAnimal } from "../user/utilities/generateRandomAnimal";
-import { rerenderGraph } from "../state/Graph";
+import { drawMap } from "../map/drawMap";
 import { mapLifecycle, resolveRoom } from "../app/room";
 import { keepMapOutOfSearch } from "../app/seo";
 
@@ -171,14 +178,16 @@ export const appendText = (text: string) => {
   });
 };
 
-/** Moves a component in the text to a point on the canvas. */
-export const replaceCoordinates = (componentName: string, x: number, y: number) => {
-  const [evolution, visibility] = MapSingleton.rendererToWardleyCoords(x, y);
-  const changes = coordinateChanges(editorView.state.doc.toString(), componentName, [
-    visibility,
-    evolution,
-  ]);
-  if (changes.length) editorView.dispatch({ changes });
+/** Writes the components' new places on the canvas into the text. */
+export const moveComponents = (moves: Move[]) => {
+  for (const { name, x, y } of moves) {
+    const [evolution, visibility] = MapSingleton.rendererToWardleyCoords(x, y);
+    const changes = coordinateChanges(editorView.state.doc.toString(), name, [
+      visibility,
+      evolution,
+    ]);
+    if (changes.length) editorView.dispatch({ changes });
+  }
 };
 
 /** Renames a component and its links, as one undoable edit. */
@@ -202,5 +211,8 @@ const handleEditorChange = debounce((text: string) => {
   setEditorText(text);
 }, 32);
 
+/** Draws the map from the text, and tints the editor when the map can't follow it. */
+export const redrawMap = () => showMapOutOfDate(!drawMap(state.editor.editorText));
+
 // Every text change redraws the whole map.
-subscribe(state.editor, rerenderGraph);
+subscribe(state.editor, redrawMap);

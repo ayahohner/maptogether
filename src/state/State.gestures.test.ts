@@ -1,8 +1,8 @@
 import { beforeEach, expect, it, vi } from "vitest";
 
-// State pulls in Graph (which builds the Pixi map) and Editor (which opens a
-// sync connection) at load; stand in for the parts these actions use.
+// Graph holds the map's Pixi objects; stand in for the parts these actions use.
 const graph = vi.hoisted(() => ({
+  hasNode: vi.fn(() => true),
   // Calls back like graphology: (node, attributes).
   filterNodes: vi.fn((test: (key: string, node: unknown) => boolean) =>
     Object.entries(nodes)
@@ -29,10 +29,8 @@ const graph = vi.hoisted(() => ({
 let nodes: Record<string, { x: number; y: number }> = {};
 /** Links on the map: key, start and end. */
 let links: [string, { x: number; y: number }, { x: number; y: number }][] = [];
-const editor = vi.hoisted(() => ({ appendText: vi.fn(), replaceCoordinates: vi.fn() }));
 const updateComponentPositionOffset = vi.hoisted(() => vi.fn());
 vi.mock("./Graph", () => ({ graph, updateComponentPositionOffset }));
-vi.mock("../editor/Editor", () => editor);
 
 import {
   dragTo,
@@ -98,7 +96,7 @@ it("toggles a component when adding", () => {
   expect(state.translateDrag.translationStartPoint).toBeUndefined();
 });
 
-it("moves components once past the drag threshold, then commits on release", () => {
+it("moves components once past the drag threshold, and returns them on release", () => {
   pressComponent("A", { x: 0, y: 0 }, false);
   dragTo({ x: 1, y: 1 }, false);
   expect(state.translateDrag.isTranslating).toBe(false);
@@ -106,8 +104,7 @@ it("moves components once past the drag threshold, then commits on release", () 
   expect(state.translateDrag.isTranslating).toBe(true);
   dragTo({ x: 5, y: 1 }, false);
   expect(updateComponentPositionOffset).toHaveBeenCalledWith("A", 2, 1);
-  releaseDrag();
-  expect(editor.replaceCoordinates).toHaveBeenCalledWith("A", 1, 2);
+  expect(releaseDrag()).toEqual([{ name: "A", x: 1, y: 2 }]);
   expect(state.translateDrag.translationStartPoint).toBeUndefined();
 });
 
@@ -184,25 +181,30 @@ it("ignores drags without a press", () => {
   expect(state.translateDrag.isTranslating).toBe(false);
 });
 
-it("links the first component picked to the second", () => {
-  linkTo("Cup");
+it("returns a link from the first component picked to the second", () => {
+  expect(linkTo("Cup")).toBeUndefined();
   expect(state.linking.initialLinkTarget).toBe("Cup");
-  linkTo("Kettle");
-  expect(editor.appendText).toHaveBeenCalledWith("\nCup.Kettle");
+  expect(linkTo("Kettle")).toEqual({ from: "Cup", to: "Kettle" });
   expect(state.linking.initialLinkTarget).toBeUndefined();
 });
 
 it("starts over on empty canvas, the same component, or an existing link", () => {
   linkTo("Cup");
-  linkTo(undefined);
+  expect(linkTo(undefined)).toBeUndefined();
   expect(state.linking.initialLinkTarget).toBeUndefined();
   linkTo("Cup");
+  expect(linkTo("Cup")).toBeUndefined();
+  graph.areNeighbors.mockReturnValueOnce(true);
   linkTo("Cup");
-  graph.areNeighbors.mockReturnValue(true);
-  linkTo("Cup");
-  linkTo("Kettle");
-  expect(editor.appendText).not.toHaveBeenCalled();
+  expect(linkTo("Kettle")).toBeUndefined();
   expect(state.linking.initialLinkTarget).toBeUndefined();
+});
+
+it("takes the next pick as the source once the first has left the map", () => {
+  linkTo("Cup");
+  graph.hasNode.mockReturnValueOnce(false);
+  expect(linkTo("Kettle")).toBeUndefined();
+  expect(state.linking.initialLinkTarget).toBe("Kettle");
 });
 
 it("turns link mode on and off with the active tool, forgetting a half-made link", () => {

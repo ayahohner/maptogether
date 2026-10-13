@@ -1,6 +1,6 @@
 import { beforeEach, expect, it, vi } from "vitest";
 
-// Graph draws with Pixi through these; record what they're asked to draw instead.
+// drawMap draws with Pixi through these; record what they're asked to draw instead.
 const map = vi.hoisted(() => ({
   graphContainer: { addChild: vi.fn(), removeChildren: vi.fn() },
   renderIndicator: { reset: vi.fn() },
@@ -8,14 +8,8 @@ const map = vi.hoisted(() => ({
   // Wardley coordinates (percent) map straight to pixels, with y pointing down.
   wardleyToRendererCoords: (x: number, y: number) => [x, 100 - y],
 }));
-const editor = vi.hoisted(() => ({
-  showMapOutOfDate: vi.fn(),
-  appendText: vi.fn(),
-  replaceCoordinates: vi.fn(),
-}));
-vi.mock("../map/components/MapSingleton", () => ({ default: map }));
-vi.mock("../editor/Editor", () => editor);
-vi.mock("../map/components/Component", () => ({
+vi.mock("./components/MapSingleton", () => ({ default: map }));
+vi.mock("./components/Component", () => ({
   // Like a Pixi container, x and y read the position.
   Component: vi.fn((config: { x: number; y: number }) => {
     const position = { x: config.x, y: config.y };
@@ -30,18 +24,13 @@ vi.mock("../map/components/Component", () => ({
     };
   }),
 }));
-vi.mock("../map/components/Line", () => ({
+vi.mock("./components/Line", () => ({
   Line: vi.fn((...ends: unknown[]) => ({ ends, updateLine: vi.fn() })),
 }));
 
-import { Component } from "../map/components/Component";
-import { graph, rerenderGraph, updateComponentPosition } from "./Graph";
-import { setEditorText } from "./State";
-
-const draw = (text: string) => {
-  setEditorText(text);
-  rerenderGraph();
-};
+import { graph, updateComponentPosition } from "../state/Graph";
+import { Component } from "./components/Component";
+import { drawMap } from "./drawMap";
 
 /** What each component was drawn with, by name. */
 const drawn = () =>
@@ -59,16 +48,15 @@ beforeEach(() => {
 });
 
 it("draws each component at its evolution and visibility", () => {
-  draw("Kettle [33, 50]\nPower");
+  drawMap("Kettle [33, 50]\nPower");
   expect(drawn()).toEqual({
     Kettle: { x: 50, y: 67, inPipeline: false },
     Power: { x: 10, y: 90, inPipeline: false },
   });
-  expect(editor.showMapOutOfDate).toHaveBeenCalledWith(false);
 });
 
 it("draws a pipeline's components on the pipeline's row", () => {
-  draw("Tea [55, 73] {\n  Loose Leaf [20, 56]\n  Tea Bags\n}");
+  drawMap("Tea [55, 73] {\n  Loose Leaf [20, 56]\n  Tea Bags\n}");
   expect(drawn()).toMatchObject({
     Tea: { x: 73, y: 45, inPipeline: false },
     "Loose Leaf": { x: 56, y: 45, inPipeline: true },
@@ -79,38 +67,39 @@ it("draws a pipeline's components on the pipeline's row", () => {
 });
 
 it("draws a pipeline nested in another without its components", () => {
-  draw("Tea {\n  Leaf {\n    Stem\n  }\n}");
+  drawMap("Tea {\n  Leaf {\n    Stem\n  }\n}");
   const leaf = vi.mocked(Component).mock.calls.find(([c]) => c.name === "Leaf")![0];
   expect(leaf.pipeline).toEqual([]);
 });
 
 it("draws links after every component, whichever comes first in the text", () => {
-  draw("Kettle.Power\nKettle [33, 50]\nPower [10, 86]");
-  expect(graph.edges().map((e) => graph.getEdgeAttribute(e, "nodeKey"))).toEqual(["Kettle->Power"]);
+  drawMap("Kettle.Power\nKettle [33, 50]\nPower [10, 86]");
+  expect(graph.edges().map((e: string) => graph.getEdgeAttribute(e, "nodeKey"))).toEqual([
+    "Kettle->Power",
+  ]);
 });
 
 it("draws a component written twice once, where it is first written", () => {
-  draw("Kettle [33, 50]\nKettle [80, 80]");
+  drawMap("Kettle [33, 50]\nKettle [80, 80]");
   expect(Component).toHaveBeenCalledTimes(1);
   expect(graph.getNodeAttribute("Kettle", "coordinates")).toEqual({ x: 50, y: 67 });
 });
 
 it("skips links to undeclared components and repeated links", () => {
-  draw("Kettle\nPower\nKettle.Power\nPower.Kettle\nKettle.Water");
+  drawMap("Kettle\nPower\nKettle.Power\nPower.Kettle\nKettle.Water");
   expect(graph.size).toBe(1);
 });
 
-it("leaves the last drawing and tints the editor when the text can't be read", () => {
-  draw("Kettle [33, 50]");
+it("leaves the last drawing, and returns false, when the text can't be read", () => {
+  expect(drawMap("Kettle [33, 50]")).toBe(true);
   vi.clearAllMocks();
-  draw(Array.from({ length: 60 }, () => "Bad [").join("\n"));
-  expect(editor.showMapOutOfDate).toHaveBeenCalledWith(true);
+  expect(drawMap(Array.from({ length: 60 }, () => "Bad [").join("\n"))).toBe(false);
   expect(Component).not.toHaveBeenCalled();
   expect(graph.order).toBe(1);
 });
 
 it("moves a component and the ends of its links", () => {
-  draw("Kettle [33, 50]\nPower [10, 86]\nKettle.Power");
+  drawMap("Kettle [33, 50]\nPower [10, 86]\nKettle.Power");
   updateComponentPosition("Kettle", 5, 6);
   const link = graph.getEdgeAttributes(graph.edges()[0]);
   expect(link.coordinates.start).toEqual({ x: 5, y: 6 });

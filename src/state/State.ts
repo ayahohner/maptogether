@@ -4,8 +4,6 @@ import { proxySet } from "valtio/utils";
 import type { ComponentT } from "../map/components/types";
 import { contains, fractionInside, rectBetween, type Segment } from "../map/segments";
 import { graph, type NodeAttributes, updateComponentPositionOffset } from "./Graph";
-
-import { appendText, replaceCoordinates } from "../editor/Editor";
 import { activeTool, tools } from "./Tools";
 
 /** Plain coordinate pair. Kept as a plain object (not a Pixi Point) so it is
@@ -160,18 +158,25 @@ export const startTranslation = (location: PointLike) => {
   state.translateDrag.translationCurrentPoint = location;
 };
 
-export const stopTranslation = () => {
-  if (state.translateDrag.translationCurrentPoint) {
-    state.selection.selectionItems.forEach((item) => {
-      const coords = graph.getNodeAttribute(item, "coordinates");
-      replaceCoordinates(item, coords.x, coords.y);
-    });
-  }
+/** A component moved on the canvas, and where it now is (px). */
+export interface Move extends PointLike {
+  name: ComponentT["nodeKey"];
+}
+
+/** Ends a move; returns the components it moved, for the text to follow. */
+export const stopTranslation = (): Move[] => {
+  const moves = state.translateDrag.translationCurrentPoint
+    ? [...state.selection.selectionItems].map((name) => ({
+        name,
+        ...graph.getNodeAttribute(name, "coordinates"),
+      }))
+    : [];
 
   state.translateDrag.isTranslating = false;
   state.translateDrag.translationStartPoint = undefined;
   state.translateDrag.translationLastPoint = undefined;
   state.translateDrag.translationCurrentPoint = undefined;
+  return moves;
 };
 
 export const updateTranslationPoint = (location: PointLike) => {
@@ -238,24 +243,30 @@ const dragMarquee = (start: PointLike, point: PointLike, additive: boolean) => {
   else updateSelectionPoint(point);
 };
 
-/** End of a press: commit any move and drop the marquee. */
+/** End of a press: drops the marquee, and returns the components moved. */
 export const releaseDrag = () => {
   stopSelecting();
-  stopTranslation();
+  return stopTranslation();
 };
 
 /**
  * Link tool: the first component picked is the source, the second the
  * component it needs. Picking empty canvas or the source again starts over.
+ * Returns the link to write, once both ends are picked.
  */
 export const linkTo = (nodeKey: ComponentT["nodeKey"] | undefined) => {
-  const from = state.linking.initialLinkTarget;
-  if (nodeKey && !from) return setInitialLinkTarget(nodeKey);
-  if (nodeKey && from && from !== nodeKey && !graph.areNeighbors(from, nodeKey)) {
-    appendText(`\n${from}.${nodeKey}`);
-  }
-  setInitialLinkTarget(undefined);
+  const from = linkSource();
+  setInitialLinkTarget(nodeKey && !from ? nodeKey : undefined);
+  if (from && nodeKey && canLink(from, nodeKey)) return { from, to: nodeKey };
 };
+
+/** The link tool's source, unless it has been removed from the map since it was picked. */
+const linkSource = () => {
+  const picked = state.linking.initialLinkTarget;
+  return picked && graph.hasNode(picked) ? picked : undefined;
+};
+
+const canLink = (from: string, to: string) => from !== to && !graph.areNeighbors(from, to);
 
 /** Link mode (and its styling) follows the active tool. */
 export const followActiveTool = () => {

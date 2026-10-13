@@ -1,15 +1,19 @@
 import { beforeEach, expect, it, vi } from "vitest";
 
-const editor = vi.hoisted(() => ({ appendText: vi.fn(), renameComponent: vi.fn() }));
+const editor = vi.hoisted(() => ({
+  appendText: vi.fn(),
+  moveComponents: vi.fn(),
+  renameComponent: vi.fn(),
+}));
 const graph = vi.hoisted(() => ({ hasNode: vi.fn((name: string) => name === "Kettle") }));
 const store = vi.hoisted(() => ({
   clearSelection: vi.fn(),
   dragTo: vi.fn(),
-  linkTo: vi.fn(),
+  linkTo: vi.fn((): { from: string; to: string } | undefined => ({ from: "Cup", to: "Kettle" })),
   pressCanvas: vi.fn(),
   pressComponent: vi.fn(),
   pressEdge: vi.fn(),
-  releaseDrag: vi.fn(),
+  releaseDrag: vi.fn(() => [{ name: "Kettle", x: 1, y: 2 }]),
   // One link, from (0, 100) to (200, 100) in world coordinates.
   edgeSegments: vi.fn(() => [
     { key: "Kettle->Power", start: { x: 0, y: 100 }, stop: { x: 200, y: 100 } },
@@ -74,7 +78,7 @@ it("presses and drags in world coordinates", () => {
   actions.drag({ x: 50, y: 4 }, false);
   expect(store.dragTo).toHaveBeenCalledWith({ x: 20, y: 2 }, false);
   actions.release();
-  expect(store.releaseDrag).toHaveBeenCalled();
+  expect(editor.moveComponents).toHaveBeenCalledWith([{ name: "Kettle", x: 1, y: 2 }]);
 });
 
 it("presses a link near the pointer, allowing for zoom", () => {
@@ -98,6 +102,10 @@ it("selects one component, a link or nothing on a tap, and links", () => {
   expect(store.clearSelection).toHaveBeenCalled();
   actions.link("Kettle");
   expect(store.linkTo).toHaveBeenCalledWith("Kettle");
+  expect(editor.appendText).toHaveBeenCalledWith("\nCup.Kettle");
+  store.linkTo.mockReturnValueOnce(undefined);
+  actions.link("Cup");
+  expect(editor.appendText).toHaveBeenCalledTimes(1);
 });
 
 it("names a new component where the canvas was pressed", () => {

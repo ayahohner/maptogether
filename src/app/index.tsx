@@ -1,17 +1,18 @@
+import throttle from "lodash/throttle";
 import { createRoot } from "react-dom/client";
 
-// Load the editor first: it and State import each other, and the editor
-// reads State as it loads.
 import {
   editorView,
   awareness,
   deleteSelection,
   mapLink,
+  redrawMap,
   replaceText,
   room,
   undoManager,
 } from "../editor/Editor";
 import MapSingleton from "../map/components/MapSingleton";
+import { SelectionHandler } from "../map/components/SelectionHandler";
 
 import { initializeCanvasPresence } from "../map/CanvasPresence";
 import { MapAxes, StageDividers } from "../map/MapAxes";
@@ -38,11 +39,17 @@ keepMapOutOfSearch(room.isNew);
 const run = async (elementId: string) => {
   // Pixi starts asynchronously; the renderer and canvas exist only once it is ready.
   await MapSingleton.ready;
+  MapSingleton.world.addChild(SelectionHandler());
 
+  // Map positions are fractions of the canvas, so a new size redraws the map.
+  const fitMap = throttle(() => {
+    MapSingleton.fitToParent();
+    redrawMap();
+  }, 32);
   initializePanelResizer(
     document.getElementById("editorContainer")!,
     document.getElementById("resize")!,
-    MapSingleton.handleResize,
+    fitMap,
   );
 
   setEditorText(editorView.state.doc.toString());
@@ -67,7 +74,7 @@ const run = async (elementId: string) => {
     deleteSelection,
   });
 
-  MapSingleton.handleResize();
+  fitMap();
 
   // Draws the first frame, even of an empty map.
   MapSingleton.dirty = true;

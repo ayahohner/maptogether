@@ -1,6 +1,7 @@
 import { act } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
+// Stand in for the Pixi map and the editor, which the canvas actions load.
 vi.mock("../state/Graph", () => ({}));
 vi.mock("../editor/Editor", () => ({}));
 

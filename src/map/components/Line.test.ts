@@ -2,8 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 
 const map = vi.hoisted(() => ({ dirty: false }));
 vi.mock("./MapSingleton", () => ({ default: map }));
-vi.mock("../../state/Graph", () => ({}));
-vi.mock("../../editor/Editor", () => ({}));
 
 import { Container } from "pixi.js";
 
