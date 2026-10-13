@@ -176,9 +176,17 @@ const placeComponent = (config: ComponentConfig) => {
   addComponent(config);
 };
 
-/** Whether a component can be moved to its new config rather than drawn anew. */
+/** A pipeline's box, relative to the pipeline, as a string to compare. */
+const box = (config: ComponentConfig) => JSON.stringify(layoutComponent(config).pipe);
+
+/**
+ * Whether a component can be moved to its new config rather than drawn anew:
+ * the same marker, and for a pipeline, a box in the same place relative to it.
+ */
 const sameShape = (a: ComponentConfig, b: ComponentConfig) =>
-  a.inPipeline === b.inPipeline && String(a.pipeline) === String(b.pipeline);
+  a.inPipeline === b.inPipeline &&
+  (a.pipeline === undefined) === (b.pipeline === undefined) &&
+  box(a) === box(b);
 
 const moveComponent = (node: NodeAttributes, config: ComponentConfig) => {
   const { x, y } = config;

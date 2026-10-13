@@ -136,6 +136,26 @@ it("draws a pipeline anew when its components change", () => {
   expect(drawn()).toEqual({ Tea: { x: 73, y: 45, inPipeline: false } });
 });
 
+it("draws a pipeline anew when it moves, so its box still spans its components", () => {
+  drawMap("Tea [55, 73] {\n  Leaf [20, 56]\n}");
+  const [tea, leaf] = [component("Tea"), component("Leaf")];
+  vi.clearAllMocks();
+  drawMap("Tea [55, 40] {\n  Leaf [20, 56]\n}");
+  expect(tea.removeFromParent).toHaveBeenCalled();
+  expect(drawn()).toEqual({ Tea: { x: 40, y: 45, inPipeline: false } });
+  expect(component("Leaf")).toBe(leaf);
+});
+
+it("keeps a pipeline when one of its components moves inside its box", () => {
+  drawMap("Tea [55, 50] {\n  Leaf [20, 20]\n  Bag [20, 60]\n  Cup [20, 80]\n}");
+  const tea = component("Tea");
+  vi.clearAllMocks();
+  drawMap("Tea [55, 50] {\n  Leaf [20, 20]\n  Bag [20, 70]\n  Cup [20, 80]\n}");
+  expect(Component).not.toHaveBeenCalled();
+  expect(component("Tea")).toBe(tea);
+  expect(component("Bag").position.x).toBe(70);
+});
+
 it("replaces a link written the other way round", () => {
   drawMap("Kettle\nPower\nKettle.Power");
   const line = link();
