@@ -30,6 +30,7 @@ import { initializePanelResizer } from "./components/PanelResizer";
 import { initializeUserEvents } from "./UserEvents";
 import { keepMapOutOfSearch } from "./seo";
 
+import "@fontsource-variable/jetbrains-mono";
 import "./index.css";
 
 /**

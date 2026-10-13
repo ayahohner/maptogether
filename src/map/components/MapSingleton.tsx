@@ -10,6 +10,9 @@ import type { MapView } from "../canvasActions";
 
 import { SelectionHandler } from "./SelectionHandler";
 
+/** Component labels, in the UI's typeface (see --font-sans). */
+const LABEL_FONT = '"Instrument Sans", sans-serif';
+
 class MapSingleton extends Application {
   static _instance: MapSingleton;
   static _parentElement: HTMLDivElement;
@@ -57,6 +60,8 @@ class MapSingleton extends Application {
     // `Application.prototype.render = null` hack from Pixi v6.)
     this.ticker.remove(this.render, this);
 
+    // The label atlas is drawn once, so the face must be loaded first.
+    await document.fonts?.load(`16px ${LABEL_FONT}`);
     this.setup();
   }
 
@@ -75,6 +80,7 @@ class MapSingleton extends Application {
       name: "TitleFont",
       style: {
         fill: "#000000",
+        fontFamily: LABEL_FONT,
         // supersize font based on dpr
         fontSize: 16 * this.renderer.resolution,
         fontWeight: "normal",

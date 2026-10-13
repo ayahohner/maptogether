@@ -40,12 +40,12 @@ const Theme = EditorView.theme({
     fontSize: "1rem",
   },
   ".cm-content": {
-    fontFamily: "'JetBrains Mono', Consolas, Courier New, monospace",
+    fontFamily: "var(--font-mono)",
     fontWeight: "400",
     cursor: "text",
   },
   ".cm-scroller": {
-    fontFamily: "'JetBrains Mono', Consolas, Courier New, monospace",
+    fontFamily: "var(--font-mono)",
     fontWeight: "400",
   },
   ".cm-gutters": {
@@ -61,7 +61,7 @@ const Theme = EditorView.theme({
     backgroundColor: "rgba(220, 38, 38, 0.08)",
   },
   ".cm-ySelectionInfo": {
-    fontFamily: "'JetBrains Mono', Consolas, Courier New, monospace",
+    fontFamily: "var(--font-mono)",
     fontWeight: "400",
     color: "black",
   },

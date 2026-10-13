@@ -6,9 +6,19 @@
  * rounded-panel, shadow-float). Components below are the few shared
  * patterns; everything else composes utilities.
  */
+/* The complete upstream file: subsets (Fontsource, Google Fonts) drop the
+   stylistic sets used below. JetBrains Mono is imported in index.tsx. */
+@font-face {
+  font-family: "Instrument Sans";
+  src: url("./fonts/instrument-sans.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, Consolas, "Courier New", monospace;
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, Consolas, "Courier New", monospace;
+  --font-weight-heading: 580;
 
   /* Neutrals: zinc, slightly cool. */
   --color-ink: #18181b;

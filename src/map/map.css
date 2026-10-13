@@ -24,7 +24,7 @@
   background-color: var(--color-surface);
   color: var(--color-ink);
   box-shadow: 0 0 0 2px var(--color-accent), var(--shadow-float);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-sans);
 }
 
 .componentInput:focus {
@@ -56,8 +56,7 @@
   position: absolute; top: 18px; left: 12px; white-space: nowrap;
   padding: 2px 4px; border-radius: 3px; border-left: 2px solid var(--pointer-color);
   background: rgb(24 24 27 / 45%); color: white; opacity: 0.75;
-  /* TitleFont uses Pixi's default Arial face for canvas component labels. */
-  font-family: Arial, sans-serif; font-size: 11px; font-weight: 400; max-width: 260px;
+  font-family: var(--font-sans); font-size: 11px; font-weight: 400; max-width: 260px;
   overflow: hidden; text-overflow: ellipsis;
 }
 .remote-pointer.near-right .remote-pointer-label { left: auto; right: 4px; }
@@ -67,7 +66,7 @@
 .map-axes {
   position: absolute; inset: 0; pointer-events: none; line-height: 1.3;
   --axis-color: #a1a1aa; --axis-text: #71717a;
-  font-family: Arial, sans-serif; font-size: 11px; color: var(--axis-text);
+  font-family: var(--font-sans); font-size: 11px; color: var(--axis-text);
 }
 .axis-x { position: absolute; left: 0; right: 0; bottom: 0; height: 20px; }
 /* The line starts at the visibility axis; stages still span the full width

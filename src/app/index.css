@@ -21,6 +21,9 @@ body {
   background: var(--color-surface);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  /* Instrument Sans alternates: round dots, straight-leg R, angled M,
+     alternate 2, et-style ampersand, solid $ and ¢. */
+  font-feature-settings: "ss01", "ss05", "ss06", "ss10", "ss11", "ss12";
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }

@@ -64,7 +64,7 @@ function HelpContents({ topic }: { topic: HelpTopic }) {
   return (
     <TabGroup selectedIndex={topics.indexOf(topic)} onChange={(i) => setHelpTopic(topics[i])}>
       <header className="flex items-center gap-3 border-b border-line px-4 pt-3.5 pb-3">
-        <h2 className="text-[15px] font-semibold">Help</h2>
+        <h2 className="text-[15px] font-heading">Help</h2>
         <TabList className="ml-auto flex rounded-[10px] bg-surface-muted p-0.5 text-[13px] font-medium">
           <HelpTab icon={<CursorArrowRaysIcon />}>Canvas</HelpTab>
           <HelpTab icon={<CodeBracketIcon />}>Code editor</HelpTab>
