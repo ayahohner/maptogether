@@ -1,266 +1,76 @@
-import { Graphics, Point, BitmapText, Container } from "pixi.js";
+import { BitmapText, Container, Graphics } from "pixi.js";
 
-import { Rectangle } from "./Rectangle";
-
-import type { ComponentT } from "./types";
-
-import { state, subscribe, type StateT } from "../../state/State";
-
+import { state, subscribe } from "../../state/State";
+import {
+  BORDERS,
+  type ComponentConfig,
+  type InteractionMode,
+  layoutComponent,
+  modeOf,
+  squareHalfSide,
+} from "./componentLayout";
 import MapSingleton from "./MapSingleton";
 import { PipelineContainer } from "./PipelineContainer";
+import { Rectangle } from "./Rectangle";
+import type { ComponentT } from "./types";
 
-const componentColors = {
-  normalBackground: 0xffffff,
-  selectedBorder: 0x9b5af9,
-  untargetedBorder: 0x000000,
-  targetableBorder: 0x059669,
-  targetedBorder: 0x6ee7b7,
+/** A circle for a component, or a square for a pipeline. */
+const drawMarker = (g: Graphics, square: boolean, mode: InteractionMode) => {
+  g.clear();
+  const half = squareHalfSide(mode);
+  if (square) g.rect(-half, -half, 2 * half, 2 * half);
+  else g.circle(0, 0, 6);
+  g.fill({ color: 0xffffff, alpha: 1 });
+  g.stroke({ ...BORDERS[mode], alpha: 1, alignment: 1 });
 };
 
-type ComponentStyles = "normal" | "pipeline";
-type InteractionModes = "default" | "selected" | "targetable" | "targeted";
-
-type IComponentStyleMap = {
-  [key in ComponentStyles]: {
-    [mode in InteractionModes]: (g: Graphics) => void;
-  };
-};
-
-const componentStyleMap: IComponentStyleMap = {
-  normal: {
-    default: (g: Graphics): void => {
-      g.clear();
-      g.circle(0, 0, 6);
-      g.fill({ color: componentColors.normalBackground, alpha: 1 });
-      g.stroke({
-        width: 1,
-        color: componentColors.untargetedBorder,
-        alpha: 1,
-        alignment: 1,
-      });
-    },
-    selected: (g: Graphics): void => {
-      g.clear();
-      g.circle(0, 0, 6);
-      g.fill({ color: componentColors.normalBackground, alpha: 1 });
-      g.stroke({
-        width: 2,
-        color: componentColors.selectedBorder,
-        alpha: 1,
-        alignment: 1,
-      });
-    },
-    targetable: (g: Graphics): void => {
-      g.clear();
-      g.circle(0, 0, 6);
-      g.fill({ color: componentColors.normalBackground, alpha: 1 });
-      g.stroke({
-        width: 2,
-        color: componentColors.targetableBorder,
-        alpha: 1,
-        alignment: 1,
-      });
-    },
-    targeted: (g: Graphics): void => {
-      g.clear();
-      g.circle(0, 0, 6);
-      g.fill({ color: componentColors.normalBackground, alpha: 1 });
-      g.stroke({
-        width: 2,
-        color: componentColors.targetedBorder,
-        alpha: 1,
-        alignment: 1,
-      });
-    },
-  },
-  pipeline: {
-    default: (g: Graphics): void => {
-      g.clear();
-      g.rect(-5, -5, 10, 10);
-      g.fill({ color: componentColors.normalBackground, alpha: 1 });
-      g.stroke({
-        width: 1,
-        color: componentColors.untargetedBorder,
-        alpha: 1,
-        alignment: 1,
-      });
-    },
-    selected: (g: Graphics): void => {
-      g.clear();
-      g.rect(-5.5, -5.5, 11, 11);
-      g.fill({ color: componentColors.normalBackground, alpha: 1 });
-      g.stroke({
-        width: 2,
-        color: componentColors.selectedBorder,
-        alpha: 1,
-        alignment: 1,
-      });
-    },
-    targetable: (g: Graphics): void => {
-      g.clear();
-      g.rect(-5.5, -5.5, 11, 11);
-      g.fill({ color: componentColors.normalBackground, alpha: 1 });
-      g.stroke({
-        width: 2,
-        color: componentColors.targetableBorder,
-        alpha: 1,
-        alignment: 1,
-      });
-    },
-    targeted: (g: Graphics): void => {
-      g.clear();
-      g.rect(-5.5, -5.5, 11, 11);
-      g.fill({ color: componentColors.normalBackground, alpha: 1 });
-      g.stroke({
-        width: 2,
-        color: componentColors.targetedBorder,
-        alpha: 1,
-        alignment: 1,
-      });
-    },
-  },
-};
-
-interface IComponentConfig {
-  x: number;
-  y: number;
-  name: string;
-  children?: Object[];
-  parent?: Object;
-  labelX?: number;
-  labelY?: number;
-}
-
-export const Component = (config: IComponentConfig) => {
-  let { x, y, name, parent, labelX, labelY, children } = config;
-
-  let lastComponentStyle: ComponentStyles | undefined ;
-  let componentStyle: ComponentStyles = "normal";
-  if (children) {
-    componentStyle = "pipeline";
-  }
-
+export const Component = (config: ComponentConfig) => {
+  const layout = layoutComponent(config);
   const component = new Container() as ComponentT;
-
-  component.interactiveChildren = true;
   component.eventMode = "static";
   component.cursor = "pointer";
+  component.nodeKey = config.name;
+  component.zIndex = layout.zIndex;
+  component.position.set(config.x, layout.y);
 
-  component.nodeKey = name;
-
-  // NOTE: This will break if we enable nested pipelines
-  if (parent) {
-    y += 12;
-    component.zIndex = 1;
-  }
-
-  component.position = new Point(x, y);
-
-  // Build pipeline container
-  if (children && children.length > 0) {
-    let left: number = 0;
-    let right: number = 0;
-    children.forEach((value: any, index) => {
-      let rhs: number;
-      if (value.children.coordinates) {
-        rhs = parseFloat(value.children.coordinates[0].children.RHS[0].image);
-      } else {
-        rhs = 10;
-      }
-      if (index === 0) {
-        left = rhs;
-        right = rhs;
-      }
-      if (rhs < left) {
-        left = rhs;
-      }
-      if (rhs > right) {
-        right = rhs;
-      }
-    });
-
-    [left] = MapSingleton.wardleyToRendererCoords(left, 0);
-    [right] = MapSingleton.wardleyToRendererCoords(right, 0);
-
-    if (x < left) {
-      left = x;
-    }
-    if (x > right) {
-      right = x;
-    }
-
-    const width = right - left + 20;
-    const offset = left - x - 10;
-
-    const pipe = PipelineContainer(width);
-    pipe.x = offset;
+  if (layout.pipe) {
+    const pipe = PipelineContainer(layout.pipe.width);
+    pipe.x = layout.pipe.offset;
     component.addChild(pipe);
   }
 
   const text = new BitmapText({
-    text: name,
-    style: {
-      fontFamily: "TitleFont",
-      fontSize: 16,
-    },
+    text: config.name,
+    style: { fontFamily: "TitleFont", fontSize: 16 },
   });
-  text.x = labelX ? 9 + labelX : 9;
-  text.y = labelY ? -16 + labelY : -16;
-  if (children && children.length > 0 && !parent) {
-    text.y = -18;
-  }
-  text.rotation = parent ? Math.PI / 6 : 0;
+  text.position.set(layout.label.x, layout.label.y);
+  text.rotation = layout.label.rotation;
 
-  // Add a rectangle under the text in app bg color to visually separate text
-  // from lines
-  const rect = Rectangle(text.x, text.y, text.width, text.height);
-  rect.rotation = labelY ? Math.PI / 6 : 0;
-  component.addChild(rect);
+  // A patch of the canvas colour behind the label keeps lines from running through it.
+  const backing = Rectangle(text.x, text.y, text.width, text.height);
+  backing.rotation = layout.label.rotation;
+  component.addChild(backing, text);
 
-  // paint on top of rect but need text width to build rectangle
-  component.addChild(text);
-
-  // Draw the node
-  const g = new Graphics();
-
-  let lastInteractionMode: InteractionModes | undefined ;
-  let interactionMode: InteractionModes = "default";
-
-  const renderComponent = (g: Graphics, state: StateT) => {
-    if (state.linking.isLinkModeEnabled) {
-      interactionMode = "targetable";
-      if (state.linking.initialLinkTarget === name) {
-        interactionMode = "targeted";
-      }
-    } else if (state.selection.selectionItems.has(component.nodeKey)) {
-      interactionMode = "selected";
-    } else {
-      interactionMode = "default";
-    }
-
-    // Rebuilding component is expensive, only do if component has changed
-    // Note: don't need to do if switched to pipeline because that will cause
-    // a rerender of the whole graph.
-    if (interactionMode !== lastInteractionMode) {
-      componentStyleMap[componentStyle][interactionMode](g);
-      MapSingleton.dirty = true;
-      lastInteractionMode = interactionMode;
-    }
+  const marker = new Graphics();
+  let drawnMode: InteractionMode | undefined;
+  // Redrawing the marker is slow, so it is redrawn only when its mode changes.
+  const redrawMarker = () => {
+    const mode = modeOf(state, config.name);
+    if (mode === drawnMode) return;
+    drawMarker(marker, config.pipeline !== undefined, mode);
+    MapSingleton.dirty = true;
+    drawnMode = mode;
   };
+  redrawMarker();
+  component.addChild(marker);
 
-  renderComponent(g, state);
-  component.addChild(g);
-
-  const selectionUnsub = subscribe(state.selection, () => renderComponent(g, state));
-  const linkingUnsub = subscribe(state.linking, () => renderComponent(g, state));
+  const unsubscribeSelection = subscribe(state.selection, redrawMarker);
+  const unsubscribeLinking = subscribe(state.linking, redrawMarker);
 
   component.on("removed", () => {
-    selectionUnsub();
-    linkingUnsub();
-    text.destroy();
-    rect.destroy();
-    g.destroy();
-    component.destroy();
+    unsubscribeSelection();
+    unsubscribeLinking();
+    component.destroy({ children: true });
   });
 
   return component;

@@ -1,12 +1,12 @@
-import { Graphics, Ticker } from "pixi.js";
+import type { Container, Graphics } from "pixi.js";
 
-export type ExtendedGraphics = Graphics & {
+/** A component's drawing: its marker, label and, for a pipeline, its box. */
+export type ComponentT = Container & {
   nodeKey: string;
 };
 
-export type ComponentT = ExtendedGraphics;
-
-export type LineT = ExtendedGraphics & {
-  ticker?: Ticker;
-  updateLine: Function;
+export type LineT = Graphics & {
+  nodeKey: string;
+  /** Moves the line's ends. */
+  updateLine: (ax: number, ay: number, bx: number, by: number) => void;
 };

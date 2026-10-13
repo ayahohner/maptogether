@@ -3,6 +3,7 @@ import Graph from "graphology";
 import MapSingleton from "../map/components/MapSingleton";
 import { Component } from "../map/components/Component";
 import { Line } from "../map/components/Line";
+import type { ComponentConfig } from "../map/components/componentLayout";
 import type { ComponentT, LineT } from "../map/components/types";
 
 import { state, setInitialLinkTarget } from "./State";
@@ -38,45 +39,16 @@ export type WardleyGraph = Graph<NodeAttributes, EdgeAttributes, GraphAttributes
 
 export const graph: WardleyGraph = new Graph({ type: "undirected" });
 
-// Allow adding to window object
-// declare global {
-//   interface Window {
-//     graph: Graph<NodeAttributes, EdgeAttributes, GraphAttributes>;
-//   }
-// }
-// window.graph = graph
+type AddComponentConfig = ComponentConfig & { type: NodeAttributes["type"] };
 
-interface IAddComponentConfig {
-  x: number;
-  y: number;
-  name: NodeAttributes["nodeKey"];
-  type: NodeAttributes["type"];
-  parent?: Object;
-  labelX?: number;
-  labelY?: number;
-  children?: Object[];
-}
-
-// ACTIONS
-export const addComponent = (config: IAddComponentConfig) => {
+/** Draws a component. A name already on the map is drawn once, where it is first written. */
+export const addComponent = (config: AddComponentConfig) => {
   const { x, y, name, type } = config;
-  const component = Component(config); // ->Renderer
-
-  // TODO: Find out what characters aren't possible in nodeKeys and prevent them from being used in Identifiers
-  try {
-    graph.addNode(name, {
-      nodeKey: name,
-      type,
-      coordinates: { x, y },
-      component,
-      mounted: true,
-    });
-  } catch (e) {
-    console.error(e);
-  }
-
-  MapSingleton.graphContainer.addChild(component); // ->Renderer
-  MapSingleton.dirty = true; // ->Renderer
+  if (graph.hasNode(name)) return;
+  const component = Component(config);
+  graph.addNode(name, { nodeKey: name, type, coordinates: { x, y }, component, mounted: true });
+  MapSingleton.graphContainer.addChild(component);
+  MapSingleton.dirty = true;
 };
 
 export const updateComponentPosition = (nodeKey: string, x: number, y: number) => {
@@ -235,7 +207,7 @@ class TogetherVisitorToGraph extends BaseTogetherVisitor {
   }
 
   componentDeclaration(ctx: any, parentComponent?: any) {
-    const children = this.pipelineChildren(ctx, parentComponent);
+    const children: CstNode[] | undefined = this.pipelineChildren(ctx, parentComponent);
     const [visibility, evolution] = this.coordinatesOf(ctx);
     // A pipeline's components sit at the pipeline's visibility.
     const rowVisibility = parentComponent ? this.coordinatesOf(parentComponent)[0] : visibility;
@@ -246,10 +218,14 @@ class TogetherVisitorToGraph extends BaseTogetherVisitor {
       y,
       name: ctx.Identifier[0].image,
       type: "normal",
-      parent: parentComponent,
-      labelY: parentComponent ? 26 : undefined,
-      children,
+      inPipeline: Boolean(parentComponent),
+      pipeline: children?.map((child) => this.rendererX(child.children)),
     });
+  }
+
+  /** A component's x in pixels, from its evolution. */
+  private rendererX(ctx: any) {
+    return MapSingleton.wardleyToRendererCoords(this.coordinatesOf(ctx)[1], 0)[0];
   }
 
   /** `[visibility, evolution]`, or the default for a component written without them. */

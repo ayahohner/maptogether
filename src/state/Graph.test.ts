@@ -48,7 +48,7 @@ const drawn = () =>
   Object.fromEntries(
     vi.mocked(Component).mock.calls.map(([config]) => [
       config.name,
-      { x: config.x, y: config.y, inPipeline: Boolean(config.parent) },
+      { x: config.x, y: config.y, inPipeline: config.inPipeline },
     ]),
   );
 
@@ -73,13 +73,13 @@ it("draws a pipeline's components on the pipeline's row", () => {
     "Tea Bags": { x: 10, y: 45, inPipeline: true },
   });
   const tea = vi.mocked(Component).mock.calls.find(([c]) => c.name === "Tea")![0];
-  expect(tea.children).toHaveLength(2);
+  expect(tea.pipeline).toEqual([56, 10]);
 });
 
 it("draws a pipeline nested in another without its components", () => {
   draw("Tea {\n  Leaf {\n    Stem\n  }\n}");
   const leaf = vi.mocked(Component).mock.calls.find(([c]) => c.name === "Leaf")![0];
-  expect(leaf.children).toEqual([]);
+  expect(leaf.pipeline).toEqual([]);
 });
 
 it("draws links after every component, whichever comes first in the text", () => {
@@ -87,6 +87,12 @@ it("draws links after every component, whichever comes first in the text", () =>
   expect(graph.edges().map((e) => graph.getEdgeAttribute(e, "nodeKey"))).toEqual([
     "Kettle->Power",
   ]);
+});
+
+it("draws a component written twice once, where it is first written", () => {
+  draw("Kettle [33, 50]\nKettle [80, 80]");
+  expect(Component).toHaveBeenCalledTimes(1);
+  expect(graph.getNodeAttribute("Kettle", "coordinates")).toEqual({ x: 50, y: 67 });
 });
 
 it("skips links to undeclared components and repeated links", () => {
