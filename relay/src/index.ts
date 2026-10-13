@@ -32,6 +32,9 @@ const DOC_KEY = "doc";
 
 type Conn = SignalPeer & StoreConn;
 
+/** A save request's id, which the reply echoes: a whole number from 0. */
+const isSaveId = (id: unknown): id is number => Number.isSafeInteger(id) && (id as number) >= 0;
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
@@ -131,7 +134,7 @@ export class MapRoom extends DurableObject<Env> {
       this.signaling.receive(this.conn(ws), text);
       return;
     }
-    if (!Number.isSafeInteger(message.id) || message.id < 0) return;
+    if (!isSaveId(message.id)) return;
     // Ordered socket frames guarantee preceding uploads are in this snapshot.
     const saved = !ws.deserializeAttachment()?.uploadRejected && (await this.save());
     ws.send(JSON.stringify({ type: saved ? "saved" : "save-error", id: message.id }));

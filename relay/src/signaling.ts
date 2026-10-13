@@ -30,8 +30,9 @@ export class Signaling {
 
   receive(peer: SignalPeer, text: string) {
     const message = parseSignal(text);
-    const target = message && this.others(peer).find((p) => p.id === message.to);
-    target?.sendText(JSON.stringify({ type: "signal", from: peer.id, data: message!.data }));
+    if (!message) return;
+    const target = this.others(peer).find((p) => p.id === message.to);
+    target?.sendText(JSON.stringify({ type: "signal", from: peer.id, data: message.data }));
   }
 
   leave(peer: SignalPeer) {
