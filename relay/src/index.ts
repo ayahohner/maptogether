@@ -63,6 +63,8 @@ export class MapRoom extends DurableObject<Env> {
   private readonly signaling: Signaling;
   private readonly conns = new WeakMap<WebSocket, Conn>();
   private savePending = false;
+  /** Edits not yet written; the stored copy is otherwise already current. */
+  private dirty = false;
   private saving: Promise<boolean> = Promise.resolve(true);
 
   constructor(ctx: DurableObjectState, env: Env) {
@@ -123,6 +125,7 @@ export class MapRoom extends DurableObject<Env> {
   }
 
   private scheduleSave() {
+    this.dirty = true;
     if (this.savePending) return;
     this.savePending = true;
     void this.ctx.storage.setAlarm(Date.now() + SAVE_DELAY_MS);
@@ -136,11 +139,15 @@ export class MapRoom extends DurableObject<Env> {
 
   private async persist(): Promise<boolean> {
     this.savePending = false;
+    // Reconnects, alarms after a checkpoint, and the last close need no write.
+    if (!this.dirty) return true;
     const snapshot = this.store.snapshot();
     if (snapshot.byteLength > MAX_DOC_BYTES) {
       console.error(`map too large to save: ${snapshot.byteLength} bytes`);
       return false;
     }
+    // Cleared before the write so edits arriving during it are saved next time.
+    this.dirty = false;
     try {
       await this.ctx.storage.put(DOC_KEY, snapshot);
       return true;
