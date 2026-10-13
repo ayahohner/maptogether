@@ -4,7 +4,8 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { TopBar } from "./index";
 import { ui } from "../state/Ui";
 
-vi.mock("../app/utilities/Clipboard", () => ({ copyTextToClipboard: vi.fn() }));
+const writeText = vi.fn();
+Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
 
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
@@ -45,11 +46,25 @@ it("shows the brand, people, a new map link and sharing", () => {
   expect(host.textContent).toContain("Share");
 });
 
-it("confirms when the share link is copied", async () => {
-  const share = [...host.querySelectorAll("button")].find((b) => b.textContent === "Share")!;
+const shareButton = () =>
+  [...host.querySelectorAll("button")].find((b) => b.textContent === "Share")!;
+
+it("copies the map's link and confirms it", async () => {
+  writeText.mockResolvedValue(undefined);
+  const share = shareButton();
   await act(async () => share.click());
   expect(props.onShare).toHaveBeenCalledOnce();
+  expect(writeText).toHaveBeenCalledWith(document.location.href);
   expect(share.textContent).toBe("Link copied");
+});
+
+it("doesn't confirm a link the browser refused to copy", async () => {
+  writeText.mockRejectedValue(new Error("denied"));
+  const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+  const share = shareButton();
+  await act(async () => share.click());
+  expect(share.textContent).toBe("Share");
+  expect(logged).toHaveBeenCalled();
 });
 
 it("lists About, help, the demo map, feedback and the version in the overflow menu", async () => {

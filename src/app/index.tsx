@@ -24,31 +24,12 @@ import { initializeOnboarding } from "../onboarding";
 
 import { setEditorText } from "../state/State";
 
-import { initializeHistoryMonkeypatch } from "./utilities/HistoryMonkeypatch";
 import { initializePanelResizer } from "./components/PanelResizer";
 import { initializeUserEvents } from "./UserEvents";
 import { keepMapOutOfSearch } from "./seo";
 
 import "@fontsource-variable/jetbrains-mono";
 import "./index.css";
-
-/**
- * Principles,
- * 1. One way state binding
- * mark each place in app with a state change
- * Make it update data structure
- * Make data structure attatch component to app on creation
- * make data structure rerender on change
- *
- *
- * Order of initialization:
- * 1. Graph
- * 2. State
- * 3. Editor
- * 4. App
- */
-
-initializeHistoryMonkeypatch();
 
 initializeUserEvents();
 

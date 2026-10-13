@@ -12,7 +12,6 @@ import {
 } from "@heroicons/react/24/outline";
 
 import { CollaborationBadge } from "./CollaborationBadge";
-import { copyTextToClipboard } from "../app/utilities/Clipboard";
 import { openHelp } from "../state/Ui";
 
 const ISSUES_URL = "https://github.com/ayahohner/wmaps/issues";
@@ -61,11 +60,13 @@ function Brand() {
 
 function ShareButton({ onShare }: Pick<TopBarProps, "onShare">) {
   const [copied, setCopied] = useState(false);
-  const share = () => {
-    onShare();
-    copyTextToClipboard(document.location.href);
+  const confirm = () => {
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  };
+  const share = () => {
+    onShare();
+    navigator.clipboard.writeText(document.location.href).then(confirm, console.error);
   };
   return (
     <button type="button" className="btn btn-primary" onClick={share} aria-live="polite">
