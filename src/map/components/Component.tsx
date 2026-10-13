@@ -24,6 +24,16 @@ const drawMarker = (g: Graphics, square: boolean, mode: InteractionMode) => {
   g.stroke({ ...BORDERS[mode], alpha: 1, alignment: 1 });
 };
 
+/** The name, on a patch of the canvas colour so lines don't run through it. */
+const label = (name: string, { x, y, rotation }: { x: number; y: number; rotation: number }) => {
+  const text = new BitmapText({ text: name, style: { fontFamily: "TitleFont", fontSize: 16 } });
+  text.position.set(x, y);
+  text.rotation = rotation;
+  const backing = Rectangle(x, y, text.width, text.height);
+  backing.rotation = rotation;
+  return [backing, text];
+};
+
 export const Component = (config: ComponentConfig) => {
   const layout = layoutComponent(config);
   const component = new Container() as ComponentT;
@@ -39,17 +49,7 @@ export const Component = (config: ComponentConfig) => {
     component.addChild(pipe);
   }
 
-  const text = new BitmapText({
-    text: config.name,
-    style: { fontFamily: "TitleFont", fontSize: 16 },
-  });
-  text.position.set(layout.label.x, layout.label.y);
-  text.rotation = layout.label.rotation;
-
-  // A patch of the canvas colour behind the label keeps lines from running through it.
-  const backing = Rectangle(text.x, text.y, text.width, text.height);
-  backing.rotation = layout.label.rotation;
-  component.addChild(backing, text);
+  component.addChild(...label(config.name, layout.label));
 
   const marker = new Graphics();
   let drawnMode: InteractionMode | undefined;
