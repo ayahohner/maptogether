@@ -231,8 +231,12 @@ export const dragTo = (point: PointLike, additive: boolean) => {
 };
 
 const dragTranslation = (start: PointLike, point: PointLike) => {
-  if (state.translateDrag.isTranslating) updateTranslationPoint(point);
-  else if (pastThreshold(start, point)) startTranslation(point);
+  if (!state.translateDrag.isTranslating) {
+    if (!pastThreshold(start, point)) return;
+    // From the press, so the components stay under the pointer.
+    startTranslation(start);
+  }
+  updateTranslationPoint(point);
 };
 
 const dragMarquee = (start: PointLike, point: PointLike, additive: boolean) => {

@@ -96,14 +96,16 @@ it("toggles a component when adding", () => {
   expect(state.translateDrag.translationStartPoint).toBeUndefined();
 });
 
-it("moves components once past the drag threshold, and returns them on release", () => {
+it("moves components from the press once past the drag threshold, and returns them on release", () => {
   pressComponent("A", { x: 0, y: 0 }, false);
   dragTo({ x: 1, y: 1 }, false);
   expect(state.translateDrag.isTranslating).toBe(false);
+  expect(updateComponentPositionOffset).not.toHaveBeenCalled();
   dragTo({ x: 3, y: 0 }, false);
   expect(state.translateDrag.isTranslating).toBe(true);
+  expect(updateComponentPositionOffset).toHaveBeenLastCalledWith("A", 3, 0);
   dragTo({ x: 5, y: 1 }, false);
-  expect(updateComponentPositionOffset).toHaveBeenCalledWith("A", 2, 1);
+  expect(updateComponentPositionOffset).toHaveBeenLastCalledWith("A", 2, 1);
   expect(releaseDrag()).toEqual([{ name: "A", x: 1, y: 2 }]);
   expect(state.translateDrag.translationStartPoint).toBeUndefined();
 });
