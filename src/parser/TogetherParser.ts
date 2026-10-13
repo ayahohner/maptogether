@@ -11,18 +11,16 @@ import {
   EOF,
 } from "chevrotain";
 
-import XRegExp from "xregexp";
-
-/** Named regex fragments, so token patterns can reuse each other. */
-const f: { [key: string]: RegExp } = {};
+/** Named regex sources, so token patterns can reuse each other. */
+const fragments = new Map<string, string>();
 
 function FRAGMENT(name: string, def: string | RegExp) {
-  f[name] = XRegExp.build(def as string, f);
+  fragments.set(name, new RegExp(def).source);
 }
 
 /** A fragment's source, to build into another pattern. */
 function C(name: string) {
-  return f[name].source;
+  return fragments.get(name)!;
 }
 
 const createComposableToken = ({ name, pattern, ...args }: ITokenConfig): TokenType => {
