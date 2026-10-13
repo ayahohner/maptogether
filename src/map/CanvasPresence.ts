@@ -2,18 +2,15 @@ import type { Awareness } from "y-protocols/awareness";
 import throttle from "lodash/throttle";
 import { readUser } from "../sync/presence";
 
-function validPointer(value: any): value is { x: number; y: number } {
-  return (
-    Number.isFinite(value?.x) &&
-    Number.isFinite(value?.y) &&
-    value.x >= 0 &&
-    value.x <= 100 &&
-    value.y >= 0 &&
-    value.y <= 100
-  );
-}
-
 type Point = { x: number; y: number };
+
+const percent = (n: unknown) => typeof n === "number" && n >= 0 && n <= 100;
+
+/** Whether another user's shared pointer is on the map, in percent. */
+function validPointer(value: unknown): value is Point {
+  const point = value as Partial<Record<keyof Point, unknown>> | null | undefined;
+  return percent(point?.x) && percent(point?.y);
+}
 
 /**
  * Ephemeral map coordinates, separate from editor selection and the saved doc.
@@ -34,7 +31,8 @@ export function initializeCanvasPresence(
   const render = () => {
     const visible = new Set<number>();
     for (const [id, value] of awareness.getStates()) {
-      if (id === awareness.clientID || !validPointer(value.mapPointer)) continue;
+      const mapPointer: unknown = value.mapPointer;
+      if (id === awareness.clientID || !validPointer(mapPointer)) continue;
       visible.add(id);
       let pointer = pointers.get(id);
       if (!pointer) {
@@ -43,11 +41,11 @@ export function initializeCanvasPresence(
         pointers.set(id, pointer);
       }
       const user = readUser(id, value, awareness.clientID);
-      pointer.style.left = `${value.mapPointer.x}%`;
-      pointer.style.top = `${100 - value.mapPointer.y}%`;
+      pointer.style.left = `${mapPointer.x}%`;
+      pointer.style.top = `${100 - mapPointer.y}%`;
       pointer.style.setProperty("--pointer-color", user.color);
-      pointer.classList.toggle("near-right", value.mapPointer.x > 70);
-      pointer.classList.toggle("near-bottom", value.mapPointer.y < 10);
+      pointer.classList.toggle("near-right", mapPointer.x > 70);
+      pointer.classList.toggle("near-bottom", mapPointer.y < 10);
       pointer.lastElementChild!.textContent = user.name;
     }
     for (const [id, pointer] of pointers) {

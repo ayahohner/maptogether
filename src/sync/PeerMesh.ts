@@ -59,7 +59,7 @@ export class PeerMesh {
 
   private async call(peerId: string) {
     const pc = this.create(peerId);
-    this.onChannel(peerId, pc.createDataChannel("yjs", { ordered: true }) as unknown as Channel);
+    this.onChannel(peerId, pc.createDataChannel("yjs", { ordered: true }) as Channel);
     await pc.setLocalDescription(await pc.createOffer());
     this.signal(peerId, { sdp: pc.localDescription!.toJSON?.() ?? pc.localDescription! });
   }
@@ -97,7 +97,7 @@ export class PeerMesh {
     this.pcs.get(peerId)?.close();
     const pc = new this.PC({ iceServers: this.opts.iceServers });
     pc.onicecandidate = (e) => this.sendCandidate(peerId, e.candidate);
-    pc.ondatachannel = (e) => this.onChannel(peerId, e.channel as unknown as Channel);
+    pc.ondatachannel = (e) => this.onChannel(peerId, e.channel as Channel);
     pc.onconnectionstatechange = () => this.watch(peerId, pc);
     this.pcs.set(peerId, pc);
     return pc;

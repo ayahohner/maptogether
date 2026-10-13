@@ -20,11 +20,13 @@ export const collaboration = proxy<{
   users: [],
 });
 
-export function readUser(id: number, value: any, localId: number): ConnectedUser {
+/** A user from their awareness state, which any peer can set to anything. */
+export function readUser(id: number, value: unknown, localId: number): ConnectedUser {
+  const { name, color } = (value as { user?: Record<string, unknown> } | null)?.user ?? {};
   return {
     id,
-    name: typeof value?.user?.name === "string" ? value.user.name.slice(0, 80) : "Anonymous",
-    color: /^#[0-9a-f]{6}$/i.test(value?.user?.color) ? value.user.color : "#666666",
+    name: typeof name === "string" ? name.slice(0, 80) : "Anonymous",
+    color: typeof color === "string" && /^#[0-9a-f]{6}$/i.test(color) ? color : "#666666",
     self: id === localId,
   };
 }
