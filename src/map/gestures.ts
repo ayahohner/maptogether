@@ -237,8 +237,18 @@ export function wheelPixels(e: Pick<WheelEvent, "deltaX" | "deltaY" | "deltaMode
  * Feeds a canvas's pointer, wheel and Safari trackpad-pinch events to
  * `gestures`. Returns a function that unbinds them.
  */
+/** Safari's trackpad pinch events, which carry the pinch's scale. */
+type GestureEvent = UIEvent & { scale: number; clientX: number; clientY: number };
+
+interface CanvasEvents extends HTMLElementEventMap {
+  gesturestart: GestureEvent;
+  gesturechange: GestureEvent;
+}
+
+type CanvasListeners = { [K in keyof CanvasEvents]?: (e: CanvasEvents[K]) => void };
+
 export function bindGestures(canvas: HTMLElement, gestures: Gestures) {
-  const local = (e: MouseEvent): Point => {
+  const local = (e: { clientX: number; clientY: number }): Point => {
     const rect = canvas.getBoundingClientRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   };
@@ -250,54 +260,44 @@ export function bindGestures(canvas: HTMLElement, gestures: Gestures) {
     touch: e.pointerType === "touch",
   });
   let gestureScale = 1;
-  const listeners: [string, (e: any) => void][] = [
-    [
-      "pointerdown",
-      (e: PointerEvent) => {
-        // Stops the browser's own touch handling and text selection. That also
-        // stops focus moving, so end typing in the editor or a name field here.
-        e.preventDefault();
-        (document.activeElement as HTMLElement | null)?.blur?.();
-        gestures.down(input(e));
-        canvas.setPointerCapture?.(e.pointerId);
-      },
-    ],
+  const listeners: CanvasListeners = {
+    pointerdown: (e) => {
+      // Stops the browser's own touch handling and text selection. That also
+      // stops focus moving, so end typing in the editor or a name field here.
+      e.preventDefault();
+      (document.activeElement as HTMLElement | null)?.blur?.();
+      gestures.down(input(e));
+      canvas.setPointerCapture?.(e.pointerId);
+    },
     // The middle button pans; don't let Windows browsers start autoscrolling.
-    ["mousedown", (e: MouseEvent) => e.button === 1 && e.preventDefault()],
-    ["pointermove", (e: PointerEvent) => gestures.move(input(e))],
-    ["pointerup", (e: PointerEvent) => gestures.up(input(e))],
-    ["pointercancel", (e: PointerEvent) => gestures.cancel(input(e))],
-    [
-      "wheel",
-      (e: WheelEvent) => {
-        e.preventDefault();
-        gestures.wheel({ point: local(e), zoom: e.ctrlKey || e.metaKey, ...wheelPixels(e) });
-      },
-    ],
+    mousedown: (e) => e.button === 1 && e.preventDefault(),
+    pointermove: (e) => gestures.move(input(e)),
+    pointerup: (e) => gestures.up(input(e)),
+    pointercancel: (e) => gestures.cancel(input(e)),
+    wheel: (e) => {
+      e.preventDefault();
+      gestures.wheel({ point: local(e), zoom: e.ctrlKey || e.metaKey, ...wheelPixels(e) });
+    },
     // Safari reports trackpad pinches as gesture events rather than wheels.
-    [
-      "gesturestart",
-      (e: Event) => {
-        e.preventDefault();
-        gestureScale = 1;
-      },
-    ],
-    [
-      "gesturechange",
-      (e: Event & { scale: number; clientX: number; clientY: number }) => {
-        e.preventDefault();
-        gestures.wheel({
-          point: local(e as unknown as MouseEvent),
-          dx: 0,
-          dy: -100 * Math.log(e.scale / gestureScale),
-          zoom: true,
-        });
-        gestureScale = e.scale;
-      },
-    ],
-  ];
-  for (const [type, fn] of listeners) canvas.addEventListener(type, fn, { passive: false });
+    gesturestart: (e) => {
+      e.preventDefault();
+      gestureScale = 1;
+    },
+    gesturechange: (e) => {
+      e.preventDefault();
+      gestures.wheel({
+        point: local(e),
+        dx: 0,
+        dy: -100 * Math.log(e.scale / gestureScale),
+        zoom: true,
+      });
+      gestureScale = e.scale;
+    },
+  };
+  // Each listener's event type is checked against its name above.
+  const entries = Object.entries(listeners) as [string, EventListener][];
+  for (const [type, fn] of entries) canvas.addEventListener(type, fn, { passive: false });
   return () => {
-    for (const [type, fn] of listeners) canvas.removeEventListener(type, fn);
+    for (const [type, fn] of entries) canvas.removeEventListener(type, fn);
   };
 }
