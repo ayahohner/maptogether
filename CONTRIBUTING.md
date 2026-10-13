@@ -58,7 +58,8 @@ See [relay/README.md](relay/README.md) for the protocol, limits, and deployment.
 | `VITE_RENDER_INDICATOR` | unset | `true` draws a render counter in the canvas corner |
 
 To try multiplayer without the deployed relay, run `yarn dev:local`: it starts
-a local relay on `:8787` and the app against it. Open the same map URL in two
+a local relay on `:8790` (apart from `yarn relay:dev`'s `:8787`) and the app
+against it. Open the same map URL in two
 browser windows. The local relay accepts any `localhost` port and keeps its
 maps in `.wrangler/`.
 

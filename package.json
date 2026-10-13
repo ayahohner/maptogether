@@ -62,7 +62,7 @@
     "serve": "vite preview",
     "test": "vitest",
     "relay:dev": "wrangler dev -c relay/wrangler.jsonc --var 'ALLOWED_ORIGINS:http://localhost:*'",
-    "dev:local": "yarn relay:dev & VITE_SYNC_RELAY_URL=http://localhost:8787 vite",
+    "dev:local": "yarn relay:dev --port 8790 & VITE_SYNC_RELAY_URL=http://localhost:8790 vite",
     "relay:deploy": "wrangler deploy -c relay/wrangler.jsonc",
     "quality": "node scripts/quality-gate.mjs",
     "version:check": "node scripts/version-check.mjs",
