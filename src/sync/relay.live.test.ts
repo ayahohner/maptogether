@@ -29,28 +29,42 @@ const join = async (mapId: string) => {
     WebSocket: OriginWebSocket as unknown as typeof WebSocket,
     RTCPeerConnection: RTCPeerConnection as unknown as typeof globalThis.RTCPeerConnection,
     fetch: (url) => fetch(url, { headers: { Origin: ORIGIN } }),
-    onStatus: (next) => { status = next; },
+    onStatus: (next) => {
+      status = next;
+    },
   });
-  return { doc, awareness, sync, text: doc.getText("t"), get status() { return status; } };
+  return {
+    doc,
+    awareness,
+    sync,
+    text: doc.getText("t"),
+    get status() {
+      return status;
+    },
+  };
 };
 
-it.skipIf(!RELAY)("syncs over WebRTC and saves to the Durable Object", async () => {
-  const mapId = `live-${Math.random()}`;
-  const a = await join(mapId);
-  const b = await join(mapId);
-  await until(() => a.sync.peers.peerCount === 1 && b.sync.peers.peerCount === 1, 20000);
-  b.sync.storage.destroy(); // prove b's copy comes from a, not the relay
-  const start = Date.now();
-  a.text.insert(0, "hello");
-  await until(() => b.text.toString() === "hello");
-  console.log(`peer edit after ${Date.now() - start} ms`);
+it.skipIf(!RELAY)(
+  "syncs over WebRTC and saves to the Durable Object",
+  async () => {
+    const mapId = `live-${Math.random()}`;
+    const a = await join(mapId);
+    const b = await join(mapId);
+    await until(() => a.sync.peers.peerCount === 1 && b.sync.peers.peerCount === 1, 20000);
+    b.sync.storage.destroy(); // prove b's copy comes from a, not the relay
+    const start = Date.now();
+    a.text.insert(0, "hello");
+    await until(() => b.text.toString() === "hello");
+    console.log(`peer edit after ${Date.now() - start} ms`);
 
-  await until(() => a.status === "saved", 10000);
-  a.sync.destroy();
-  b.sync.destroy();
-  await new Promise((r) => setTimeout(r, 3000)); // relay saves when the room empties
-  const c = await join(mapId);
-  await until(() => c.text.toString() === "hello", 10000);
-  await until(() => c.status === "saved", 10000);
-  c.sync.destroy();
-}, 60000);
+    await until(() => a.status === "saved", 10000);
+    a.sync.destroy();
+    b.sync.destroy();
+    await new Promise((r) => setTimeout(r, 3000)); // relay saves when the room empties
+    const c = await join(mapId);
+    await until(() => c.text.toString() === "hello", 10000);
+    await until(() => c.status === "saved", 10000);
+    c.sync.destroy();
+  },
+  60000,
+);

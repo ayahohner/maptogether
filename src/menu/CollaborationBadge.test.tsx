@@ -20,28 +20,20 @@ it("shows only names in the hover panel and provides accessible save status", as
   expect(indicator.textContent).toBe("2");
   expect(indicator.getAttribute("aria-label")).toBe("People");
   expect(indicator.title).toBe("Saved");
-  expect(host.querySelector(".sync-light")?.getAttribute("aria-label")).toBe(
-    "Saved",
-  );
+  expect(host.querySelector(".sync-light")?.getAttribute("aria-label")).toBe("Saved");
   await act(async () => indicator.focus());
   const panel = host.querySelector(".collaboration-popover")!;
   expect(panel.textContent).toBe("Quiet OtterCalm Finch");
   await act(async () =>
-    indicator.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
-    ),
+    indicator.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
   );
   expect(host.querySelector(".collaboration-popover")).toBeNull();
   await act(async () => indicator.click());
   expect(host.querySelector(".collaboration-popover")).toBeNull();
-  await act(async () =>
-    indicator.dispatchEvent(new MouseEvent("mouseover", { bubbles: true })),
-  );
+  await act(async () => indicator.dispatchEvent(new MouseEvent("mouseover", { bubbles: true })));
   expect(host.querySelector(".collaboration-popover")).not.toBeNull();
   await act(async () =>
-    document.body.dispatchEvent(
-      new PointerEvent("pointerdown", { bubbles: true }),
-    ),
+    document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })),
   );
   expect(host.querySelector(".collaboration-popover")).toBeNull();
   await act(async () => root.unmount());

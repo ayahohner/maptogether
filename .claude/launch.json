@@ -1,6 +1,11 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "dev", "runtimeExecutable": "yarn", "runtimeArgs": ["dev", "--port", "5179"], "port": 5179 }
+    {
+      "name": "dev",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["dev", "--port", "5179"],
+      "port": 5179
+    }
   ]
 }

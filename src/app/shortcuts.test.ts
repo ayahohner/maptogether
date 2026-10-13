@@ -16,7 +16,12 @@ const key = (key: string, target: Element = document.body, init: KeyboardEventIn
 
 it("switches tools with single keys", () => {
   bindToolShortcuts();
-  for (const [k, tool] of [["c", "component"], ["L", "link"], ["h", "hand"], ["v", "select"]]) {
+  for (const [k, tool] of [
+    ["c", "component"],
+    ["L", "link"],
+    ["h", "hand"],
+    ["v", "select"],
+  ]) {
     key(k);
     expect(tools.tool).toBe(tool);
   }

@@ -78,8 +78,7 @@ export const userColors = [
   { color: "#1be7ff", light: "#1be7ff33" },
 ];
 
-export const userColor =
-  userColors[Math.floor(Math.random() * userColors.length)];
+export const userColor = userColors[Math.floor(Math.random() * userColors.length)];
 
 const yDoc = new Y.Doc();
 const yText = yDoc.getText("maptogether");
@@ -91,11 +90,18 @@ export const undoManager = new Y.UndoManager(yText, { captureTimeout: 350 });
 export const awareness = new Awareness(yDoc);
 
 const startSync = (id: string) =>
-  connectSync(yDoc, awareness, id, { onStatus: (status) => { collaboration.status = status; } })
+  connectSync(yDoc, awareness, id, {
+    onStatus: (status) => {
+      collaboration.status = status;
+    },
+  })
     .then((sync) => {
       if (import.meta.env.VITE_DEBUG_ENABLED === "true") (window as any).__sync = sync;
     })
-    .catch((err) => { collaboration.status = "error"; console.error("[sync] failed to connect", err); });
+    .catch((err) => {
+      collaboration.status = "error";
+      console.error("[sync] failed to connect", err);
+    });
 
 /** Saves and shares the map; a new map starts once it's edited or shared. */
 if (!room.id) collaboration.status = "draft";
@@ -174,15 +180,11 @@ export const appendText = (text: string) => {
   });
 };
 
-export const replaceCoordinates = (
-  componentName: string,
-  x: number,
-  y: number
-) => {
+export const replaceCoordinates = (componentName: string, x: number, y: number) => {
   const searchCursor = new RegExpCursor(
     editorView.state.doc,
     matchComponentRegex(componentName),
-    {}
+    {},
   );
 
   let changes = [];
@@ -210,7 +212,7 @@ export const replaceCoordinates = (
 
   if (changes.length === 0) {
     throw new Error(
-      `Error: "${componentName}" not found in text document. State sync lost or regex error.`
+      `Error: "${componentName}" not found in text document. State sync lost or regex error.`,
     );
   }
 
@@ -226,7 +228,7 @@ export const renameComponent = (oldName: string, newName: string) => {
   const componentSearchCursor = new RegExpCursor(
     editorView.state.doc,
     matchComponentRegex(oldName),
-    {}
+    {},
   );
 
   for (const next of componentSearchCursor) {
@@ -247,11 +249,7 @@ export const renameComponent = (oldName: string, newName: string) => {
     });
   }
 
-  const edgeSearchCursor = new RegExpCursor(
-    editorView.state.doc,
-    matchEdgeRegex(oldName),
-    {}
-  );
+  const edgeSearchCursor = new RegExpCursor(editorView.state.doc, matchEdgeRegex(oldName), {});
 
   for (const next of edgeSearchCursor) {
     let from = next.from;
@@ -279,9 +277,7 @@ export const renameComponent = (oldName: string, newName: string) => {
       from += rhsRest + rhsDotAttributes + rhsWs;
       to = from + rhsComponentIdentifier;
     } else {
-      throw new Error(
-        "Error: this shouldn't be reached. Check if regex has changed."
-      );
+      throw new Error("Error: this shouldn't be reached. Check if regex has changed.");
     }
 
     changes.push({
@@ -293,7 +289,7 @@ export const renameComponent = (oldName: string, newName: string) => {
 
   if (changes.length === 0) {
     throw new Error(
-      `RenameComponentError: "${oldName}" not found in text document. State sync lost or regex error.`
+      `RenameComponentError: "${oldName}" not found in text document. State sync lost or regex error.`,
     );
   }
 

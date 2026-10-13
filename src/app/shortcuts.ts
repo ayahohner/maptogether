@@ -6,9 +6,11 @@ export const LINK_KEY = isApple ? "Meta" : "Control";
 
 /** Typing in the editor or a name field shouldn't switch tools. */
 export const isEditable = (target: EventTarget | null) =>
-  target instanceof HTMLElement && (target.isContentEditable || target.matches("input, textarea, select"));
+  target instanceof HTMLElement &&
+  (target.isContentEditable || target.matches("input, textarea, select"));
 
-const isShortcut = (e: KeyboardEvent) => !isEditable(e.target) && !e.metaKey && !e.ctrlKey && !e.altKey;
+const isShortcut = (e: KeyboardEvent) =>
+  !isEditable(e.target) && !e.metaKey && !e.ctrlKey && !e.altKey;
 
 const holdSpace = (e: KeyboardEvent) => {
   // Space still presses a focused button.

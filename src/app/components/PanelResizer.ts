@@ -81,7 +81,12 @@ const unchanged = (state: PanelState) => state;
 
 const keySteps: Record<string, number> = { ArrowLeft: KEY_STEP, ArrowRight: -KEY_STEP };
 
-function onKey(event: KeyboardEvent, state: PanelState, limits: PanelLimits, apply: (s: PanelState) => void) {
+function onKey(
+  event: KeyboardEvent,
+  state: PanelState,
+  limits: PanelLimits,
+  apply: (s: PanelState) => void,
+) {
   if (event.key === "Enter" || event.key === " ") {
     event.preventDefault();
     apply(toggle(state, limits));

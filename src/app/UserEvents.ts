@@ -39,7 +39,7 @@ export const initializeUserEvents = () => {
     (e: KeyboardEvent) => {
       if (!isEditable(e.target)) deleteSelection();
     },
-    "keydown"
+    "keydown",
   );
 
   window.addEventListener("blur", resetInteractiveStates);

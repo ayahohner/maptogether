@@ -8,10 +8,7 @@ const testRegex = (componentName: string, testString: string) => {
 };
 
 const genTruthyTest = (componentName: string, testString: string) => {
-  return it(`matches component "${componentName}" in "${testString.replace(
-    /\n|\r/g,
-    ""
-  )}"`, () => {
+  return it(`matches component "${componentName}" in "${testString.replace(/\n|\r/g, "")}"`, () => {
     expect(testRegex(componentName, testString)).toBeTruthy();
   });
 };
@@ -19,7 +16,7 @@ const genTruthyTest = (componentName: string, testString: string) => {
 const genFalsyTest = (componentName: string, testString: string) => {
   return it(`doesn't match component "${componentName}" in "${testString.replace(
     /\n|\r/g,
-    ""
+    "",
   )}"`, () => {
     expect(testRegex(componentName, testString)).toBeFalsy();
   });

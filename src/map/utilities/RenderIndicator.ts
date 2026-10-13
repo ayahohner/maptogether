@@ -10,9 +10,7 @@ export class RenderIndicator {
   counter = 0;
   text: BitmapText;
 
-  constructor(
-    readonly enabled = import.meta.env.VITE_RENDER_INDICATOR === "true"
-  ) {
+  constructor(readonly enabled = import.meta.env.VITE_RENDER_INDICATOR === "true") {
     this.drawBackground();
 
     // Note: the "TitleFont" bitmap font is installed by MapSingleton during

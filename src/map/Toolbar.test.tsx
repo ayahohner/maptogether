@@ -12,7 +12,13 @@ import { MAX_SCALE, resetView, viewport } from "./viewport";
 
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
-const props = { onUndo: vi.fn(), onRedo: vi.fn(), onDelete: vi.fn(), onZoom: vi.fn(), onResetZoom: vi.fn() };
+const props = {
+  onUndo: vi.fn(),
+  onRedo: vi.fn(),
+  onDelete: vi.fn(),
+  onZoom: vi.fn(),
+  onResetZoom: vi.fn(),
+};
 
 beforeEach(async () => {
   (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -33,7 +39,8 @@ afterEach(async () => {
 });
 
 const button = (label: string) => host.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`);
-const pressed = () => [...host.querySelectorAll('[aria-pressed="true"]')].map((b) => b.getAttribute("aria-label"));
+const pressed = () =>
+  [...host.querySelectorAll('[aria-pressed="true"]')].map((b) => b.getAttribute("aria-label"));
 const click = (el: HTMLElement) => act(async () => el.click());
 const update = (fn: () => void) => act(async () => fn());
 

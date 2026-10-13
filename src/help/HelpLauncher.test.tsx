@@ -24,7 +24,9 @@ afterEach(async () => {
 const fab = () => host.querySelector<HTMLButtonElement>(".help-fab")!;
 const panel = () => document.getElementById("help-panel");
 const button = (text: string) =>
-  [...host.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent?.includes(text))!;
+  [...host.querySelectorAll<HTMLButtonElement>("button")].find((b) =>
+    b.textContent?.includes(text),
+  )!;
 
 it("opens and closes from the floating button", async () => {
   expect(panel()).toBeNull();
@@ -61,7 +63,9 @@ it("closes on Escape and on a press outside", async () => {
   expect(ui.help.open).toBe(false);
   await act(async () => openHelp());
   await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "a" })));
-  await act(async () => document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
+  await act(async () =>
+    document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })),
+  );
   expect(ui.help.open).toBe(false);
 });
 

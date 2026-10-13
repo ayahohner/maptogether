@@ -13,7 +13,10 @@ function open(relay: ReturnType<typeof createFakeRelay>, opts = {}) {
     onText: (m) => seen.texts.push(m),
     onBinary: () => seen.binaries++,
   };
-  const socket = new RelaySocket("ws://relay/sync/x", handlers, { WebSocket: relay.WebSocket, ...opts });
+  const socket = new RelaySocket("ws://relay/sync/x", handlers, {
+    WebSocket: relay.WebSocket,
+    ...opts,
+  });
   sockets.push(socket);
   return { socket, seen };
 }

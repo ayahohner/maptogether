@@ -50,10 +50,32 @@ const TYPE_KEYS = new Set([
   "superTypeArguments",
   "implements",
 ]);
-const SKIP_KEYS = new Set(["loc", "start", "end", "extra", "range", "leadingComments", "trailingComments", "innerComments"]);
+const SKIP_KEYS = new Set([
+  "loc",
+  "start",
+  "end",
+  "extra",
+  "range",
+  "leadingComments",
+  "trailingComments",
+  "innerComments",
+]);
 const OPERAND_TOKENS = new Set([
-  "name", "num", "string", "regexp", "bigint", "template", "jsxName", "jsxText",
-  "privateName", "#name", "true", "false", "null", "this", "super",
+  "name",
+  "num",
+  "string",
+  "regexp",
+  "bigint",
+  "template",
+  "jsxName",
+  "jsxText",
+  "privateName",
+  "#name",
+  "true",
+  "false",
+  "null",
+  "this",
+  "super",
 ]);
 
 export function analyzeSource(code, filename) {
@@ -149,7 +171,9 @@ function attributeTokens(tokens, ctx) {
 
 function isExcluded(token, excluded) {
   const label = tokenLabel(token);
-  return label === "eof" || excluded.some(([start, end]) => start <= token.start && token.end <= end);
+  return (
+    label === "eof" || excluded.some(([start, end]) => start <= token.start && token.end <= end)
+  );
 }
 
 function tokenLabel(token) {

@@ -43,9 +43,15 @@ export function TopBar({ onAbout, onDemo, onShare }: TopBarProps) {
 
 function Brand() {
   return (
-    <a href="/" className="flex items-center gap-2.5 rounded-lg pr-1 select-none" title="MapTogether: new map">
+    <a
+      href="/"
+      className="flex items-center gap-2.5 rounded-lg pr-1 select-none"
+      title="MapTogether: new map"
+    >
       <img src="/favicon.svg" alt="" width={28} height={28} className="size-7" />
-      <span className="text-[15px] font-heading tracking-tight text-ink max-[400px]:hidden">MapTogether</span>
+      <span className="text-[15px] font-heading tracking-tight text-ink max-[400px]:hidden">
+        MapTogether
+      </span>
       <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-ink-muted max-sm:hidden">
         Alpha
       </span>
@@ -81,7 +87,11 @@ function OverflowMenu({ onAbout, onDemo }: Omit<TopBarProps, "onShare">) {
         className="panel z-50 w-60 p-1.5 outline-none transition duration-150 ease-out data-closed:scale-95 data-closed:opacity-0"
       >
         <MenuAction icon={InformationCircleIcon} label="About MapTogether" onClick={onAbout} />
-        <MenuAction icon={QuestionMarkCircleIcon} label="Help and shortcuts" onClick={() => openHelp()} />
+        <MenuAction
+          icon={QuestionMarkCircleIcon}
+          label="Help and shortcuts"
+          onClick={() => openHelp()}
+        />
         <MenuAction icon={MapIcon} label="Open the demo map" onClick={onDemo} />
         <MenuSeparator className="my-1.5 h-px bg-line" />
         <MenuItem>

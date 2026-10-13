@@ -13,6 +13,9 @@ describe("toDiagnostics", () => {
   });
 
   it("puts problems past the end on the last line", () => {
-    expect(toDiagnostics(doc, [{ line: Infinity, message: "end" }])[0]).toMatchObject({ from: 27, to: 41 });
+    expect(toDiagnostics(doc, [{ line: Infinity, message: "end" }])[0]).toMatchObject({
+      from: 27,
+      to: 41,
+    });
   });
 });

@@ -43,8 +43,12 @@ describe("metrics", () => {
   });
 
   it("names methods, properties and anonymous functions", () => {
-    const fns = byName("class A { m() {} p = () => {} }\nconst o = { k() {}, 'q': function () {} };\nx.y = () => 1;\n[1].map(() => 2);");
-    expect(Object.keys(fns)).toEqual(expect.arrayContaining(["m", "p", "k", "q", "y", "<anonymous:4>"]));
+    const fns = byName(
+      "class A { m() {} p = () => {} }\nconst o = { k() {}, 'q': function () {} };\nx.y = () => 1;\n[1].map(() => 2);",
+    );
+    expect(Object.keys(fns)).toEqual(
+      expect.arrayContaining(["m", "p", "k", "q", "y", "<anonymous:4>"]),
+    );
     expect(functionName({ loc: { start: { line: 9 } } }, null)).toBe("<anonymous:9>");
   });
 
@@ -103,7 +107,8 @@ describe("diff", () => {
 });
 
 describe("gate", () => {
-  const code = "export function bad(a, b, c) {\n  if (a) return 1;\n  if (b) return 2;\n  return c ? 3 : 4;\n}\nexport const ok = () => 1;\n";
+  const code =
+    "export function bad(a, b, c) {\n  if (a) return 1;\n  if (b) return 2;\n  return c ? 3 : 4;\n}\nexport const ok = () => 1;\n";
 
   it("only gates code files", () => {
     expect(isGatedFile("src/a.ts")).toBe(true);
@@ -124,7 +129,13 @@ describe("gate", () => {
 
   it("flags low maintainability", () => {
     const strict = { maxCrap: 100, minMi: 170 };
-    const result = checkFile({ file: "x.js", code, coverage: undefined, changed: null, limits: strict });
+    const result = checkFile({
+      file: "x.js",
+      code,
+      coverage: undefined,
+      changed: null,
+      limits: strict,
+    });
     expect(result.violations.some((v) => v.includes("bad (line 1) MI"))).toBe(true);
     expect(result.violations.at(-1)).toMatch(/file MI .* ≤ 170/);
   });
@@ -137,11 +148,22 @@ describe("cli", () => {
     const io = {
       logs,
       log: (line) => void logs.push(line),
-      git: (args) => (args[0] === "merge-base" ? "base\n" : args[0] === "ls-files" ? "new.js\n" : "+++ b/f.js\n@@ -0,0 +1 @@\n+++ b/notes.md\n@@ -0,0 +1 @@\n"),
+      git: (args) =>
+        args[0] === "merge-base"
+          ? "base\n"
+          : args[0] === "ls-files"
+            ? "new.js\n"
+            : "+++ b/f.js\n@@ -0,0 +1 @@\n+++ b/notes.md\n@@ -0,0 +1 @@\n",
       exists: () => true,
       readFile: () => code,
       resolve: (file) => `/repo/${file}`,
-      runCoverage: (files) => Object.fromEntries(files.map((f) => [`/repo/${f}`, { statementMap: { 0: { start: { line: 1, column: 24 } } }, s: { 0: 1 } }])),
+      runCoverage: (files) =>
+        Object.fromEntries(
+          files.map((f) => [
+            `/repo/${f}`,
+            { statementMap: { 0: { start: { line: 1, column: 24 } } }, s: { 0: 1 } },
+          ]),
+        ),
       ...overrides,
     };
     return io;
@@ -158,8 +180,12 @@ describe("cli", () => {
   it("diffs committed changes against a base and fails on violations", () => {
     const calls = [];
     const io = fakeIo({ git: (args) => (calls.push(args), "+++ b/f.js\n@@ -0,0 +1 @@\n") });
-    expect(run(["--base", "main", "--head", "HEAD", "--all", "--verbose", "--max-crap", "1"], io)).toBe(1);
-    expect(calls).toEqual([["diff", "--unified=0", "--diff-filter=AMR", "--no-color", "main", "HEAD"]]);
+    expect(
+      run(["--base", "main", "--head", "HEAD", "--all", "--verbose", "--max-crap", "1"], io),
+    ).toBe(1);
+    expect(calls).toEqual([
+      ["diff", "--unified=0", "--diff-filter=AMR", "--no-color", "main", "HEAD"],
+    ]);
     expect(io.logs.at(-1)).toContain("failed");
   });
 
@@ -174,7 +200,11 @@ describe("cli", () => {
   });
 
   it("formats a report", () => {
-    const text = formatFile({ file: "a.js", mi: 100, functions: [{ name: "f", cc: 2, coverage: 0.5, crap: 2.5, mi: 120 }] });
+    const text = formatFile({
+      file: "a.js",
+      mi: 100,
+      functions: [{ name: "f", cc: 2, coverage: 0.5, crap: 2.5, mi: 120 }],
+    });
     expect(text).toContain("a.js  (file MI 100.0)");
     expect(text).toMatch(/f +CC +2 +cov +50% +CRAP +2.5 +MI 120.0/);
     const fns = [
@@ -183,7 +213,9 @@ describe("cli", () => {
       { name: "dense", cc: 1, coverage: 1, crap: 1, mi: 90 },
     ];
     expect(formatWorst({ file: "a.js", mi: 100, functions: fns })).toContain("risky");
-    expect(formatWorst({ file: "a.js", mi: 100, functions: fns.filter((f) => f.crap === 1) })).toContain("dense");
+    expect(
+      formatWorst({ file: "a.js", mi: 100, functions: fns.filter((f) => f.crap === 1) }),
+    ).toContain("dense");
     expect(formatWorst({ file: "a.js", mi: 100, functions: [] })).toBe("a.js  (file MI 100.0)");
   });
 });

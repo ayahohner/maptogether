@@ -24,7 +24,12 @@ it("fills a `/?demo` map with the demo and treats it as shared", () => {
 
 it("returns an action that loads the demo into a new, empty map", () => {
   const about = dialog();
-  const openDemo = initializeOnboarding({ id: "a", isNew: true, wantsDemo: false }, map, about, storage());
+  const openDemo = initializeOnboarding(
+    { id: "a", isNew: true, wantsDemo: false },
+    map,
+    about,
+    storage(),
+  );
   expect(about.dataset.map).toBe("new");
   expect(map.replace).not.toHaveBeenCalled();
   openDemo();

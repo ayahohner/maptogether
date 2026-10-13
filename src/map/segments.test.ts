@@ -44,7 +44,11 @@ describe("fractionInside", () => {
   it("measures the part a rectangle cuts out", () => {
     expect(fractionInside(a, b, rectBetween({ x: 40, y: -10 }, { x: 70, y: 10 }))).toBeCloseTo(0.3);
     expect(fractionInside(b, a, rectBetween({ x: 40, y: -10 }, { x: 70, y: 10 }))).toBeCloseTo(0.3);
-    const diagonal = fractionInside(a, { x: 100, y: 100 }, rectBetween({ x: 0, y: 0 }, { x: 60, y: 200 }));
+    const diagonal = fractionInside(
+      a,
+      { x: 100, y: 100 },
+      rectBetween({ x: 0, y: 0 }, { x: 60, y: 200 }),
+    );
     expect(diagonal).toBeCloseTo(0.6);
   });
 });

@@ -12,7 +12,9 @@ it("counts app and relay code as shipped, but not tests or tooling", () => {
   expect(shipsCode(["src/app/room.ts"])).toBe(true);
   expect(shipsCode(["index.html"])).toBe(true);
   expect(shipsCode(["relay/src/index.ts"])).toBe(true);
-  expect(shipsCode(["src/app/room.test.ts", "README.md", "scripts/x.mjs", "relay/README.md"])).toBe(false);
+  expect(shipsCode(["src/app/room.test.ts", "README.md", "scripts/x.mjs", "relay/README.md"])).toBe(
+    false,
+  );
 });
 
 it("needs a higher version only when shipped files change", () => {

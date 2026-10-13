@@ -7,11 +7,7 @@ import { it, expect, describe, vi } from "vitest";
 vi.mock("./Graph", () => ({}));
 vi.mock("../editor/Editor", () => ({}));
 
-import {
-  state,
-  setInitialLinkTarget,
-  startPotentialSelect,
-} from "./State";
+import { state, setInitialLinkTarget, startPotentialSelect } from "./State";
 
 /**
  * Regression test for the Command-link freeze (2026-09-26):

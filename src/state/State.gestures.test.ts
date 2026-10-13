@@ -7,9 +7,18 @@ const graph = vi.hoisted(() => ({
   areNeighbors: vi.fn(() => false),
   getNodeAttribute: vi.fn(() => ({ x: 1, y: 2 })),
   // Calls back like graphology: (edge, attributes, source, target, sourceAttributes, targetAttributes).
-  mapEdges: vi.fn((fn: (...args: any[]) => unknown) => links.map(([key, start, stop]) =>
-    fn(key, { nodeKey: key }, "", "", { component: { position: start } }, { component: { position: stop } }),
-  )),
+  mapEdges: vi.fn((fn: (...args: any[]) => unknown) =>
+    links.map(([key, start, stop]) =>
+      fn(
+        key,
+        { nodeKey: key },
+        "",
+        "",
+        { component: { position: start } },
+        { component: { position: stop } },
+      ),
+    ),
+  ),
 }));
 /** Links on the map: key, start and end. */
 let links: [string, { x: number; y: number }, { x: number; y: number }][] = [];

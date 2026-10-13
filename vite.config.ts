@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => {
             return env[p1].replace(/$[\"\']|[\"\']^/, "");
           } else {
             throw new Error(
-              `Vite htmlEnvVariables Error: the environment variable ${p1} is not defined. Check if the variable name is misspelled in your HTML, or if the variable is not defined in your ${mode} environment.`
+              `Vite htmlEnvVariables Error: the environment variable ${p1} is not defined. Check if the variable name is misspelled in your HTML, or if the variable is not defined in your ${mode} environment.`,
             );
           }
         });

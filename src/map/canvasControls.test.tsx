@@ -38,7 +38,9 @@ it("adds the toolbar, wired to the editor and the view", async () => {
   const controls = element.querySelector(".map-controls")!;
   await act(async () => controls.querySelector<HTMLButtonElement>('[aria-label="Undo"]')!.click());
   expect(editor.undo).toHaveBeenCalled();
-  await act(async () => controls.querySelector<HTMLButtonElement>('[aria-label="Zoom in"]')!.click());
+  await act(async () =>
+    controls.querySelector<HTMLButtonElement>('[aria-label="Zoom in"]')!.click(),
+  );
   expect(viewport).toMatchObject({ scale: 1.25, x: -50, y: -25 });
   await act(async () => controls.querySelector<HTMLButtonElement>(".map-zoom-level")!.click());
   expect(viewport.scale).toBe(1);
@@ -46,9 +48,15 @@ it("adds the toolbar, wired to the editor and the view", async () => {
 
 it("turns canvas presses into gestures", () => {
   canvas.getBoundingClientRect = () => ({ left: 0, top: 0 }) as DOMRect;
-  const down = new PointerEvent("pointerdown", { pointerId: 1, pointerType: "touch", cancelable: true });
+  const down = new PointerEvent("pointerdown", {
+    pointerId: 1,
+    pointerType: "touch",
+    cancelable: true,
+  });
   canvas.dispatchEvent(down);
   expect(down.defaultPrevented).toBe(true);
-  canvas.dispatchEvent(new PointerEvent("pointermove", { pointerId: 1, pointerType: "touch", clientX: 40 }));
+  canvas.dispatchEvent(
+    new PointerEvent("pointermove", { pointerId: 1, pointerType: "touch", clientX: 40 }),
+  );
   expect(viewport.x).toBe(40);
 });

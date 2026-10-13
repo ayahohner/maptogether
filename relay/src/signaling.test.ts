@@ -3,7 +3,11 @@ import { Signaling, parseSignal, type SignalPeer } from "./signaling";
 
 const peer = (id: string) => {
   const inbox: any[] = [];
-  return { id, inbox, sendText: (t: string) => void inbox.push(JSON.parse(t)) } satisfies SignalPeer & { inbox: any[] };
+  return {
+    id,
+    inbox,
+    sendText: (t: string) => void inbox.push(JSON.parse(t)),
+  } satisfies SignalPeer & { inbox: any[] };
 };
 
 describe("Signaling", () => {

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { dragTo, fit, initialPanel, isCollapsed, release, toggle, type PanelLimits } from "./editorPanel";
+import {
+  dragTo,
+  fit,
+  initialPanel,
+  isCollapsed,
+  release,
+  toggle,
+  type PanelLimits,
+} from "./editorPanel";
 
 const desktop: PanelLimits = { defaultWidth: 400, maxWidth: 1000, snapWidth: 48, mobile: false };
 const phone: PanelLimits = { defaultWidth: 380, maxWidth: 360, snapWidth: 48, mobile: true };

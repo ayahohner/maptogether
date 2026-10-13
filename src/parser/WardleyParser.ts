@@ -268,7 +268,7 @@ export function parseToCST(text: string) {
     throw new Error(
       `Error: ${err.name} at line ${err.token.startLine} col ${
         err.token.startColumn
-      }\n${err.stack!}`
+      }\n${err.stack!}`,
     );
   }
 

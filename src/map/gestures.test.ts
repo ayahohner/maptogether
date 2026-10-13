@@ -277,7 +277,13 @@ describe("bindGestures", () => {
   });
 
   const pointer = (type: string, init: PointerEventInit = {}) => {
-    const event = new PointerEvent(type, { clientX: 15, clientY: 30, pointerId: 3, cancelable: true, ...init });
+    const event = new PointerEvent(type, {
+      clientX: 15,
+      clientY: 30,
+      pointerId: 3,
+      cancelable: true,
+      ...init,
+    });
     canvas.dispatchEvent(event);
     return event;
   };
@@ -286,7 +292,13 @@ describe("bindGestures", () => {
     const unbind = bindGestures(canvas, target as unknown as Gestures);
     const down = pointer("pointerdown", { pointerType: "touch", shiftKey: true });
     expect(down.defaultPrevented).toBe(true);
-    expect(target.down).toHaveBeenCalledWith({ id: 3, point: { x: 5, y: 10 }, button: 0, shift: true, touch: true });
+    expect(target.down).toHaveBeenCalledWith({
+      id: 3,
+      point: { x: 5, y: 10 },
+      button: 0,
+      shift: true,
+      touch: true,
+    });
     pointer("pointermove");
     pointer("pointerup");
     pointer("pointercancel");
@@ -321,7 +333,11 @@ describe("bindGestures", () => {
     bindGestures(canvas, target as unknown as Gestures);
     const wheel = new WheelEvent("wheel", { deltaY: 4, ctrlKey: true, cancelable: true });
     // happy-dom's WheelEvent ignores the MouseEvent fields.
-    Object.defineProperties(wheel, { clientX: { value: 15 }, clientY: { value: 30 }, ctrlKey: { value: true } });
+    Object.defineProperties(wheel, {
+      clientX: { value: 15 },
+      clientY: { value: 30 },
+      ctrlKey: { value: true },
+    });
     canvas.dispatchEvent(wheel);
     expect(wheel.defaultPrevented).toBe(true);
     expect(target.wheel).toHaveBeenCalledWith({ point: { x: 5, y: 10 }, zoom: true, dx: 0, dy: 4 });
@@ -330,7 +346,9 @@ describe("bindGestures", () => {
   it("feeds Safari trackpad pinches as zooms", () => {
     bindGestures(canvas, target as unknown as Gestures);
     const gesture = (type: string, scale: number) =>
-      canvas.dispatchEvent(Object.assign(new Event(type, { cancelable: true }), { scale, clientX: 15, clientY: 30 }));
+      canvas.dispatchEvent(
+        Object.assign(new Event(type, { cancelable: true }), { scale, clientX: 15, clientY: 30 }),
+      );
     gesture("gesturestart", 1);
     gesture("gesturechange", 2);
     const [{ point, dy, zoom }] = target.wheel.mock.calls[0];

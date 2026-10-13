@@ -1,4 +1,8 @@
-import { matchComponentRegex, matchEdgeBetweenRegex, matchEdgeRegex } from "../parser/TogetherParser";
+import {
+  matchComponentRegex,
+  matchEdgeBetweenRegex,
+  matchEdgeRegex,
+} from "../parser/TogetherParser";
 
 export interface Deletion {
   /** Component names: each goes with its links (and a pipeline with its children). */

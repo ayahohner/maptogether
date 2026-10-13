@@ -36,7 +36,8 @@ export const panView = (dx: number, dy: number) => {
   viewport.y += dy;
 };
 
-export const zoomView = (at: Point, factor: number) => Object.assign(viewport, zoomAt(viewport, at, factor));
+export const zoomView = (at: Point, factor: number) =>
+  Object.assign(viewport, zoomAt(viewport, at, factor));
 
 /** Zooms around the middle of `el` (the zoom buttons). */
 export const zoomCentered = (el: HTMLElement, factor: number) =>

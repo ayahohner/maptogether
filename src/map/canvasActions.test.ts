@@ -11,7 +11,9 @@ const store = vi.hoisted(() => ({
   pressEdge: vi.fn(),
   releaseDrag: vi.fn(),
   // One link, from (0, 100) to (200, 100) in world coordinates.
-  edgeSegments: vi.fn(() => [{ key: "Kettle->Power", start: { x: 0, y: 100 }, stop: { x: 200, y: 100 } }]),
+  edgeSegments: vi.fn(() => [
+    { key: "Kettle->Power", start: { x: 0, y: 100 }, stop: { x: 200, y: 100 } },
+  ]),
   replaceSelection: vi.fn(),
 }));
 vi.mock("../editor/Editor", () => editor);
@@ -31,7 +33,9 @@ beforeEach(() => {
   document.body.innerHTML = `<div id="map"></div>`;
   map = {
     element: document.getElementById("map")!,
-    components: () => [{ nodeKey: "Kettle", getBounds: () => ({ x: 0, y: 0, width: 10, height: 10 }) }],
+    components: () => [
+      { nodeKey: "Kettle", getBounds: () => ({ x: 0, y: 0, width: 10, height: 10 }) },
+    ],
     size: () => ({ width: 400, height: 200 }),
   };
 });

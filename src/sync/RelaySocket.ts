@@ -33,7 +33,7 @@ export class RelaySocket {
   constructor(
     readonly url: string,
     private readonly handlers: RelayHandlers,
-    opts: RelaySocketOptions = {}
+    opts: RelaySocketOptions = {},
   ) {
     // `??`, not a spread: callers pass `{ WebSocket: undefined }` to mean the default.
     this.opts = {

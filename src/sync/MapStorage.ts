@@ -16,7 +16,7 @@ export class MapStorage {
 
   constructor(
     readonly doc: Y.Doc,
-    private readonly send: (data: Uint8Array) => void
+    private readonly send: (data: Uint8Array) => void,
   ) {
     doc.on("update", this.onUpdate);
   }

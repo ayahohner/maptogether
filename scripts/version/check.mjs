@@ -25,7 +25,8 @@ export function compareVersions(a, b) {
 /** The verdict for a push: `{ ok, message }`. */
 export function checkVersion({ base, head, files }) {
   if (!shipsCode(files)) return { ok: true, message: "version check: nothing shipped changed" };
-  if (compareVersions(head, base) > 0) return { ok: true, message: `version check: ${base} → ${head}` };
+  if (compareVersions(head, base) > 0)
+    return { ok: true, message: `version check: ${base} → ${head}` };
   return {
     ok: false,
     message: `✗ version check: shipped files changed but package.json is still ${head} (was ${base}).\n\n${USAGE}`,

@@ -30,7 +30,7 @@ export class PeerMesh {
   constructor(
     private readonly signal: (to: string, data: SignalData) => void,
     private readonly onChannel: (peerId: string, channel: Channel) => void,
-    private readonly opts: PeerMeshOptions
+    private readonly opts: PeerMeshOptions,
   ) {
     this.PC = opts.RTCPeerConnection ?? globalThis.RTCPeerConnection;
   }

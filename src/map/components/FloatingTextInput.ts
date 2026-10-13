@@ -12,7 +12,7 @@ export const FloatingTextInput = (
   x: number,
   y: number,
   onSubmit: OnSubmitHandler,
-  initialText = ""
+  initialText = "",
 ): HTMLInputElement => {
   const container = document.createElement("div");
   container.className = "componentInputContainer";

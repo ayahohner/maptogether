@@ -34,11 +34,7 @@ export type GraphAttributes = {
   name?: string;
 };
 
-export type WardleyGraph = Graph<
-  NodeAttributes,
-  EdgeAttributes,
-  GraphAttributes
->;
+export type WardleyGraph = Graph<NodeAttributes, EdgeAttributes, GraphAttributes>;
 
 export const graph: WardleyGraph = new Graph({ type: "undirected" });
 
@@ -83,11 +79,7 @@ export const addComponent = (config: IAddComponentConfig) => {
   MapSingleton.dirty = true; // ->Renderer
 };
 
-export const updateComponentPosition = (
-  nodeKey: string,
-  x: number,
-  y: number
-) => {
+export const updateComponentPosition = (nodeKey: string, x: number, y: number) => {
   const node = graph.getNodeAttributes(nodeKey);
   if (node) {
     node.component.position.x = x; // ->Renderer
@@ -99,11 +91,7 @@ export const updateComponentPosition = (
   }
 };
 
-export const updateComponentPositionOffset = (
-  nodeKey: string,
-  x: number,
-  y: number
-) => {
+export const updateComponentPositionOffset = (nodeKey: string, x: number, y: number) => {
   const node = graph.getNodeAttributes(nodeKey);
   if (node) {
     node.component.position.x += x; // ->Renderer
@@ -123,14 +111,14 @@ export const addEdge = (componentAKey: string, componentBKey: string) => {
     componentA = graph.getNodeAttributes(componentAKey);
   } catch (error) {
     console.error(
-      `Node ${componentAKey} not found. Check to make sure it's declared in the graph.\n${error}`
+      `Node ${componentAKey} not found. Check to make sure it's declared in the graph.\n${error}`,
     );
   }
   try {
     componentB = graph.getNodeAttributes(componentBKey);
   } catch (error) {
     console.error(
-      `Node ${componentBKey} not found. Check to make sure it's declared in the graph.\n${error}`
+      `Node ${componentBKey} not found. Check to make sure it's declared in the graph.\n${error}`,
     );
   }
 
@@ -149,13 +137,7 @@ export const addEdge = (componentAKey: string, componentBKey: string) => {
     const componentBx = componentB.component.x;
     const componentBy = componentB.component.y;
     const nodeKey = `${componentA.nodeKey}->${componentB.nodeKey}`;
-    const component = Line(
-      componentAx,
-      componentAy,
-      componentBx,
-      componentBy,
-      nodeKey
-    ); // ->Renderer
+    const component = Line(componentAx, componentAy, componentBx, componentBy, nodeKey); // ->Renderer
 
     MapSingleton.graphContainer.addChild(component); // ->Renderer
     MapSingleton.dirty = true; // ->Renderer
@@ -180,7 +162,7 @@ const updateEdgePosition = (
   target: string,
   sourceAttributes: NodeAttributes,
   targetAttributes: NodeAttributes,
-  undirected: boolean
+  undirected: boolean,
 ) => {
   attributes.coordinates.start.x = sourceAttributes.component.x;
   attributes.coordinates.start.y = sourceAttributes.component.y;
@@ -191,7 +173,7 @@ const updateEdgePosition = (
     attributes.coordinates.start.x,
     attributes.coordinates.start.y,
     attributes.coordinates.stop.x,
-    attributes.coordinates.stop.y
+    attributes.coordinates.stop.y,
   ); // ->Renderer
   MapSingleton.dirty = true; // ->Renderer
 };
@@ -297,7 +279,7 @@ export class TogetherVisitorToGraph extends BaseTogetherVisitor {
     // wardleyscript has coordinates backwards
     const rendererCoords = MapSingleton.wardleyToRendererCoords(
       coordinates[1],
-      parentCoordinates ? parentCoordinates[0] : coordinates[0] // if we're a child of a pipeline we want to use parent's y
+      parentCoordinates ? parentCoordinates[0] : coordinates[0], // if we're a child of a pipeline we want to use parent's y
     ); // <-Renderer
 
     addComponent({

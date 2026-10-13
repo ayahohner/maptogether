@@ -54,9 +54,7 @@ export function CollaborationBadge() {
 }
 
 function SyncLight({ status }: { status: CollaborationStatus }) {
-  return (
-    <span className={`sync-light sync-${status}`} role="img" aria-label={labels[status]} />
-  );
+  return <span className={`sync-light sync-${status}`} role="img" aria-label={labels[status]} />;
 }
 
 function PeopleList({
@@ -71,7 +69,11 @@ function PeopleList({
       <ul>
         {users.map((user) => (
           <li key={user.id}>
-            <span className="presence-triangle" style={{ backgroundColor: user.color }} aria-hidden="true" />
+            <span
+              className="presence-triangle"
+              style={{ backgroundColor: user.color }}
+              aria-hidden="true"
+            />
             <span>{user.name}</span>
           </li>
         ))}

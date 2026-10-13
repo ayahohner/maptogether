@@ -52,21 +52,19 @@ describe("parseInput with component declarations", () => {
   });
 
   it("with coordinates", () => {
-    expect(parseToAST("component _apples 1h92+   \t [-1,2.3e1]")).toStrictEqual(
-      [
-        {
-          componentName: "_apples 1h92+",
-          coordinates: [-1, 2.3e1],
-          type: "componentDeclaration",
-        },
-      ]
-    );
+    expect(parseToAST("component _apples 1h92+   \t [-1,2.3e1]")).toStrictEqual([
+      {
+        componentName: "_apples 1h92+",
+        coordinates: [-1, 2.3e1],
+        type: "componentDeclaration",
+      },
+    ]);
   });
 
   it("fails with coordinates that aren't numbers", () => {
-    expect(() =>
-      parseToAST('component _apples 1h92+   \t [aoo,"2"]')
-    ).toThrowError("NumberLiteral");
+    expect(() => parseToAST('component _apples 1h92+   \t [aoo,"2"]')).toThrowError(
+      "NumberLiteral",
+    );
   });
 });
 

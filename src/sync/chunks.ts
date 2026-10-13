@@ -20,7 +20,7 @@ export function split(message: Uint8Array, id: number, size = CHUNK_BYTES): Uint
       encoding.writeVarUint(e, index);
       encoding.writeVarUint(e, count);
       encoding.writeUint8Array(e, message.subarray(index * size, (index + 1) * size));
-    })
+    }),
   );
 }
 

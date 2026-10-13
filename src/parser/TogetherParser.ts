@@ -36,11 +36,7 @@ function C(name: string) {
   return f[name].source;
 }
 
-const createComposableToken = ({
-  name,
-  pattern,
-  ...args
-}: ITokenConfig): TokenType => {
+const createComposableToken = ({ name, pattern, ...args }: ITokenConfig): TokenType => {
   FRAGMENT(name, pattern as string | RegExp);
   return createToken({
     name,
@@ -166,9 +162,7 @@ const Identifier = createToken({
   name: "Identifier",
   // not // / . = : ^ ' " , ( ) { } [ ]
   pattern: new RegExp(
-    `[a-zA-Z0-9${C("IdentifierSymbols")}]+([ ]+[a-zA-Z0-9${C(
-      "IdentifierSymbols"
-    )}]+)*`
+    `[a-zA-Z0-9${C("IdentifierSymbols")}]+([ ]+[a-zA-Z0-9${C("IdentifierSymbols")}]+)*`,
   ),
 });
 
@@ -377,10 +371,7 @@ class TogetherParser extends CstParser {
       $.CONSUME(BraceOpen);
       // Blank lines are allowed anywhere inside, as at the top level.
       $.MANY(() => {
-        $.OR([
-          { ALT: () => $.CONSUME(Newline) },
-          { ALT: () => $.SUBRULE($.statement) },
-        ]);
+        $.OR([{ ALT: () => $.CONSUME(Newline) }, { ALT: () => $.SUBRULE($.statement) }]);
       });
       $.CONSUME(BraceClose);
     });
@@ -412,8 +403,7 @@ class TogetherParser extends CstParser {
 
 const parserInstance = new TogetherParser(togetherTokens);
 
-export const BaseTogetherVisitor =
-  parserInstance.getBaseCstVisitorConstructor();
+export const BaseTogetherVisitor = parserInstance.getBaseCstVisitorConstructor();
 
 export interface ParseProblem {
   /** 1-based line number. */
@@ -443,7 +433,10 @@ const problemAt = (e: IRecognitionException): ParseProblem => {
 export const tryParse = (text: string): ParseResult => {
   const tokenized = TogetherLexer.tokenize(text);
   if (tokenized.errors.length > 0) {
-    const problems = tokenized.errors.map((e) => ({ line: e.line ?? Infinity, message: e.message }));
+    const problems = tokenized.errors.map((e) => ({
+      line: e.line ?? Infinity,
+      message: e.message,
+    }));
     return { cst: undefined, problems };
   }
   parserInstance.input = tokenized.tokens;
@@ -504,13 +497,9 @@ export const matchComponentRegex = (componentName: string) => {
     `(${C("Whitespace")})?`,
     `(${C("BracketOpen")}.+${C("BracketClose")})?`,
     `(${C("Whitespace")})?`,
-    `(${C("ParenOpen")}[^${C("ParenClose")}]*$|${C("ParenOpen")}.*?${C(
-      "ParenClose"
-    )})?`,
+    `(${C("ParenOpen")}[^${C("ParenClose")}]*$|${C("ParenOpen")}.*?${C("ParenClose")})?`,
     `(${C("Whitespace")})?`,
-    `(${C("BraceOpen")}[^${C("BraceClose")}]*$|${C("BraceOpen")}.*?${C(
-      "BraceClose"
-    )})?`,
+    `(${C("BraceOpen")}[^${C("BraceClose")}]*$|${C("BraceOpen")}.*?${C("BraceClose")})?`,
     `(${C("Whitespace")})?`,
     `(${C("Comment")})?$`,
   ].join("");
@@ -518,14 +507,10 @@ export const matchComponentRegex = (componentName: string) => {
 
 export const matchEdgeRegex = (edgeComponentName: string) => {
   return [
-    `^(${C("Whitespace")})?(${escapeRegex(edgeComponentName)})(${C(
-      "Whitespace"
-    )})?\\.(.*)$`,
+    `^(${C("Whitespace")})?(${escapeRegex(edgeComponentName)})(${C("Whitespace")})?\\.(.*)$`,
     `|(.*?)(\\.(${C("ParenOpen")}.*?${C("ParenClose")})?|\\))(${C(
-      "Whitespace"
-    )})?(${escapeRegex(edgeComponentName)})(${C("Whitespace")})?(${C(
-      "Comment"
-    )})?$`,
+      "Whitespace",
+    )})?(${escapeRegex(edgeComponentName)})(${C("Whitespace")})?(${C("Comment")})?$`,
   ].join("");
 };
 

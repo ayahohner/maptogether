@@ -15,7 +15,7 @@ export const Line = (
   componentAy: number,
   componentBx: number,
   componentBy: number,
-  nodeKey: string
+  nodeKey: string,
 ): LineT => {
   const g = new Graphics() as LineT;
   let ends = [componentAx, componentAy, componentBx, componentBy];

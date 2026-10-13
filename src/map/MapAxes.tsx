@@ -52,11 +52,7 @@ const stageEdges = [0, ...stageBoundaries, 100];
  */
 export function StageDividers() {
   return stageBoundaries.map((boundary) => (
-    <span
-      key={boundary}
-      className="axis-x-divider"
-      style={{ left: `${boundary}%` }}
-    />
+    <span key={boundary} className="axis-x-divider" style={{ left: `${boundary}%` }} />
   ));
 }
 

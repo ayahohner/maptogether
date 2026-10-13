@@ -16,7 +16,8 @@ beforeEach(() => {
 
 const pointer = (type: string, clientX: number) =>
   divider.dispatchEvent(new PointerEvent(type, { clientX, pointerId: 1, bubbles: true }));
-const key = (k: string) => divider.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }));
+const key = (k: string) =>
+  divider.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }));
 const width = () => panel.style.getPropertyValue("--editor-width");
 
 it("applies the initial width and notifies the map", () => {
@@ -82,9 +83,21 @@ it("derives limits from the layout", () => {
   const main = panel.parentElement!;
   Object.defineProperty(main, "clientWidth", { value: 1400, configurable: true });
   Object.defineProperty(divider, "offsetWidth", { value: 10 });
-  expect(panelLimits(main, divider)).toEqual({ defaultWidth: 417, maxWidth: 1230, snapWidth: 48, mobile: false });
-  const matchMedia = vi.spyOn(window, "matchMedia").mockReturnValue({ matches: true } as MediaQueryList);
+  expect(panelLimits(main, divider)).toEqual({
+    defaultWidth: 417,
+    maxWidth: 1230,
+    snapWidth: 48,
+    mobile: false,
+  });
+  const matchMedia = vi
+    .spyOn(window, "matchMedia")
+    .mockReturnValue({ matches: true } as MediaQueryList);
   Object.defineProperty(main, "clientWidth", { value: 390 });
-  expect(panelLimits(main, divider)).toEqual({ defaultWidth: 380, maxWidth: 380, snapWidth: 48, mobile: true });
+  expect(panelLimits(main, divider)).toEqual({
+    defaultWidth: 380,
+    maxWidth: 380,
+    snapWidth: 48,
+    mobile: true,
+  });
   matchMedia.mockRestore();
 });

@@ -15,12 +15,7 @@ export const SelectionHandler = () => {
       const start = state.selectDrag.selectionStartPoint;
       const current = state.selectDrag.selectionCurrentPoint;
       component.clear();
-      component.rect(
-        0,
-        0,
-        Math.abs(current.x - start.x),
-        Math.abs(current.y - start.y)
-      );
+      component.rect(0, 0, Math.abs(current.x - start.x), Math.abs(current.y - start.y));
       component.fill({ color: 0x4597f7, alpha: 0.1 });
       component.stroke({ width: 1, color: 0x4597f7, alpha: 1 });
       component.x = Math.min(start.x, current.x);

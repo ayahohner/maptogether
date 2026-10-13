@@ -19,13 +19,27 @@ type Icon = ComponentType<SVGProps<SVGSVGElement>>;
 const ZOOM_STEP = 1.25;
 
 const SelectIcon: Icon = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinejoin="round" {...props}>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.5}
+    strokeLinejoin="round"
+    {...props}
+  >
     <path d="M5.5 3.5 18 10l-5.5 1.8-2.6 5.7z" />
   </svg>
 );
 
 const ComponentIcon: Icon = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" {...props}>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.5}
+    strokeLinecap="round"
+    {...props}
+  >
     <circle cx="10" cy="14" r="5" />
     <path d="M18 3v6M15 6h6" />
   </svg>
@@ -79,7 +93,12 @@ function Toolbar({ onUndo, onRedo, onDelete }: MapControlsProps) {
   const active = activeTool(useSnapshot(tools));
   const selected = hasSelection(useSnapshot(state.selection));
   return (
-    <div role="toolbar" aria-label="Map tools" aria-orientation="vertical" className="map-toolbar float">
+    <div
+      role="toolbar"
+      aria-label="Map tools"
+      aria-orientation="vertical"
+      className="map-toolbar float"
+    >
       {toolItems.map((item) => (
         <ControlButton
           key={item.tool}
@@ -91,7 +110,9 @@ function Toolbar({ onUndo, onRedo, onDelete }: MapControlsProps) {
       <hr className="map-toolbar-rule" />
       <ControlButton label="Undo" keys={[keys.undo]} icon={ArrowUturnLeftIcon} onClick={onUndo} />
       <ControlButton label="Redo" keys={[keys.redo]} icon={ArrowUturnRightIcon} onClick={onRedo} />
-      {selected && <ControlButton label="Delete" keys={[keys.delete]} icon={TrashIcon} onClick={onDelete} />}
+      {selected && (
+        <ControlButton label="Delete" keys={[keys.delete]} icon={TrashIcon} onClick={onDelete} />
+      )}
     </div>
   );
 }
@@ -141,7 +162,13 @@ function ZoomControls({ onZoom, onResetZoom }: MapControlsProps) {
       >
         <MinusIcon aria-hidden="true" />
       </button>
-      <button type="button" className="map-zoom-level" title="Reset zoom" onMouseDown={keepFocus} onClick={onResetZoom}>
+      <button
+        type="button"
+        className="map-zoom-level"
+        title="Reset zoom"
+        onMouseDown={keepFocus}
+        onClick={onResetZoom}
+      >
         {Math.round(scale * 100)}%
       </button>
       <button
@@ -162,7 +189,9 @@ function ZoomControls({ onZoom, onResetZoom }: MapControlsProps) {
 export function toolHint(tool: Tool, linkFrom: string | undefined) {
   if (tool === "component") return "Choose where the new component goes";
   if (tool !== "link") return undefined;
-  return linkFrom ? `Now choose the component ${linkFrom} needs` : "Choose a component, then the one it needs";
+  return linkFrom
+    ? `Now choose the component ${linkFrom} needs`
+    : "Choose a component, then the one it needs";
 }
 
 function ToolHint() {

@@ -19,7 +19,8 @@ export interface Hittable {
 const contains = (b: Bounds, p: Point) =>
   p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height;
 
-const isComponent = (child: Hittable) => child.nodeKey !== undefined && child.updateLine === undefined;
+const isComponent = (child: Hittable) =>
+  child.nodeKey !== undefined && child.updateLine === undefined;
 
 /**
  * The node key of the topmost component (by zIndex, then paint order) whose

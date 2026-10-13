@@ -34,8 +34,7 @@ export function initializeCanvasPresence(
   const render = () => {
     const visible = new Set<number>();
     for (const [id, value] of awareness.getStates()) {
-      if (id === awareness.clientID || !validPointer(value.mapPointer))
-        continue;
+      if (id === awareness.clientID || !validPointer(value.mapPointer)) continue;
       visible.add(id);
       let pointer = pointers.get(id);
       if (!pointer) {

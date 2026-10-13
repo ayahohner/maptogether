@@ -90,7 +90,9 @@ describe("connectSync", () => {
     expect(ok).toHaveBeenCalledWith("https://r/ice");
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const down = async () => new Response("", { status: 500 });
-    expect((await fetchIceServers("https://r", down as any))[0].urls).toEqual(["stun:stun.cloudflare.com:3478"]);
+    expect((await fetchIceServers("https://r", down as any))[0].urls).toEqual([
+      "stun:stun.cloudflare.com:3478",
+    ]);
   });
 
   it("opens the relay socket for the map", async () => {

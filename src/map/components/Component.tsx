@@ -251,12 +251,8 @@ export const Component = (config: IComponentConfig) => {
   renderComponent(g, state);
   component.addChild(g);
 
-  const selectionUnsub = subscribe(state.selection, () =>
-    renderComponent(g, state)
-  );
-  const linkingUnsub = subscribe(state.linking, () =>
-    renderComponent(g, state)
-  );
+  const selectionUnsub = subscribe(state.selection, () => renderComponent(g, state));
+  const linkingUnsub = subscribe(state.linking, () => renderComponent(g, state));
 
   component.on("removed", () => {
     selectionUnsub();

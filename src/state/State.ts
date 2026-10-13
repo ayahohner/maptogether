@@ -68,9 +68,7 @@ export const setEditorText = (text: string) => {
   state.editor.editorText = text;
 };
 
-export const setInitialLinkTarget = (
-  nodeKey: ComponentT["nodeKey"] | undefined
-) => {
+export const setInitialLinkTarget = (nodeKey: ComponentT["nodeKey"] | undefined) => {
   state.linking.initialLinkTarget = nodeKey;
 };
 
@@ -89,10 +87,7 @@ export const stopSelecting = () => {
   state.selectDrag.selectionCurrentPoint = undefined;
 };
 
-export const nodeInSelection = (
-  nodeKey: string,
-  nodeAttributes: NodeAttributes
-) => {
+export const nodeInSelection = (nodeKey: string, nodeAttributes: NodeAttributes) => {
   let startX = state.selectDrag.selectionStartPoint!.x;
   let startY = state.selectDrag.selectionStartPoint!.y;
   let curX = state.selectDrag.selectionCurrentPoint!.x;
@@ -115,7 +110,10 @@ export const edgeSegments = (): Segment[] =>
 
 /** Links more than half inside the marquee, so a box around one component skips its links. */
 const edgesInSelection = () => {
-  const rect = rectBetween(state.selectDrag.selectionStartPoint!, state.selectDrag.selectionCurrentPoint!);
+  const rect = rectBetween(
+    state.selectDrag.selectionStartPoint!,
+    state.selectDrag.selectionCurrentPoint!,
+  );
   return edgeSegments()
     .filter(({ start, stop }) => fractionInside(start, stop, rect) > 0.5)
     .map(({ key }) => key);
@@ -191,14 +189,11 @@ export const updateTranslationPoint = (location: PointLike) => {
   state.selection.selectionItems.forEach((item) => {
     updateComponentPositionOffset(
       item,
-      state.translateDrag.translationCurrentPoint!.x -
-        state.translateDrag.translationLastPoint!.x,
-      state.translateDrag.translationCurrentPoint!.y -
-        state.translateDrag.translationLastPoint!.y
+      state.translateDrag.translationCurrentPoint!.x - state.translateDrag.translationLastPoint!.x,
+      state.translateDrag.translationCurrentPoint!.y - state.translateDrag.translationLastPoint!.y,
     );
   });
-  state.translateDrag.translationLastPoint =
-    state.translateDrag.translationCurrentPoint;
+  state.translateDrag.translationLastPoint = state.translateDrag.translationCurrentPoint;
 };
 
 /* ===== Canvas gestures (points in world coordinates) ===== */
@@ -213,7 +208,7 @@ export const pressCanvas = (point: PointLike, additive: boolean) => {
 export const pressComponent = (
   nodeKey: ComponentT["nodeKey"],
   point: PointLike,
-  additive: boolean
+  additive: boolean,
 ) => {
   if (additive) return xorSelection([nodeKey]);
   if (!state.selection.selectionItems.has(nodeKey)) replaceSelection([nodeKey]);

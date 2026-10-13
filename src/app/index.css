@@ -106,7 +106,9 @@ body {
   border-radius: 999px;
   background: var(--color-ink-subtle);
   transform: translate(-50%, -50%);
-  transition: background-color 150ms, height 150ms;
+  transition:
+    background-color 150ms,
+    height 150ms;
 }
 
 /* A wider invisible hit area so the thin divider is easy to grab. */

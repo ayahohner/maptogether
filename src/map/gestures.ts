@@ -109,7 +109,15 @@ export class Gestures {
     if (this.pointers.size > 1) return;
     const nodeKey = this.actions.hit(e.point);
     const mode = this.startMode(e, nodeKey);
-    this.press = { id: e.id, start: e.point, last: e.point, nodeKey, touch: e.touch, mode, moved: false };
+    this.press = {
+      id: e.id,
+      start: e.point,
+      last: e.point,
+      nodeKey,
+      touch: e.touch,
+      mode,
+      moved: false,
+    };
     if (e.touch && nodeKey && this.actions.tool() === "select") this.waitForLongPress(this.press);
   }
 
@@ -179,7 +187,8 @@ export class Gestures {
 
   private tap(press: Press, p: Point) {
     const tool = this.actions.tool();
-    if (this.isRepeat(p, press.touch) && tool === "select") return this.actions.edit(press.nodeKey, p);
+    if (this.isRepeat(p, press.touch) && tool === "select")
+      return this.actions.edit(press.nodeKey, p);
     if (press.mode === "pending") this.toolTap(tool, press, p);
   }
 
@@ -193,7 +202,8 @@ export class Gestures {
   private isRepeat(p: Point, touch: boolean) {
     const time = this.clock.now();
     const last = this.lastTap;
-    const repeat = !!last && time - last.time < DOUBLE_TAP_MS && distance(last.at, p) < repeatRadius(touch);
+    const repeat =
+      !!last && time - last.time < DOUBLE_TAP_MS && distance(last.at, p) < repeatRadius(touch);
     this.lastTap = repeat ? undefined : { at: p, time };
     return repeat;
   }
@@ -241,33 +251,50 @@ export function bindGestures(canvas: HTMLElement, gestures: Gestures) {
   });
   let gestureScale = 1;
   const listeners: [string, (e: any) => void][] = [
-    ["pointerdown", (e: PointerEvent) => {
-      // Stops the browser's own touch handling and text selection. That also
-      // stops focus moving, so end typing in the editor or a name field here.
-      e.preventDefault();
-      (document.activeElement as HTMLElement | null)?.blur?.();
-      gestures.down(input(e));
-      canvas.setPointerCapture?.(e.pointerId);
-    }],
+    [
+      "pointerdown",
+      (e: PointerEvent) => {
+        // Stops the browser's own touch handling and text selection. That also
+        // stops focus moving, so end typing in the editor or a name field here.
+        e.preventDefault();
+        (document.activeElement as HTMLElement | null)?.blur?.();
+        gestures.down(input(e));
+        canvas.setPointerCapture?.(e.pointerId);
+      },
+    ],
     // The middle button pans; don't let Windows browsers start autoscrolling.
     ["mousedown", (e: MouseEvent) => e.button === 1 && e.preventDefault()],
     ["pointermove", (e: PointerEvent) => gestures.move(input(e))],
     ["pointerup", (e: PointerEvent) => gestures.up(input(e))],
     ["pointercancel", (e: PointerEvent) => gestures.cancel(input(e))],
-    ["wheel", (e: WheelEvent) => {
-      e.preventDefault();
-      gestures.wheel({ point: local(e), zoom: e.ctrlKey || e.metaKey, ...wheelPixels(e) });
-    }],
+    [
+      "wheel",
+      (e: WheelEvent) => {
+        e.preventDefault();
+        gestures.wheel({ point: local(e), zoom: e.ctrlKey || e.metaKey, ...wheelPixels(e) });
+      },
+    ],
     // Safari reports trackpad pinches as gesture events rather than wheels.
-    ["gesturestart", (e: Event) => {
-      e.preventDefault();
-      gestureScale = 1;
-    }],
-    ["gesturechange", (e: Event & { scale: number; clientX: number; clientY: number }) => {
-      e.preventDefault();
-      gestures.wheel({ point: local(e as unknown as MouseEvent), dx: 0, dy: -100 * Math.log(e.scale / gestureScale), zoom: true });
-      gestureScale = e.scale;
-    }],
+    [
+      "gesturestart",
+      (e: Event) => {
+        e.preventDefault();
+        gestureScale = 1;
+      },
+    ],
+    [
+      "gesturechange",
+      (e: Event & { scale: number; clientX: number; clientY: number }) => {
+        e.preventDefault();
+        gestures.wheel({
+          point: local(e as unknown as MouseEvent),
+          dx: 0,
+          dy: -100 * Math.log(e.scale / gestureScale),
+          zoom: true,
+        });
+        gestureScale = e.scale;
+      },
+    ],
   ];
   for (const [type, fn] of listeners) canvas.addEventListener(type, fn, { passive: false });
   return () => {

@@ -14,7 +14,11 @@ export interface EditorCommands {
 }
 
 /** Canvas gestures, the toolbar and zoom buttons, and tool cursors. */
-export function initializeCanvasControls(canvas: HTMLElement, map: MapView, editor: EditorCommands) {
+export function initializeCanvasControls(
+  canvas: HTMLElement,
+  map: MapView,
+  editor: EditorCommands,
+) {
   bindGestures(canvas, new Gestures(canvasActions(map)));
 
   const showTool = () => {

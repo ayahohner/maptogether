@@ -35,7 +35,11 @@ export function HelpLauncher() {
         aria-controls="help-panel"
         onClick={toggleHelp}
       >
-        {help.open ? <XMarkIcon aria-hidden="true" className="size-5" /> : <span aria-hidden="true">?</span>}
+        {help.open ? (
+          <XMarkIcon aria-hidden="true" className="size-5" />
+        ) : (
+          <span aria-hidden="true">?</span>
+        )}
       </button>
     </div>
   );
@@ -113,7 +117,11 @@ function CanvasHelp() {
           </dl>
         </section>
       ))}
-      <button type="button" className="mt-3 text-[13px] font-medium text-accent hover:underline" onClick={() => setInput(other)}>
+      <button
+        type="button"
+        className="mt-3 text-[13px] font-medium text-accent hover:underline"
+        onClick={() => setInput(other)}
+      >
         {other === "touch" ? "Show touch gestures" : "Show mouse and keyboard"}
       </button>
     </div>
@@ -127,8 +135,8 @@ function SyntaxHelp() {
   return (
     <div className="px-4 pt-3 pb-4 text-[13px]">
       <p className="text-ink-muted">
-        The editor and the canvas show the same map. Anything you draw appears here as text, and anything you type
-        appears on the canvas.
+        The editor and the canvas show the same map. Anything you draw appears here as text, and
+        anything you type appears on the canvas.
       </p>
       {syntaxHelp.map((example) => (
         <section key={example.title} className="mt-4">

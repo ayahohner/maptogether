@@ -23,9 +23,15 @@ const mouseHelp = ({ mod, undo, redo }: KeyLabels): HelpSection[] => [
   {
     title: "Create",
     rows: [
-      { action: "Add a component", how: ["Double-click the canvas, or", { key: "C" }, "and click"] },
+      {
+        action: "Add a component",
+        how: ["Double-click the canvas, or", { key: "C" }, "and click"],
+      },
       { action: "Rename a component", how: ["Double-click it"] },
-      { action: "Link two components", how: ["Hold", { key: mod }, "and click both, or", { key: "L" }] },
+      {
+        action: "Link two components",
+        how: ["Hold", { key: mod }, "and click both, or", { key: "L" }],
+      },
     ],
   },
   {

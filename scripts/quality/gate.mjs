@@ -4,7 +4,8 @@ import { crap, functionCoverage } from "./coverage.mjs";
 export const DEFAULTS = { maxCrap: 8, minMi: 75 };
 
 const CODE_FILE = /\.[cm]?[jt]sx?$/;
-const NOT_GATED = /(\.test\.|\.spec\.|\.d\.ts$|(^|\/)(node_modules|dist|coverage|testing|__tests__)\/)/;
+const NOT_GATED =
+  /(\.test\.|\.spec\.|\.d\.ts$|(^|\/)(node_modules|dist|coverage|testing|__tests__)\/)/;
 
 export function isGatedFile(path) {
   return CODE_FILE.test(path) && !NOT_GATED.test(path);
@@ -34,14 +35,23 @@ function touches(fn, changed) {
 
 function scoreFunction(fn, fileCoverage) {
   const coverage = functionCoverage(fn, fileCoverage);
-  return { name: fn.name, line: fn.line, cc: fn.cc, coverage, crap: crap(fn.cc, coverage), mi: fn.mi };
+  return {
+    name: fn.name,
+    line: fn.line,
+    cc: fn.cc,
+    coverage,
+    crap: crap(fn.cc, coverage),
+    mi: fn.mi,
+  };
 }
 
 function functionViolations(row, limits) {
   const where = `${row.name} (line ${row.line})`;
   const out = [];
   if (row.crap > limits.maxCrap) {
-    out.push(`${where} CRAP ${row.crap.toFixed(1)} > ${limits.maxCrap} (CC ${row.cc}, ${pct(row.coverage)} covered)`);
+    out.push(
+      `${where} CRAP ${row.crap.toFixed(1)} > ${limits.maxCrap} (CC ${row.cc}, ${pct(row.coverage)} covered)`,
+    );
   }
   if (row.mi <= limits.minMi) out.push(`${where} MI ${row.mi.toFixed(1)} ≤ ${limits.minMi}`);
   return out;

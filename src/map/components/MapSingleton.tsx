@@ -34,9 +34,7 @@ class MapSingleton extends Application {
       return MapSingleton._instance;
     }
 
-    MapSingleton._parentElement = document.getElementById(
-      "map"
-    ) as HTMLDivElement;
+    MapSingleton._parentElement = document.getElementById("map") as HTMLDivElement;
 
     MapSingleton._instance = this;
 

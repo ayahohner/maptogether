@@ -24,9 +24,12 @@ export async function iceServers(env: IceEnv, fetcher: typeof fetch = fetch): Pr
       `https://rtc.live.cloudflare.com/v1/turn/keys/${env.TURN_KEY_ID}/credentials/generate-ice-servers`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${env.TURN_KEY_API_TOKEN}`, "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${env.TURN_KEY_API_TOKEN}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ ttl: TURN_TTL_SECONDS }),
-      }
+      },
     );
     if (!res.ok) throw new Error(`TURN API ${res.status}`);
     const body = (await res.json()) as { iceServers: IceServer[] };
