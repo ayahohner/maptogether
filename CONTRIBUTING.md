@@ -21,6 +21,7 @@ yarn dev       # app on http://localhost:5173, using the deployed relay
 | `yarn coverage` | One Vitest run with coverage |
 | `yarn quality` | Code quality gate (see below) |
 | `yarn version:check` | Semver check (see below) |
+| `yarn lint` / `yarn format` | Biome lint and format check / apply fixes |
 | `yarn relay:dev` | Local relay on `:8787` |
 | `yarn relay:deploy` | Deploy the relay (needs `CLOUDFLARE_API_TOKEN`) |
 | `yarn test:live` | WebRTC and saving against the deployed relay |
@@ -73,6 +74,13 @@ maintainability index above 75, and every edited file an MI above 75
 It runs automatically before `git push` (`.githooks/pre-push`, enabled by
 `yarn install`). Use `--verbose` to see every function, `--help` for options.
 
+## Formatting and linting
+
+[Biome](https://biomejs.dev) formats and lints the code (`biome.jsonc`). Before
+each commit, `.githooks/pre-commit` runs it on the staged files through
+lint-staged and applies safe fixes; a lint error stops the commit. Pull requests
+run `biome ci`. `index.html` is excluded, because its copy is laid out by hand.
+
 ## Versioning
 
 MapTogether follows [semver](https://semver.org). The version in
@@ -87,7 +95,7 @@ must raise it:
 
 `yarn version:check` compares `package.json` with the merge-base with `main`.
 It runs before `git push` and on every pull request
-([Version check](.github/workflows/version.yml)). Bump once per branch, not per
+([Checks](.github/workflows/checks.yml)). Bump once per branch, not per
 commit.
 
 ## README screenshot

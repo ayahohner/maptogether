@@ -38,6 +38,7 @@
   "description": "",
   "devDependencies": {
     "@babel/parser": "^8.0.6",
+    "@biomejs/biome": "2.5.15",
     "@cloudflare/workers-types": "^5.20261006.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/lodash": "^4.17.25",
@@ -46,6 +47,7 @@
     "@vitest/ui": "^5.0.2",
     "autoprefixer": "^10.6.1",
     "happy-dom": "^20.14.5",
+    "lint-staged": "17.6.0",
     "postcss": "^8.5.28",
     "tailwindcss": "^4.3.3",
     "vitest": "^5.0.2",
@@ -79,7 +81,12 @@
     "quality": "node scripts/quality-gate.mjs",
     "version:check": "node scripts/version-check.mjs",
     "postinstall": "git config core.hooksPath .githooks 2>/dev/null || true",
-    "test:live": "LIVE_RELAY=${LIVE_RELAY:-https://wmaps-relay.innerlattice.workers.dev} vitest run src/sync/relay.live.test.ts"
+    "test:live": "LIVE_RELAY=${LIVE_RELAY:-https://wmaps-relay.innerlattice.workers.dev} vitest run src/sync/relay.live.test.ts",
+    "lint": "biome check .",
+    "format": "biome check --write ."
   },
-  "version": "3.3.0"
+  "version": "3.3.0",
+  "lint-staged": {
+    "*.{js,mjs,ts,tsx,css,json,jsonc}": "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true"
+  }
 }
