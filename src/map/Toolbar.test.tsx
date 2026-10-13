@@ -91,7 +91,7 @@ it("keeps focus where it was when a control is clicked", () => {
   expect(down.defaultPrevented).toBe(true);
 });
 
-it("explains what to do next with the link and component tools", async () => {
+it("shows the next step for the link and component tools", async () => {
   const hint = () => host.querySelector<HTMLElement>('[role="status"]')!;
   expect(hint().hidden).toBe(true);
   await update(() => setTool("link"));

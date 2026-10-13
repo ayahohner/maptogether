@@ -34,13 +34,13 @@ describe("parseLeniently", () => {
     expect(problemLines(text)).toEqual([2]);
   });
 
-  it("blames the line before the end for an unclosed pipeline", () => {
+  it("reports an unclosed pipeline on its last line, then the line that opens it", () => {
     const text = "Kettle [33, 50]\nTea [55, 73] {\n  Tea Bags [55, 90]\n\n";
     expect(components(text)).toEqual(["Kettle"]);
     expect(problemLines(text)).toEqual([3, 2]);
   });
 
-  it("gives up after too many problems", () => {
+  it("draws nothing once there are MAX_PROBLEMS problems", () => {
     const text = Array.from({ length: MAX_PROBLEMS + 5 }, () => "Bad [").join("\n");
     const result = parseLeniently(text);
     expect(result.cst).toBeUndefined();

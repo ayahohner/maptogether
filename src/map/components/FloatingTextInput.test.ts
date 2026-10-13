@@ -52,10 +52,10 @@ it("cancels on Escape, and ignores an empty name", () => {
   expect(fields()).toBe(0);
 });
 
-it("waits for an input method to finish composing", () => {
+it("doesn't submit on the Enter that ends input-method composition", () => {
   const input = FloatingTextInput(mount, 0, 0, onSubmit);
   input.value = "茶";
   press(input, "Enter", { isComposing: true });
-  press(input, "a");
+  expect(onSubmit).not.toHaveBeenCalled();
   expect(fields()).toBe(1);
 });

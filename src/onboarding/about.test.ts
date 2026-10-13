@@ -21,7 +21,7 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-it("welcomes first-time visitors and remembers when they dismiss it", () => {
+it("opens for first-time visitors, and records when they dismiss it", () => {
   const dialog = mount();
   const store = storage();
   initializeAbout(dialog, { storage: store, isNewMap: true, onDemo: vi.fn() });

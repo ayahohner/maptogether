@@ -42,7 +42,7 @@ describe("RelaySocket", () => {
     await until(() => seen.opens === 2);
   });
 
-  it("pings, ignores pongs, and reconnects when the relay goes silent", async () => {
+  it("pings, ignores pongs, and reconnects when nothing arrives from the relay", async () => {
     const relay = createFakeRelay();
     const { seen } = open(relay, { pingIntervalMs: 10, silenceTimeoutMs: 40, maxBackoffMs: 5 });
     await until(() => relay.state.pings > 1);

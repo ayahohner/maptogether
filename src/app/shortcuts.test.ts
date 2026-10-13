@@ -69,7 +69,7 @@ it("lets go of held keys when the window loses focus", () => {
   expect(activeTool()).toBe("select");
 });
 
-it("knows which targets are editable", () => {
+it("counts text fields as editable, but not buttons or nothing", () => {
   expect(isEditable(document.getElementById("field"))).toBe(true);
   expect(isEditable(document.getElementById("btn"))).toBe(false);
   expect(isEditable(null)).toBe(false);

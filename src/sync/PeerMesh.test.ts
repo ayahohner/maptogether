@@ -81,7 +81,7 @@ describe("PeerMesh", () => {
     expect(channels).toEqual(["x"]);
   });
 
-  it("ignores answers from strangers and empty signals", async () => {
+  it("ignores answers from unknown peers, and empty signals", async () => {
     const { m } = mesh();
     await m.handle({ type: "signal", from: "x", data: { sdp: { type: "answer", sdp: "a" } } });
     await m.handle({ type: "signal", from: "x", data: {} });

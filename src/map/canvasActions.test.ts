@@ -131,7 +131,7 @@ it("places a component with the component tool, then goes back to select", () =>
   expect(editor.appendText).toHaveBeenCalledWith("\nTeapot [75, 25]");
 });
 
-it("pans, zooms and buzzes on pick-up", () => {
+it("pans, zooms and vibrates on pick-up", () => {
   const vibrate = vi.fn();
   Object.defineProperty(navigator, "vibrate", { value: vibrate, configurable: true });
   const actions = canvasActions(map);

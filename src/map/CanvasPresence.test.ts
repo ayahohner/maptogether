@@ -48,7 +48,7 @@ it("publishes canvas-relative pointers, cancels trailing movement on leave, and 
   expect(parent.querySelector(".canvas-presence")).toBeNull();
 });
 
-it("renders remote presence safely, tracks users independently of pointers, and removes departed peers", () => {
+it("shows remote pointers with names as text, hides off-map ones without changing the people list, and drops peers who leave", () => {
   const a = peer(),
     b = peer();
   const canvas = document.createElement("canvas");

@@ -1,41 +1,66 @@
-import { matchComponentRegex } from "./TogetherParser";
+import { describe, expect, it } from "vitest";
 
-import { it, expect, describe } from "vitest";
+import { matchComponentRegex, matchEdgeRegex } from "./TogetherParser";
 
-const testRegex = (componentName: string, testString: string) => {
-  const regexp = new RegExp(matchComponentRegex(componentName), "gm");
-  return regexp.test(testString);
-};
+const match = (pattern: string, line: string) => new RegExp(pattern).exec(line);
 
-const genTruthyTest = (componentName: string, testString: string) => {
-  return it(`matches component "${componentName}" in "${testString.replace(/\n|\r/g, "")}"`, () => {
-    expect(testRegex(componentName, testString)).toBeTruthy();
+describe("matchComponentRegex", () => {
+  it.each([
+    "corn",
+    "corn// comment",
+    "corn  \t// comment",
+    "corn [-1.3, 2.3e1]",
+    " corn [-1.3, 2.3e1] ",
+    "corn[-1.3,2.3]//[0.3,0.5]",
+  ])("matches a line declaring corn: %j", (line) => {
+    expect(match(matchComponentRegex("corn"), line)).not.toBeNull();
   });
-};
 
-const genFalsyTest = (componentName: string, testString: string) => {
-  return it(`doesn't match component "${componentName}" in "${testString.replace(
-    /\n|\r/g,
-    "",
-  )}"`, () => {
-    expect(testRegex(componentName, testString)).toBeFalsy();
+  it.each(["corn  hole", "corn  hole [0.3, 0.4]", "corn \t hole ///", "cornhole", "corn.Power"])(
+    "doesn't match another component or a link: %j",
+    (line) => {
+      expect(match(matchComponentRegex("corn"), line)).toBeNull();
+    },
+  );
+
+  it("captures each part of the line", () => {
+    const groups = match(
+      matchComponentRegex("Tea"),
+      "  Tea:2 [55, 73] (inertia) { // drinks",
+    )!.slice(1);
+    expect(groups).toEqual([
+      "  ",
+      "Tea",
+      ":2",
+      " ",
+      "[55, 73]",
+      " ",
+      "(inertia)",
+      " ",
+      "{ // drinks",
+      undefined,
+      undefined,
+    ]);
   });
-};
 
-describe("replaceCoordinatesRegex", () => {
-  genTruthyTest("corn", "corn");
-  genTruthyTest("corn", "corn// comment");
-  genTruthyTest("corn", "corn // comment");
-  genTruthyTest("corn", "corn  // comment");
-  genTruthyTest("corn", "corn  \t// comment");
-  genTruthyTest("corn", "corn [-1.3, 2.3e1]");
-  genTruthyTest("corn", " corn [-1.3, 2.3e1]");
-  genTruthyTest("corn", "corn[-1.3,2.3]");
-  genTruthyTest("corn", "corn[-1.3,2.3]//[0.3,0.5]");
-  genTruthyTest("corn", "corn [-1.3, 2.3e1] ");
-  genFalsyTest("corn", "corn  hole");
-  genFalsyTest("corn", "corn  hole [0.3, 0.4]");
-  genFalsyTest("corn", "corn \t hole ///");
-  genFalsyTest("corn", "corn hole//comment");
-  genFalsyTest("corn", "cornhole");
+  it("treats the name literally, not as a pattern", () => {
+    expect(match(matchComponentRegex("C++ (beta)"), "C++ (beta) [1, 2]")).not.toBeNull();
+    expect(match(matchComponentRegex("a.c"), "abc")).toBeNull();
+  });
+});
+
+describe("matchEdgeRegex", () => {
+  it("matches a link with the name on the left, in groups 1–4", () => {
+    const m = match(matchEdgeRegex("Kettle"), "  Kettle.Power // boils")!;
+    expect(m.slice(1, 5)).toEqual(["  ", "Kettle", undefined, "Power // boils"]);
+  });
+
+  it("matches a link with the name on the right, in group 9", () => {
+    const m = match(matchEdgeRegex("Power"), "Kettle.(heat)Power // boils")!;
+    expect([m[5], m[6], m[9], m[11]]).toEqual(["Kettle", ".(heat)", "Power", "// boils"]);
+  });
+
+  it("doesn't match the component's own declaration", () => {
+    expect(match(matchEdgeRegex("Kettle"), "Kettle [33, 50]")).toBeNull();
+  });
 });

@@ -49,7 +49,7 @@ describe("PeerSync", () => {
     expect(b.awareness.getStates().has(a.doc.clientID)).toBe(false);
   });
 
-  it("forgets a peer's cursors when its channel closes, ignoring stale channels", async () => {
+  it("removes a peer's cursors when its channel closes, ignoring stale channels", async () => {
     const a = node();
     const b = node();
     a.awareness.setLocalStateField("user", "otter");
@@ -80,10 +80,12 @@ describe("PeerSync", () => {
     a.sync.destroy();
   });
 
-  it("reads awareness entries", () => {
+  it("lists the clients an awareness update mentions, and which have left", () => {
     const a = node();
     a.awareness.setLocalStateField("user", 1);
-    const entries = awarenessEntries(encodeAwarenessUpdate(a.awareness, [a.doc.clientID]));
-    expect(entries).toEqual([{ id: a.doc.clientID, removed: false }]);
+    const update = () => awarenessEntries(encodeAwarenessUpdate(a.awareness, [a.doc.clientID]));
+    expect(update()).toEqual([{ id: a.doc.clientID, removed: false }]);
+    a.awareness.setLocalState(null);
+    expect(update()).toEqual([{ id: a.doc.clientID, removed: true }]);
   });
 });

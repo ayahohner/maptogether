@@ -29,7 +29,7 @@ it("pans while space is held", () => {
   expect(activeTool()).toBe("hand");
 });
 
-it("prefers linking when both keys are held", () => {
+it("links when both keys are held", () => {
   holdPan(true);
   holdLink(true);
   expect(activeTool()).toBe("link");

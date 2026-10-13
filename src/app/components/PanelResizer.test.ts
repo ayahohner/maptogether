@@ -37,7 +37,7 @@ it("collapses on click and hides the editor from focus", () => {
   expect(panel.inert).toBe(true);
 });
 
-it("resizes by dragging and remembers the width", () => {
+it("resizes by dragging, and keeps the width to reopen at", () => {
   const resizer = initializePanelResizer(panel, divider, onResize, () => limits);
   pointer("pointerdown", 500);
   pointer("pointermove", 400);
