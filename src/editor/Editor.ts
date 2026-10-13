@@ -24,7 +24,7 @@ import {
 import MapSingleton from "../map/components/MapSingleton";
 import { togetherScriptLinter } from "./TogetherScriptLinter";
 import { deletionRanges } from "./deletions";
-import { coordinateChanges, renameChanges } from "./edits";
+import { moveChanges, renameChanges } from "./edits";
 import { generateRandomAnimal } from "../user/utilities/generateRandomAnimal";
 import { drawMap } from "../map/drawMap";
 import { mapLifecycle, resolveRoom } from "../app/room";
@@ -178,16 +178,15 @@ export const appendText = (text: string) => {
   });
 };
 
-/** Writes the components' new places on the canvas into the text. */
+/** Writes the components' new places on the canvas into the text, as one undoable edit. */
 export const moveComponents = (moves: Move[]) => {
-  for (const { name, x, y } of moves) {
-    const [evolution, visibility] = MapSingleton.rendererToWardleyCoords(x, y);
-    const changes = coordinateChanges(editorView.state.doc.toString(), name, [
-      visibility,
-      evolution,
-    ]);
-    if (changes.length) editorView.dispatch({ changes });
-  }
+  const changes = moveChanges(editorView.state.doc.toString(), moves.map(toMapCoordinates));
+  if (changes.length) editorView.dispatch({ changes });
+};
+
+const toMapCoordinates = ({ name, x, y }: Move) => {
+  const [evolution, visibility] = MapSingleton.rendererToWardleyCoords(x, y);
+  return { name, coordinates: [visibility, evolution] as const };
 };
 
 /** Renames a component and its links, as one undoable edit. */

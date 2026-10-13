@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { type Change, coordinateChanges, renameChanges } from "./edits";
+import { type Change, coordinateChanges, moveChanges, renameChanges } from "./edits";
 
 const apply = (text: string, changes: Change[]) =>
   [...changes].reverse().reduce((t, c) => t.slice(0, c.from) + c.insert + t.slice(c.to), text);
@@ -29,6 +29,18 @@ describe("coordinateChanges", () => {
 
   it("changes nothing when the component isn't in the text", () => {
     expect(coordinateChanges("Kettle [33, 50]", "Power", ["1", "2"])).toEqual([]);
+  });
+});
+
+describe("moveChanges", () => {
+  it("moves several components in one set of changes, in document order", () => {
+    const text = "Power [10, 86]\nKettle [33, 50]\nKettle.Power";
+    const changes = moveChanges(text, [
+      { name: "Kettle", coordinates: ["40", "60"] },
+      { name: "Power", coordinates: ["1", "2"] },
+    ]);
+    expect(changes.map((c) => c.from)).toEqual([0, 15]);
+    expect(apply(text, changes)).toBe("Power [1, 2]\nKettle [40, 60]\nKettle.Power");
   });
 });
 

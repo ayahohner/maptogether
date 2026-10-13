@@ -40,6 +40,18 @@ export const coordinateChanges = (
     };
   });
 
+/** A component's new coordinates, `[visibility, evolution]`. */
+export interface Placement {
+  name: string;
+  coordinates: readonly [string, string];
+}
+
+/** Sets the coordinates of several components, as one set of changes in document order. */
+export const moveChanges = (text: string, placements: readonly Placement[]): Change[] =>
+  placements
+    .flatMap(({ name, coordinates }) => coordinateChanges(text, name, coordinates))
+    .sort((a, b) => a.from - b.from);
+
 /** Offset of the component name in a link line, on whichever side it is. */
 function nameInLink(match: RegExpExecArray) {
   // Groups 1–2 match the name on the left of the ".", groups 5–9 on the right.
