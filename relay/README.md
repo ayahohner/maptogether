@@ -65,6 +65,38 @@ The token is supplied only to the deployment step on `main`; pull requests run
 validation without Cloudflare credentials. Existing TURN secrets stay in
 Cloudflare and do not need to be copied into GitHub.
 
+### Worker Previews
+
+Pull requests from this repository also get an isolated
+[Worker Preview](https://developers.cloudflare.com/workers/previews/) named
+`pr-<number>`, at `https://pr-<number>-wmaps-relay.innerlattice.workers.dev`.
+Each Preview has its own `MapRoom` Durable Object namespace, so preview maps
+never read or write production maps. CI runs the live sync test against it,
+comments the URL on the PR, and deletes the Preview when the PR closes. To try a
+Preview from the app, run it with `VITE_SYNC_RELAY_URL` set to that URL.
+
+By hand, from any branch:
+
+```sh
+yarn wrangler preview -c relay/wrangler.jsonc --name my-branch
+yarn wrangler preview delete -c relay/wrangler.jsonc --name my-branch -y
+```
+
+Previews don't inherit top-level `vars` or `env` bindings, so `wrangler.jsonc`
+restates them under `previews`. They use STUN only unless TURN secrets are added
+with `wrangler preview base-config secret put TURN_KEY_ID` (and
+`TURN_KEY_API_TOKEN`). The free plan keeps up to 100 Previews per Worker and
+deletes the least recently deployed beyond that.
+
+### Logs and traces
+
+Workers Logs record every invocation. Traces sample 10% of production
+invocations (`observability.traces.head_sampling_rate`) and 100% of Previews.
+From 2026-12-01 the free plan includes 0.5 GB/day of trace ingestion; 10% keeps
+roughly an order of magnitude of headroom over current traffic. Check
+ingestion under Observability in the dashboard and adjust the rate there if
+traffic grows.
+
 ## Limits and costs
 
 64 editors per map, 64 KB signaling messages, 1 MB sync messages, ~2 MB saved
