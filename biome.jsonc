@@ -43,6 +43,5 @@
       "linter": { "rules": { "suspicious": { "noExplicitAny": "off" } } }
     }
   ],
-  // Import order matters here: Editor and State import each other.
   "assist": { "enabled": false }
 }
