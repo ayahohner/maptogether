@@ -1685,13 +1685,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/combokeys@npm:^2.4.9":
-  version: 2.4.9
-  resolution: "@types/combokeys@npm:2.4.9"
-  checksum: 10c0/f5e9016d8b06591e3d8107b4223bd61e412af18be01d9803657c2ecb1c0cb488b948cb43a980072273ed4b42ea8cf82bff1c04e621096de5547e14bf1f8efd09
-  languageName: node
-  linkType: hard
-
 "@types/deep-eql@npm:*":
   version: 4.0.2
   resolution: "@types/deep-eql@npm:4.0.2"
@@ -2243,13 +2236,6 @@ __metadata:
     "@codemirror/state": "npm:^6.0.0"
     "@codemirror/view": "npm:^6.0.0"
   checksum: 10c0/8d198d8aebc32e56c966ac57b0fe8f832b7d601a2f62819ba3a294570233982bf4d5b499a764194b6b26dbc5313a156c2611cbc542234ea6eae6accf07a651ab
-  languageName: node
-  linkType: hard
-
-"combokeys@npm:^3.0.1":
-  version: 3.0.1
-  resolution: "combokeys@npm:3.0.1"
-  checksum: 10c0/e03e19949e1f41097154889c68cb81897734fa5eba0c9edb860a4702fa24ae333fdbccf5764fad3036e3a23a167b573e02947ce5854df4abde69bf81f047e0a6
   languageName: node
   linkType: hard
 
@@ -3973,7 +3959,6 @@ __metadata:
     "@heroicons/react": "npm:^2.2.0"
     "@replit/codemirror-vscode-keymap": "npm:^6.0.2"
     "@tailwindcss/postcss": "npm:^4.3.3"
-    "@types/combokeys": "npm:^2.4.9"
     "@types/lodash": "npm:^4.17.25"
     "@types/node": "npm:^24"
     "@types/react": "npm:^19.3.0"
@@ -3984,7 +3969,6 @@ __metadata:
     autoprefixer: "npm:^10.6.1"
     chevrotain: "npm:^13.2.0"
     codemirror: "npm:^6.0.2"
-    combokeys: "npm:^3.0.1"
     graphology: "npm:^0.26.0"
     graphology-types: "npm:^0.24.8"
     happy-dom: "npm:^20.14.5"

@@ -1,6 +1,14 @@
-import { beforeEach, expect, it } from "vitest";
+import { beforeEach, expect, it, vi } from "vitest";
 import { activeTool, releaseHeld, setTool, tools } from "../state/Tools";
-import { bindToolShortcuts, isEditable, LINK_KEY, onKeyDown, onKeyUp } from "./shortcuts";
+import {
+  bindEditShortcuts,
+  bindToolShortcuts,
+  editShortcut,
+  isEditable,
+  LINK_KEY,
+  onKeyDown,
+  onKeyUp,
+} from "./shortcuts";
 
 beforeEach(() => {
   setTool("select");
@@ -73,4 +81,35 @@ it("counts text fields as editable, but not buttons or nothing", () => {
   expect(isEditable(document.getElementById("field"))).toBe(true);
   expect(isEditable(document.getElementById("btn"))).toBe(false);
   expect(isEditable(null)).toBe(false);
+});
+
+// happy-dom reports a platform other than Apple's, so mod is Ctrl.
+const press = (init: KeyboardEventInit, target: Element = document.body) => {
+  const event = new KeyboardEvent("keydown", { bubbles: true, ...init });
+  Object.defineProperty(event, "target", { value: target });
+  return editShortcut(event);
+};
+
+it("reads undo, redo and delete from key presses", () => {
+  expect(press({ key: "z", ctrlKey: true })).toBe("undo");
+  expect(press({ key: "Z", ctrlKey: true, shiftKey: true })).toBe("redo");
+  expect(press({ key: "y", ctrlKey: true })).toBe("redo");
+  expect(press({ key: "Delete" })).toBe("deleteSelection");
+  expect(press({ key: "Backspace" })).toBe("deleteSelection");
+});
+
+it("leaves edit keys to text fields, and to other modifiers", () => {
+  expect(press({ key: "z", ctrlKey: true }, document.getElementById("code")!)).toBeUndefined();
+  expect(press({ key: "Backspace" }, document.getElementById("field")!)).toBeUndefined();
+  expect(press({ key: "z", ctrlKey: true, altKey: true })).toBeUndefined();
+  expect(press({ key: "z", metaKey: true })).toBeUndefined();
+  expect(press({ key: "z" })).toBeUndefined();
+});
+
+it("calls the edit for a shortcut, in place of the browser's own", () => {
+  const actions = { undo: vi.fn(), redo: vi.fn(), deleteSelection: vi.fn() };
+  bindEditShortcuts(actions);
+  expect(key("z", document.body, { ctrlKey: true }).defaultPrevented).toBe(true);
+  expect(key("x", document.body, { ctrlKey: true }).defaultPrevented).toBe(false);
+  expect(actions.undo).toHaveBeenCalledTimes(1);
 });

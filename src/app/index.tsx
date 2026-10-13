@@ -23,16 +23,24 @@ import { HelpLauncher } from "../help/HelpLauncher";
 import { openAbout } from "../onboarding/about";
 import { initializeOnboarding } from "../onboarding";
 
-import { setEditorText } from "../state/State";
+import { setEditorText, stopSelecting } from "../state/State";
 
 import { initializePanelResizer } from "./components/PanelResizer";
-import { initializeUserEvents } from "./UserEvents";
+import { bindEditShortcuts, bindToolShortcuts } from "./shortcuts";
 import { keepMapOutOfSearch } from "./seo";
 
 import "@fontsource-variable/jetbrains-mono";
 import "./index.css";
 
-initializeUserEvents();
+const edits = {
+  undo: () => undoManager.undo(),
+  redo: () => undoManager.redo(),
+  deleteSelection,
+};
+bindToolShortcuts();
+bindEditShortcuts(edits);
+// A marquee can't follow a pointer released outside the window.
+window.addEventListener("blur", stopSelecting);
 
 keepMapOutOfSearch(room.isNew);
 
@@ -68,11 +76,7 @@ const run = async (elementId: string) => {
 
   initializeCanvasPresence(MapSingleton.canvas, awareness, (p) => toWorld(viewport, p));
 
-  initializeCanvasControls(MapSingleton.canvas, MapSingleton.mapView, {
-    undo: () => undoManager.undo(),
-    redo: () => undoManager.redo(),
-    deleteSelection,
-  });
+  initializeCanvasControls(MapSingleton.canvas, MapSingleton.mapView, edits);
 
   fitMap();
 
