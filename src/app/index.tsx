@@ -21,7 +21,6 @@ import { TopBar } from "../menu";
 import { HelpLauncher } from "../help/HelpLauncher";
 import { openAbout } from "../onboarding/about";
 import { initializeOnboarding } from "../onboarding";
-import { trackHelpTopic } from "../state/Ui";
 
 import { setEditorText } from "../state/State";
 
@@ -115,7 +114,6 @@ const initializeChrome = () => {
     <TopBar onAbout={openAbout} onDemo={openDemo} onShare={mapLink.create} />,
   );
   createRoot(document.getElementById("overlays")!).render(<HelpLauncher />);
-  trackHelpTopic();
 };
 
 run("map");
