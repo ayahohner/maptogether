@@ -4,7 +4,6 @@ import {
   bindGestures,
   DOUBLE_TAP_MS,
   Gestures,
-  LONG_PRESS_MS,
   wheelPixels,
   type CanvasActions,
   type Clock,

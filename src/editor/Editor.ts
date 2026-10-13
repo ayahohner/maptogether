@@ -13,13 +13,7 @@ import { vscodeKeymap } from "@replit/codemirror-vscode-keymap";
 
 import debounce from "lodash/debounce";
 
-import {
-  renameInSelection,
-  setEditorText,
-  state,
-  subscribe,
-  clearSelection,
-} from "../state/State";
+import { renameInSelection, setEditorText, state, subscribe, clearSelection } from "../state/State";
 import MapSingleton from "../map/components/MapSingleton";
 import { togetherScriptLinter } from "./TogetherScriptLinter";
 import { deletionRanges } from "./deletions";
@@ -92,7 +86,8 @@ const startSync = (id: string) =>
     },
   })
     .then((sync) => {
-      if (import.meta.env.VITE_DEBUG_ENABLED === "true") (window as any).__sync = sync;
+      if (import.meta.env.VITE_DEBUG_ENABLED === "true")
+        (window as { __sync?: unknown }).__sync = sync;
     })
     .catch((err) => {
       collaboration.status = "error";
@@ -202,12 +197,6 @@ export const deleteSelection = () => {
   clearSelection();
   if (changes.length) editorView.dispatch({ changes });
 };
-
-/* ======== Events ======== */
-// Save editor state to browser storage before navigating away
-window.addEventListener("beforeunload", (e) => {
-  localStorage.setItem("editorText", editorView.state.doc.toString());
-});
 
 const handleEditorChange = debounce((text: string) => {
   setEditorText(text);

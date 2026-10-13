@@ -6,10 +6,7 @@ import { bindPresence, collaboration } from "../sync/presence";
 
 const cleanups: (() => void)[] = [];
 afterEach(() => {
-  cleanups
-    .reverse()
-    .splice(0)
-    .forEach((fn) => fn());
+  for (const fn of cleanups.reverse().splice(0)) fn();
   document.body.replaceChildren();
   vi.useRealTimers();
 });

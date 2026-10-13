@@ -368,7 +368,10 @@ class TogetherParser extends CstParser {
       this.CONSUME(BraceOpen);
       // Blank lines are allowed anywhere inside, as at the top level.
       this.MANY(() => {
-        this.OR([{ ALT: () => this.CONSUME(Newline) }, { ALT: () => this.SUBRULE(this.statement) }]);
+        this.OR([
+          { ALT: () => this.CONSUME(Newline) },
+          { ALT: () => this.SUBRULE(this.statement) },
+        ]);
       });
       this.CONSUME(BraceClose);
     });

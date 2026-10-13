@@ -1,6 +1,6 @@
 import {
   dragTo,
-  fit,
+  fitToWindow,
   initialPanel,
   isCollapsed,
   release,
@@ -71,7 +71,7 @@ export function initializePanelResizer(
   divider.addEventListener("pointerup", endPress);
   divider.addEventListener("pointercancel", endPress);
   divider.addEventListener("keydown", (event) => onKey(event, state, limits(), apply));
-  window.addEventListener("resize", () => apply(fit(state, limits())));
+  window.addEventListener("resize", () => apply(fitToWindow(state, limits())));
 
   apply(state);
   return { state: () => state };

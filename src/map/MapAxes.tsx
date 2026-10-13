@@ -60,10 +60,10 @@ export function StageDividers() {
 export function MapAxes() {
   return (
     <>
-      <div className="axis-y" aria-label="Visibility">
+      <div className="axis-y">
         <span className="axis-y-label">Visibility</span>
       </div>
-      <div className="axis-x" aria-label="Evolution">
+      <div className="axis-x">
         {evolutionStages.map((stage, i) => (
           <span
             key={stage.name}
@@ -75,6 +75,7 @@ export function MapAxes() {
               width: `${stageEdges[i + 1] - stageEdges[i]}%`,
             }}
           >
+            {/* biome-ignore lint/a11y/noNoninteractiveTabindex: focus shows the stage's other names, for keyboard users. */}
             <span className="axis-x-label" tabIndex={0}>
               {stage.name}
               <span className="axis-x-popover" role="tooltip">

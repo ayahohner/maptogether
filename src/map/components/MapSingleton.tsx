@@ -14,8 +14,8 @@ import { SelectionHandler } from "./SelectionHandler";
 const LABEL_FONT = '"Instrument Sans", sans-serif';
 
 class MapSingleton extends Application {
-  static _instance: MapSingleton;
-  static _parentElement: HTMLDivElement;
+  /** The element the canvas fills. */
+  readonly parent = document.getElementById("map") as HTMLDivElement;
 
   /** Resolves once the Pixi application has been initialized. */
   readonly ready!: Promise<void>;
@@ -29,15 +29,6 @@ class MapSingleton extends Application {
 
   constructor() {
     super();
-
-    if (MapSingleton._instance) {
-      return MapSingleton._instance;
-    }
-
-    MapSingleton._parentElement = document.getElementById("map") as HTMLDivElement;
-
-    MapSingleton._instance = this;
-
     this.ready = this.initialize();
   }
 
@@ -50,7 +41,7 @@ class MapSingleton extends Application {
       autoDensity: true,
       // this may introduce coordinate bugs
       resolution: 2,
-      resizeTo: MapSingleton._parentElement,
+      resizeTo: this.parent,
     });
 
     // Disable automatic rendering: we render manually in the ticker callback
@@ -98,14 +89,14 @@ class MapSingleton extends Application {
   }
 
   private applyView = () => {
-    applyView(this.world, MapSingleton._parentElement, viewport);
+    applyView(this.world, this.parent, viewport);
     this.dirty = true;
   };
 
   /** The map as the canvas gestures see it. */
   get mapView(): MapView {
     return {
-      element: MapSingleton._parentElement,
+      element: this.parent,
       components: () => this.graphContainer.children,
       size: () => this.screen,
     };
@@ -120,8 +111,7 @@ class MapSingleton extends Application {
     // (This is what the old `this.resize()` call did; in Pixi v8 `resize`
     // is assigned dynamically by the ResizePlugin and isn't in the types,
     // so call `renderer.resize` directly.)
-    const parent = MapSingleton._parentElement;
-    this.renderer.resize(parent.clientWidth, parent.clientHeight);
+    this.renderer.resize(this.parent.clientWidth, this.parent.clientHeight);
     rerenderGraph();
   }, 32);
 

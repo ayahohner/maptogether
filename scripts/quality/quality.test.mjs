@@ -179,7 +179,12 @@ describe("cli", () => {
 
   it("diffs committed changes against a base and fails on violations", () => {
     const calls = [];
-    const io = fakeIo({ git: (args) => (calls.push(args), "+++ b/f.js\n@@ -0,0 +1 @@\n") });
+    const io = fakeIo({
+      git: (args) => {
+        calls.push(args);
+        return "+++ b/f.js\n@@ -0,0 +1 @@\n";
+      },
+    });
     expect(
       run(["--base", "main", "--head", "HEAD", "--all", "--verbose", "--max-crap", "1"], io),
     ).toBe(1);

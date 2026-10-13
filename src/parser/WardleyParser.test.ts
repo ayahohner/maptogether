@@ -1,4 +1,4 @@
-import { parseToAST, WardleyASTT } from "./WardleyParser";
+import { parseToAST } from "./WardleyParser";
 
 import { it, expect, describe } from "vitest";
 

@@ -20,6 +20,7 @@ const ZOOM_STEP = 1.25;
 
 const SelectIcon: Icon = (props) => (
   <svg
+    aria-hidden="true"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -33,6 +34,7 @@ const SelectIcon: Icon = (props) => (
 
 const ComponentIcon: Icon = (props) => (
   <svg
+    aria-hidden="true"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -46,7 +48,14 @@ const ComponentIcon: Icon = (props) => (
 );
 
 const LinkToolIcon: Icon = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} {...props}>
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.5}
+    {...props}
+  >
     <circle cx="6.5" cy="6.5" r="3" />
     <circle cx="17.5" cy="17.5" r="3" />
     <path d="m8.6 8.6 6.8 6.8" />
@@ -151,6 +160,7 @@ function ControlButton({ label, keys, icon: Icon, pressed, onClick }: ControlBut
 function ZoomControls({ onZoom, onResetZoom }: MapControlsProps) {
   const { scale } = useSnapshot(viewport);
   return (
+    // biome-ignore lint/a11y/useSemanticElements: a fieldset groups form fields, not buttons.
     <div role="group" aria-label="Zoom" className="map-zoom float">
       <button
         type="button"

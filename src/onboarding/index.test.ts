@@ -8,7 +8,12 @@ const dialog = () => {
 };
 const storage = () => ({ getItem: () => "false", setItem: vi.fn() });
 let text = "";
-const map = { text: () => text, replace: vi.fn((t: string) => void (text = t)) };
+const map = {
+  text: () => text,
+  replace: vi.fn((t: string) => {
+    text = t;
+  }),
+};
 
 beforeEach(() => {
   text = "";

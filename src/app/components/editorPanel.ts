@@ -52,5 +52,5 @@ export const toggle = (state: PanelState, limits: PanelLimits): PanelState => {
 };
 
 /** Keeps the panel inside a resized window. */
-export const fit = (state: PanelState, limits: PanelLimits): PanelState =>
+export const fitToWindow = (state: PanelState, limits: PanelLimits): PanelState =>
   state.width > limits.maxWidth ? { ...state, width: limits.maxWidth } : state;

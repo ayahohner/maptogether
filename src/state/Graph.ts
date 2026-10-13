@@ -105,13 +105,12 @@ export const addEdge = (componentAKey: string, componentBKey: string) => {
 };
 
 const updateEdgePosition = (
-  edge: string,
+  _edge: string,
   attributes: EdgeAttributes,
-  source: string,
-  target: string,
+  _source: string,
+  _target: string,
   sourceAttributes: NodeAttributes,
   targetAttributes: NodeAttributes,
-  undirected: boolean,
 ) => {
   attributes.coordinates.start.x = sourceAttributes.component.x;
   attributes.coordinates.start.y = sourceAttributes.component.y;
@@ -186,7 +185,7 @@ class TogetherVisitorToGraph extends BaseTogetherVisitor {
     // TODO: add command and note
   }
 
-  command(ctx: any) {
+  command(_ctx: any) {
     return;
   }
 
@@ -194,7 +193,7 @@ class TogetherVisitorToGraph extends BaseTogetherVisitor {
     return ctx.attributes;
   }
 
-  attribute(ctx: any) {
+  attribute(_ctx: any) {
     return;
   }
 
@@ -240,7 +239,7 @@ class TogetherVisitorToGraph extends BaseTogetherVisitor {
     return parentComponent ? [] : children;
   }
 
-  pipeline(ctx: any, parentComponent?: Object | undefined) {
+  pipeline(ctx: any, parentComponent?: unknown) {
     const components: any[] = [];
 
     if (ctx.statement) {
@@ -259,7 +258,7 @@ class TogetherVisitorToGraph extends BaseTogetherVisitor {
     return [Number(ctx.LHS[0].image), Number(ctx.RHS[0].image)];
   }
 
-  note(ctx: any) {
+  note(_ctx: any) {
     return;
   }
 }

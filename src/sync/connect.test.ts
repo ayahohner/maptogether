@@ -7,7 +7,9 @@ import { MapSync, connectSync, fetchIceServers, roomUrl } from "./connect";
 import { createFakeRelay, until } from "./testing/fakeRelay";
 
 const syncs: MapSync[] = [];
-afterEach(() => syncs.splice(0).forEach((s) => s.destroy()));
+afterEach(() => {
+  for (const s of syncs.splice(0)) s.destroy();
+});
 
 function client(relay: ReturnType<typeof createFakeRelay>) {
   const doc = new Y.Doc();

@@ -24,6 +24,7 @@ export function CollaborationBadge() {
     return () => document.removeEventListener("pointerdown", dismiss);
   }, []);
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: hovering shows the same list that focusing the indicator does.
     <div
       ref={root}
       className="collaboration-badge"
@@ -36,9 +37,11 @@ export function CollaborationBadge() {
         if (event.key === "Escape") setOpen(false);
       }}
     >
+      {/* biome-ignore lint/a11y/useSemanticElements: a fieldset groups form fields. */}
       <span
         className="collaboration-indicator"
         role="group"
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: focus shows who is on the map, for keyboard users.
         tabIndex={0}
         aria-describedby={open ? id : undefined}
         aria-label="People"

@@ -33,7 +33,11 @@ export const coordinateChanges = (
     // Indent, name, definition specifier and the space before the coordinates.
     const head = joined(match.slice(1, 5));
     const old = match[5] ?? "";
-    return { from: at, to: at + head.length + old.length, insert: `${head}[${visibility}, ${evolution}]` };
+    return {
+      from: at,
+      to: at + head.length + old.length,
+      insert: `${head}[${visibility}, ${evolution}]`,
+    };
   });
 
 /** Offset of the component name in a link line, on whichever side it is. */

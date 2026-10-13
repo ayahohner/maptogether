@@ -6,7 +6,7 @@
 import * as Y from "yjs";
 import { Awareness } from "y-protocols/awareness";
 import { RTCPeerConnection } from "werift";
-import { expect, it } from "vitest";
+import { it } from "vitest";
 import { connectSync } from "./connect";
 import { until } from "./testing/fakeRelay";
 import type { SyncStatus } from "./SaveStatus";

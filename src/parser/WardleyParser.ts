@@ -58,8 +58,7 @@ const NewLine = createToken({
 // TODO: string literal starting with a number matches numberliteral, need to do lookahead
 const StringLiteral = createToken({
   name: "StringLiteral",
-  pattern:
-    /[a-zA-Z0-9_+:?!@#$%^&*(){}/`~]+([ -]+[a-zA-Z0-9_+:?!@#$%^&*(){}/`~]+)*/,
+  pattern: /[a-zA-Z0-9_+:?!@#$%^&*(){}/`~]+([ -]+[a-zA-Z0-9_+:?!@#$%^&*(){}/`~]+)*/,
 });
 
 const NumberLiteral = createToken({
@@ -206,7 +205,7 @@ class WardleyVisitorToAST extends BaseWardleyVisitor {
   }
 
   declaration(ctx: any) {
-    let dec ;
+    let dec: unknown;
     if (ctx.componentDeclaration) {
       dec = this.visit(ctx.componentDeclaration[0]);
     } else if (ctx.pipelineDeclaration) {
@@ -218,7 +217,7 @@ class WardleyVisitorToAST extends BaseWardleyVisitor {
   }
 
   componentDeclaration(ctx: any) {
-    let coordinates ;
+    let coordinates: unknown;
     if (ctx.coordinates) {
       coordinates = this.visit(ctx.coordinates[0]);
     }
@@ -230,7 +229,7 @@ class WardleyVisitorToAST extends BaseWardleyVisitor {
   }
 
   pipelineDeclaration(ctx: any) {
-    let coordinates ;
+    let coordinates: unknown;
     if (ctx.coordinates) {
       coordinates = this.visit(ctx.coordinates[0]);
     }

@@ -78,7 +78,7 @@ function limitsFrom(values) {
 }
 
 function report(results, format, log) {
-  results.forEach((result) => log(format(result)));
+  for (const result of results) log(format(result));
   const violations = results.flatMap((r) => r.violations);
   log(
     violations.length

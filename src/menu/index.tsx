@@ -115,7 +115,7 @@ interface MenuActionProps {
 function MenuAction({ icon: Icon, label, onClick }: MenuActionProps) {
   return (
     <MenuItem>
-      <button className="menu-item" onClick={onClick}>
+      <button type="button" className="menu-item" onClick={onClick}>
         <Icon aria-hidden="true" /> {label}
       </button>
     </MenuItem>

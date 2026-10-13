@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   dragTo,
-  fit,
+  fitToWindow,
   initialPanel,
   isCollapsed,
   release,
@@ -51,8 +51,8 @@ describe("on desktop", () => {
 
   it("shrinks to fit a smaller window", () => {
     const wide = dragAndRelease(undefined, 900);
-    expect(fit(wide, { ...desktop, maxWidth: 700 }).width).toBe(700);
-    expect(fit(wide, desktop)).toBe(wide);
+    expect(fitToWindow(wide, { ...desktop, maxWidth: 700 }).width).toBe(700);
+    expect(fitToWindow(wide, desktop)).toBe(wide);
   });
 });
 

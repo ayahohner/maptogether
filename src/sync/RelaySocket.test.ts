@@ -4,7 +4,9 @@ import { RelaySocket, type RelayHandlers } from "./RelaySocket";
 import { createFakeRelay, until } from "./testing/fakeRelay";
 
 const sockets: RelaySocket[] = [];
-afterEach(() => sockets.splice(0).forEach((s) => s.destroy()));
+afterEach(() => {
+  for (const s of sockets.splice(0)) s.destroy();
+});
 
 function open(relay: ReturnType<typeof createFakeRelay>, opts = {}) {
   const seen = { opens: 0, texts: [] as unknown[], binaries: 0 };

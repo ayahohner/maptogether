@@ -109,6 +109,7 @@ function CanvasHelp() {
                 <dt className="font-medium text-ink">{row.action}</dt>
                 <dd className="ml-auto flex flex-wrap items-center justify-end gap-1 text-right text-ink-muted">
                   {row.how.map((part, i) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: the parts are fixed and can repeat.
                     <HowPart key={i} part={part} />
                   ))}
                 </dd>
@@ -156,6 +157,7 @@ const TOKEN = /(\/\/.*$|-?\d+(?:\.\d+)?|[[\]{}.,])/gm;
 /** Light syntax colouring: comments, numbers and punctuation. */
 export function Highlighted({ code }: { code: string }) {
   return code.split(TOKEN).map((token, i) => (
+    // biome-ignore lint/suspicious/noArrayIndexKey: tokens repeat, and the list is rebuilt whole.
     <span key={i} className={tokenClass(token)}>
       {token}
     </span>

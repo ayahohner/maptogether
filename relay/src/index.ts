@@ -121,7 +121,7 @@ export class MapRoom extends DurableObject<Env> {
 
   private async receiveText(ws: WebSocket, text: string) {
     if (text.length > MAX_TEXT_BYTES) return;
-    let message;
+    let message: { type?: string; id?: number } | null;
     try {
       message = JSON.parse(text);
     } catch {

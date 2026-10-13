@@ -131,8 +131,8 @@ export const renameInSelection = (oldName: string, newName: string) => {
 };
 
 export const addToSelection = (items: ComponentT["nodeKey"][], edges: string[] = []) => {
-  items.forEach((item) => state.selection.selectionItems.add(item));
-  edges.forEach((edge) => state.selection.edgeItems.add(edge));
+  for (const item of items) state.selection.selectionItems.add(item);
+  for (const edge of edges) state.selection.edgeItems.add(edge);
 };
 
 export const replaceSelection = (newSelection: ComponentT["nodeKey"][], edges: string[] = []) => {
@@ -145,8 +145,8 @@ const toggle = (set: Set<string>, item: string) => {
 };
 
 export const xorSelection = (inputSelection: ComponentT["nodeKey"][], edges: string[] = []) => {
-  inputSelection.forEach((item) => toggle(state.selection.selectionItems, item));
-  edges.forEach((edge) => toggle(state.selection.edgeItems, edge));
+  for (const item of inputSelection) toggle(state.selection.selectionItems, item);
+  for (const edge of edges) toggle(state.selection.edgeItems, edge);
 };
 
 export const hasSelection = (selection: StateT["selection"] = state.selection) =>

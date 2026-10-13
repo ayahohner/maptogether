@@ -47,7 +47,7 @@ export class PeerMesh {
   }
 
   destroy() {
-    this.peerIds.forEach((id) => this.drop(id));
+    for (const id of this.peerIds) this.drop(id);
   }
 
   private async welcome(id: string, peers: string[]) {

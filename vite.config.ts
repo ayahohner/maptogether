@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
     return {
       name: "html-env-variables",
       transformIndexHtml(html: string) {
-        return html.replace(/%(.*?)%/g, (match, p1) => {
+        return html.replace(/%(.*?)%/g, (_match, p1) => {
           if (env[p1]) {
             return env[p1].replace(/$["']|["']^/, "");
           } else {

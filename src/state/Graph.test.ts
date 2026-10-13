@@ -46,10 +46,12 @@ const draw = (text: string) => {
 /** What each component was drawn with, by name. */
 const drawn = () =>
   Object.fromEntries(
-    vi.mocked(Component).mock.calls.map(([config]) => [
-      config.name,
-      { x: config.x, y: config.y, inPipeline: config.inPipeline },
-    ]),
+    vi
+      .mocked(Component)
+      .mock.calls.map(([config]) => [
+        config.name,
+        { x: config.x, y: config.y, inPipeline: config.inPipeline },
+      ]),
   );
 
 beforeEach(() => {
@@ -84,9 +86,7 @@ it("draws a pipeline nested in another without its components", () => {
 
 it("draws links after every component, whichever comes first in the text", () => {
   draw("Kettle.Power\nKettle [33, 50]\nPower [10, 86]");
-  expect(graph.edges().map((e) => graph.getEdgeAttribute(e, "nodeKey"))).toEqual([
-    "Kettle->Power",
-  ]);
+  expect(graph.edges().map((e) => graph.getEdgeAttribute(e, "nodeKey"))).toEqual(["Kettle->Power"]);
 });
 
 it("draws a component written twice once, where it is first written", () => {

@@ -55,7 +55,9 @@ export function mapLifecycle(room: Room, hooks: LifecycleHooks): MapLifecycle {
   if (room.id) hooks.connect(room.id);
   return {
     create,
-    setUnedited: (text) => void (unedited = text),
+    setUnedited: (text) => {
+      unedited = text;
+    },
     textChanged: (text) => {
       if (room.id) return;
       const now = text();

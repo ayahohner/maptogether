@@ -44,7 +44,7 @@ export class Signaling {
 
   private broadcast(message: object, except: SignalPeer) {
     const text = JSON.stringify(message);
-    this.others(except).forEach((p) => p.sendText(text));
+    for (const p of this.others(except)) p.sendText(text);
   }
 }
 
