@@ -1,0 +1,42 @@
+name: Clean up relay Worker Previews
+
+# Previews have no built-in expiry. Delete a branch's Preview with the branch,
+# and daily sweep any not deployed for a week (except main's). The free plan
+# also evicts the least recently deployed beyond 100.
+on:
+  delete:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  API: https://api.cloudflare.com/client/v4/accounts/ea273b96fe59655aa4b5ce77dccec99c/workers/workers/wmaps-relay/previews
+  MAX_IDLE_DAYS: 7
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: relay/scripts
+      - name: Delete stale Previews
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DELETED_REF: ${{ github.event_name == 'delete' && github.event.ref_type == 'branch' && github.event.ref || '' }}
+        run: |
+          set -eo pipefail
+          api() { curl -sSf -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$@"; }
+          cutoff="$(date -u -d "$MAX_IDLE_DAYS days ago" +%Y-%m-%dT%H:%M:%SZ)"
+          deleted="$( [ -n "$DELETED_REF" ] && relay/scripts/preview-name.sh "$DELETED_REF" || true)"
+          api "$API?per_page=100" | jq -r --arg cutoff "$cutoff" --arg deleted "$deleted" \
+            '.result[] | select(.name != "main" and (.name == $deleted or .deployed_on < $cutoff)) | .name' |
+          while read -r name; do
+            echo "Deleting Preview $name"
+            api -X DELETE "$API/$name" > /dev/null
+          done

@@ -1,22 +1,9 @@
 name: Deploy Cloudflare relay
 
 on:
+  # main deploys production; other branches get their own Worker Preview.
   push:
-    branches: [main]
-    paths:
-      - "relay/**"
-      - "src/sync/**"
-      - "package.json"
-      - "yarn.lock"
-      - ".yarnrc.yml"
-      - ".yarn/**"
-      - ".nvmrc"
-      - "vite.config.ts"
-      - ".github/workflows/deploy-relay.yml"
-  pull_request:
-    branches: [main]
-    # closed: delete the PR's Worker Preview.
-    types: [opened, synchronize, reopened, closed]
+    branches: ["**"]
     paths:
       - "relay/**"
       - "src/sync/**"
@@ -31,7 +18,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 # Finish an in-progress deployment before starting another one.
 concurrency:
@@ -40,7 +26,6 @@ concurrency:
 
 jobs:
   relay:
-    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -50,7 +35,7 @@ jobs:
         with:
           persist-credentials: false
           # Queued runs and manual reruns validate/deploy the current main.
-          ref: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && 'main' || github.sha }}
+          ref: ${{ github.ref == 'refs/heads/main' && 'main' || github.sha }}
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
@@ -63,59 +48,32 @@ jobs:
         run: node .yarn/releases/yarn-4.18.0.cjs vitest run relay/src src/sync
       - name: Validate Worker bundle and infrastructure configuration
         run: node .yarn/releases/yarn-4.18.0.cjs relay:deploy --dry-run
-      # Forks don't get secrets; their PRs stop at the dry run above.
-      - name: Deploy PR Worker Preview
+      # Isolated Durable Objects: a bad migration fails here, not in production.
+      - name: Deploy Worker Preview
         id: preview
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           set -o pipefail
-          output="$(node .yarn/releases/yarn-4.18.0.cjs wrangler preview -c relay/wrangler.jsonc --name "pr-${{ github.event.pull_request.number }}" --json)"
-          echo "url=$(printf '%s' "$output" | jq -er '.preview.urls[0]')" >> "$GITHUB_OUTPUT"
-      - name: Verify PR Preview sync and durable save receipts
-        if: steps.preview.outcome == 'success'
-        env:
-          LIVE_RELAY: ${{ steps.preview.outputs.url }}
-        run: node .yarn/releases/yarn-4.18.0.cjs vitest run src/sync/relay.live.test.ts
-      - name: Comment Preview URL
-        if: steps.preview.outcome == 'success'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh pr comment "${{ github.event.pull_request.number }}" --edit-last --create-if-none \
-            --body "Relay Worker Preview: ${{ steps.preview.outputs.url }} (isolated Durable Objects; set \`VITE_SYNC_RELAY_URL\` to try it)"
-      - name: Deploy production relay
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
             echo "::error::Set the repository Actions secret CLOUDFLARE_API_TOKEN to a Cloudflare Workers deployment token."
             exit 1
           fi
-          node .yarn/releases/yarn-4.18.0.cjs relay:deploy
-      - name: Verify deployed sync and durable save receipts
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        run: node .yarn/releases/yarn-4.18.0.cjs test:live
-
-  delete-preview:
-    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    env:
-      WRANGLER_SEND_METRICS: "false"
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
-          package-manager-cache: false
-      - name: Install locked dependencies
-        run: node .yarn/releases/yarn-4.18.0.cjs install --immutable
-      - name: Delete PR Worker Preview
+          name="$(relay/scripts/preview-name.sh "$GITHUB_REF_NAME")"
+          output="$(node .yarn/releases/yarn-4.18.0.cjs wrangler preview -c relay/wrangler.jsonc --name "$name" --json)"
+          url="$(printf '%s' "$output" | jq -er '.preview.urls[0]')"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Relay Worker Preview: $url" >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify Preview sync and durable save receipts
+        env:
+          LIVE_RELAY: ${{ steps.preview.outputs.url }}
+        run: node .yarn/releases/yarn-4.18.0.cjs vitest run src/sync/relay.live.test.ts
+      - name: Deploy production relay
+        if: github.ref == 'refs/heads/main'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: node .yarn/releases/yarn-4.18.0.cjs wrangler preview delete -c relay/wrangler.jsonc --name "pr-${{ github.event.pull_request.number }}" --skip-confirmation
+        run: node .yarn/releases/yarn-4.18.0.cjs relay:deploy
+      - name: Verify deployed sync and durable save receipts
+        if: github.ref == 'refs/heads/main'
+        run: node .yarn/releases/yarn-4.18.0.cjs test:live
+
