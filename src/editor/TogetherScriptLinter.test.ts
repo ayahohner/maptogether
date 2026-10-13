@@ -1,7 +1,8 @@
 import { Text } from "@codemirror/state";
 import { describe, expect, it } from "vitest";
 
-import { toDiagnostics } from "./TogetherScriptLinter";
+import { tryParse } from "../parser/TogetherParser";
+import { selfLinkLines, toDiagnostics } from "./TogetherScriptLinter";
 
 describe("toDiagnostics", () => {
   const doc = Text.of(["Kettle [33, 50]", "Power [10,", "Water [22, 91]"]);
@@ -17,5 +18,12 @@ describe("toDiagnostics", () => {
       from: 27,
       to: 41,
     });
+  });
+});
+
+describe("selfLinkLines", () => {
+  it("finds the links from a component to itself", () => {
+    const { cst } = tryParse("A\nB\nA.A\nA.B\nB.(loop)B // twice");
+    expect(selfLinkLines(cst!)).toEqual([3, 5]);
   });
 });

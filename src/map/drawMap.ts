@@ -26,11 +26,14 @@ const mountedNode = (nodeKey: string) =>
     ? graph.getNodeAttributes(nodeKey)
     : undefined;
 
-/** Draws a link. Links to undeclared components, and repeated links, are skipped. */
+/**
+ * Draws a link. Links to undeclared components, from a component to itself
+ * (the editor warns of these), and repeated links are skipped.
+ */
 export const addEdge = (componentAKey: string, componentBKey: string) => {
   const a = mountedNode(componentAKey);
   const b = mountedNode(componentBKey);
-  if (!a || !b || graph.hasEdge(componentAKey, componentBKey)) return;
+  if (!a || !b || a === b || graph.hasEdge(componentAKey, componentBKey)) return;
 
   const nodeKey = `${a.nodeKey}->${b.nodeKey}`;
   const component = Line(a.component.x, a.component.y, b.component.x, b.component.y, nodeKey);

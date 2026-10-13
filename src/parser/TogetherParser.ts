@@ -438,19 +438,24 @@ export const matchComponentRegex = (componentName: string) => {
   ].join("");
 };
 
+/** Matches a link line from `name`: groups 1–4 are indent, name, space and the rest. */
+export const matchEdgeFromRegex = (name: string) =>
+  `^(${C("Whitespace")})?(${escapeRegex(name)})(${C("Whitespace")})?\\.(.*)$`;
+
 /**
- * Matches a link line with `edgeComponentName` on either side. With the name
- * on the left, groups 1–4 are indent, name, space and the rest; on the right,
- * groups 5–8 come before it, 9 is the name, then 10 space and 11 comment.
+ * Matches a link line to `name`: groups 1–4 come before it (2 is the "." or
+ * label, 3 the label alone), 5 is the name, then 6 space and 7 comment.
  */
-export const matchEdgeRegex = (edgeComponentName: string) => {
-  return [
-    `^(${C("Whitespace")})?(${escapeRegex(edgeComponentName)})(${C("Whitespace")})?\\.(.*)$`,
-    `|(.*?)(\\.(${C("ParenOpen")}.*?${C("ParenClose")})?|\\))(${C(
-      "Whitespace",
-    )})?(${escapeRegex(edgeComponentName)})(${C("Whitespace")})?(${C("Comment")})?$`,
-  ].join("");
-};
+export const matchEdgeToRegex = (name: string) =>
+  `(.*?)(\\.(${C("ParenOpen")}.*?${C("ParenClose")})?|\\))(${C("Whitespace")})?(${escapeRegex(name)})(${C("Whitespace")})?(${C("Comment")})?$`;
+
+/**
+ * Matches a link line with `name` on either side. With the name on the left,
+ * groups 1–4 are as in matchEdgeFromRegex; on the right, groups 5–11 are
+ * matchEdgeToRegex's 1–7.
+ */
+export const matchEdgeRegex = (name: string) =>
+  `${matchEdgeFromRegex(name)}|${matchEdgeToRegex(name)}`;
 
 /** A line that is just the link between `a` and `b`, written either way round. */
 export const matchEdgeBetweenRegex = (a: string, b: string) => {

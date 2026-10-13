@@ -45,6 +45,11 @@ describe("moveChanges", () => {
 });
 
 describe("renameChanges", () => {
+  it("renames both ends of a link from the component to itself", () => {
+    const text = "A\nA.A";
+    expect(apply(text, renameChanges(text, "A", "B"))).toBe("B\nB.B");
+  });
+
   it("renames the declaration and both sides of its links", () => {
     const text = "Kettle [33, 50]\nKettle.Power\nHot Water.Kettle // heats";
     expect(apply(text, renameChanges(text, "Kettle", "Urn"))).toBe(

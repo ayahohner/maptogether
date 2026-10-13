@@ -85,8 +85,8 @@ it("draws a component written twice once, where it is first written", () => {
   expect(graph.getNodeAttribute("Kettle", "coordinates")).toEqual({ x: 50, y: 67 });
 });
 
-it("skips links to undeclared components and repeated links", () => {
-  drawMap("Kettle\nPower\nKettle.Power\nPower.Kettle\nKettle.Water");
+it("skips links to undeclared components, to the component itself, and repeated links", () => {
+  drawMap("Kettle\nPower\nKettle.Power\nPower.Kettle\nKettle.Water\nKettle.Kettle");
   expect(graph.size).toBe(1);
 });
 

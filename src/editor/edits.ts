@@ -1,4 +1,8 @@
-import { matchComponentRegex, matchEdgeRegex } from "../parser/TogetherParser";
+import {
+  matchComponentRegex,
+  matchEdgeFromRegex,
+  matchEdgeToRegex,
+} from "../parser/TogetherParser";
 import { lineStarts } from "./deletions";
 
 export interface Change {
@@ -52,22 +56,22 @@ export const moveChanges = (text: string, placements: readonly Placement[]): Cha
     .flatMap(({ name, coordinates }) => coordinateChanges(text, name, coordinates))
     .sort((a, b) => a.from - b.from);
 
-/** Offset of the component name in a link line, on whichever side it is. */
-function nameInLink(match: RegExpExecArray) {
-  // Groups 1–2 match the name on the left of the ".", groups 5–9 on the right.
-  if (match[2] !== undefined) return joined([match[1]]).length;
-  return joined([match[5], match[6], match[8]]).length;
-}
-
-/** Renames a component where it is declared and in each link to or from it. */
+/**
+ * Renames a component where it is declared and at each end of a link that
+ * names it, both ends of a link from the component to itself included.
+ */
 export const renameChanges = (text: string, oldName: string, newName: string): Change[] => {
   const rename = (from: number) => ({ from, to: from + oldName.length, insert: newName });
   return [
     ...lineMatches(text, matchComponentRegex(oldName)).map(({ at, match }) =>
       rename(at + joined([match[1]]).length),
     ),
-    ...lineMatches(text, matchEdgeRegex(oldName)).map(({ at, match }) =>
-      rename(at + nameInLink(match)),
+    ...lineMatches(text, matchEdgeFromRegex(oldName)).map(({ at, match }) =>
+      rename(at + joined([match[1]]).length),
+    ),
+    // Group 3, the label, is inside group 2.
+    ...lineMatches(text, matchEdgeToRegex(oldName)).map(({ at, match }) =>
+      rename(at + joined([match[1], match[2], match[4]]).length),
     ),
   ].sort((a, b) => a.from - b.from);
 };
