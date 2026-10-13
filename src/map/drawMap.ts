@@ -1,5 +1,14 @@
-import type { CstNode } from "chevrotain";
-
+import type {
+  ComponentDeclarationCstChildren,
+  ComponentDeclarationCstNode,
+  CoordinatesCstChildren,
+  DefaultCstChildren,
+  DefaultCstNode,
+  EdgeDeclarationCstChildren,
+  ICstNodeVisitor,
+  PipelineCstChildren,
+  StatementCstChildren,
+} from "../parser/TogetherCst";
 import { graph, type NodeAttributes, redrawLinks } from "../state/Graph";
 import { BaseTogetherVisitor } from "../parser/TogetherParser";
 import { parseMap } from "../parser/lenient";
@@ -14,11 +23,16 @@ export interface MapModel {
   links: [string, string][];
 }
 
+type Coordinates = [number, number];
+
 /** Where a component written without coordinates is drawn. */
-const DEFAULT_COORDINATES = [10, 10];
+const DEFAULT_COORDINATES: Coordinates = [10, 10];
 
 /** Reads the map's components and links from the parsed text. */
-class TogetherVisitorToModel extends BaseTogetherVisitor {
+class TogetherVisitorToModel
+  extends BaseTogetherVisitor
+  implements ICstNodeVisitor<ComponentDeclarationCstChildren, unknown>
+{
   private model: MapModel = { components: new Map(), links: [] };
 
   constructor() {
@@ -27,37 +41,39 @@ class TogetherVisitorToModel extends BaseTogetherVisitor {
     this.validateVisitor();
   }
 
-  default(ctx: any): MapModel {
+  default(ctx: DefaultCstChildren): MapModel {
     this.model = { components: new Map(), links: [] };
     for (const statement of ctx.statement ?? []) this.visit(statement);
     return this.model;
   }
 
-  statement(ctx: any) {
+  statement(ctx: StatementCstChildren) {
     if (ctx.componentDeclaration) this.visit(ctx.componentDeclaration[0]);
     else if (ctx.edgeDeclaration) this.model.links.push(this.visit(ctx.edgeDeclaration[0]));
   }
 
   // Commands, attributes and notes are parsed but not drawn.
-  command(_ctx: any) {}
+  command() {}
 
-  attributes(ctx: any) {
-    return ctx.attributes;
-  }
+  attributes() {}
 
-  attribute(_ctx: any) {}
+  attribute() {}
 
-  note(_ctx: any) {}
+  note() {}
 
-  edgeDeclaration(ctx: any) {
+  edgeDeclaration(ctx: EdgeDeclarationCstChildren): [string, string] {
     return [ctx.LHS[0].image, ctx.RHS[0].image];
   }
 
-  componentDeclaration(ctx: any, parentComponent?: any) {
-    const children: CstNode[] | undefined = this.pipelineChildren(ctx, parentComponent);
+  /** Adds a component; `parent` is the pipeline's component, for a component in a pipeline. */
+  componentDeclaration(
+    ctx: ComponentDeclarationCstChildren,
+    parent?: ComponentDeclarationCstChildren,
+  ) {
+    const children = this.pipelineChildren(ctx, parent);
     const [visibility, evolution] = this.coordinatesOf(ctx);
     // A pipeline's components sit at the pipeline's visibility.
-    const rowVisibility = parentComponent ? this.coordinatesOf(parentComponent)[0] : visibility;
+    const rowVisibility = parent ? this.coordinatesOf(parent)[0] : visibility;
     const [x, y] = MapSingleton.wardleyToRendererCoords(evolution, rowVisibility);
 
     const name = ctx.Identifier[0].image;
@@ -67,38 +83,41 @@ class TogetherVisitorToModel extends BaseTogetherVisitor {
       x,
       y,
       name,
-      inPipeline: Boolean(parentComponent),
+      inPipeline: Boolean(parent),
       pipeline: children?.map((child) => this.rendererX(child.children)),
     });
   }
 
   /** A component's x in pixels, from its evolution. */
-  private rendererX(ctx: any) {
+  private rendererX(ctx: ComponentDeclarationCstChildren) {
     return MapSingleton.wardleyToRendererCoords(this.coordinatesOf(ctx)[1], 0)[0];
   }
 
   /** `[visibility, evolution]`, or the default for a component written without them. */
-  private coordinatesOf(ctx: any): number[] {
+  private coordinatesOf(ctx: ComponentDeclarationCstChildren): Coordinates {
     return ctx.coordinates ? this.visit(ctx.coordinates) : DEFAULT_COORDINATES;
   }
 
   /** The components a pipeline holds. A pipeline nested in another is drawn empty. */
-  private pipelineChildren(ctx: any, parentComponent?: any) {
+  private pipelineChildren(
+    ctx: ComponentDeclarationCstChildren,
+    parent?: ComponentDeclarationCstChildren,
+  ): ComponentDeclarationCstNode[] | undefined {
     if (!ctx.pipeline) return undefined;
     const children = this.visit(ctx.pipeline, ctx);
-    return parentComponent ? [] : children;
+    return parent ? [] : children;
   }
 
-  /** Reads a pipeline's components; returns their parse nodes. */
-  pipeline(ctx: any, parentComponent?: unknown) {
-    const declarations: CstNode[] = (ctx.statement ?? []).flatMap(
-      (statement: CstNode) => statement.children.componentDeclaration ?? [],
+  /** Adds a pipeline's components, in `parent`'s pipeline; returns their parse nodes. */
+  pipeline(ctx: PipelineCstChildren, parent?: ComponentDeclarationCstChildren) {
+    const declarations = (ctx.statement ?? []).flatMap(
+      (statement) => statement.children.componentDeclaration ?? [],
     );
-    for (const declaration of declarations) this.visit(declaration, parentComponent);
+    for (const declaration of declarations) this.visit(declaration, parent);
     return declarations;
   }
 
-  coordinates(ctx: any) {
+  coordinates(ctx: CoordinatesCstChildren): Coordinates {
     return [Number(ctx.LHS[0].image), Number(ctx.RHS[0].image)];
   }
 }
@@ -115,7 +134,7 @@ export const drawMap = (text: string) => {
   return Boolean(cst);
 };
 
-const drawModel = (cst: CstNode) => {
+const drawModel = (cst: DefaultCstNode) => {
   try {
     reconcile(visitor.visit(cst));
     MapSingleton.renderIndicator.reset();

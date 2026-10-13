@@ -3,8 +3,17 @@
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": {
     // index.html is mostly crawlable copy laid out by hand; public/ and docs/
-    // hold generated or third-party files.
-    "includes": ["**", "!.yarn", "!dist", "!public", "!docs", "!index.html", "!**/*.woff2"]
+    // hold generated or third-party files. The parse tree types are generated.
+    "includes": [
+      "**",
+      "!.yarn",
+      "!dist",
+      "!public",
+      "!docs",
+      "!index.html",
+      "!**/*.woff2",
+      "!src/parser/*Cst.d.ts"
+    ]
   },
   "formatter": {
     "enabled": true,

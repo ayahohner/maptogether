@@ -7,6 +7,16 @@ import {
   type TokenTypeDictionary,
 } from "chevrotain";
 
+import type {
+  ComponentDeclarationCstChildren,
+  CoordinatesCstChildren,
+  DeclarationCstChildren,
+  EdgeDeclarationCstChildren,
+  ICstNodeVisitor,
+  PipelineDeclarationCstChildren,
+  WardleyCstChildren,
+} from "./WardleyCst";
+
 // ================ Types ================
 type CoordinatesASTT = [number, number] | undefined;
 
@@ -16,13 +26,17 @@ interface ComponentDeclarationASTT {
   coordinates: CoordinatesASTT;
 }
 
+interface PipelineDeclarationASTT extends Omit<ComponentDeclarationASTT, "type"> {
+  type: "pipelineDeclaration";
+}
+
 interface EdgeDeclarationASTT {
   type: "edgeDeclaration";
   lhs: string;
   rhs: string;
 }
 
-type DeclarationASTT = ComponentDeclarationASTT | EdgeDeclarationASTT;
+type DeclarationASTT = ComponentDeclarationASTT | PipelineDeclarationASTT | EdgeDeclarationASTT;
 
 export type WardleyASTT = DeclarationASTT[];
 
@@ -187,60 +201,41 @@ class WardleyParser extends CstParser {
 const parserInstance = new WardleyParser(wardleyTokensMap);
 
 const BaseWardleyVisitor = parserInstance.getBaseCstVisitorConstructor();
+export const wardleyProductions = parserInstance.getGAstProductions();
 
-class WardleyVisitorToAST extends BaseWardleyVisitor {
+class WardleyVisitorToAST extends BaseWardleyVisitor implements ICstNodeVisitor<void, unknown> {
   constructor() {
     super();
-    // The "validateVisitor" method is a helper utility which performs static analysis
-    // to detect missing or redundant visitor methods
+    // Throws if a grammar rule has no visit method, or a visit method no rule.
     this.validateVisitor();
   }
-  /* Visit methods */
-  wardley(ctx: any) {
-    if (ctx.declaration) {
-      return ctx.declaration.map((dec: any) => this.visit(dec));
-    } else {
-      return [];
-    }
+
+  wardley(ctx: WardleyCstChildren): WardleyASTT {
+    return (ctx.declaration ?? []).map((dec) => this.visit(dec));
   }
 
-  declaration(ctx: any) {
-    let dec: unknown;
-    if (ctx.componentDeclaration) {
-      dec = this.visit(ctx.componentDeclaration[0]);
-    } else if (ctx.pipelineDeclaration) {
-      dec = this.visit(ctx.pipelineDeclaration[0]);
-    } else if (ctx.edgeDeclaration) {
-      dec = this.visit(ctx.edgeDeclaration[0]);
-    }
-    return dec;
+  declaration(ctx: DeclarationCstChildren): DeclarationASTT {
+    const [dec] = ctx.componentDeclaration ?? ctx.pipelineDeclaration ?? ctx.edgeDeclaration ?? [];
+    return this.visit(dec);
   }
 
-  componentDeclaration(ctx: any) {
-    let coordinates: unknown;
-    if (ctx.coordinates) {
-      coordinates = this.visit(ctx.coordinates[0]);
-    }
+  componentDeclaration(ctx: ComponentDeclarationCstChildren): ComponentDeclarationASTT {
     return {
       type: "componentDeclaration",
       componentName: ctx.StringLiteral[0].image,
-      coordinates,
+      coordinates: ctx.coordinates && this.visit(ctx.coordinates[0]),
     };
   }
 
-  pipelineDeclaration(ctx: any) {
-    let coordinates: unknown;
-    if (ctx.coordinates) {
-      coordinates = this.visit(ctx.coordinates[0]);
-    }
+  pipelineDeclaration(ctx: PipelineDeclarationCstChildren): PipelineDeclarationASTT {
     return {
       type: "pipelineDeclaration",
       componentName: ctx.StringLiteral[0].image,
-      coordinates,
+      coordinates: ctx.coordinates && this.visit(ctx.coordinates[0]),
     };
   }
 
-  edgeDeclaration(ctx: any) {
+  edgeDeclaration(ctx: EdgeDeclarationCstChildren): EdgeDeclarationASTT {
     return {
       type: "edgeDeclaration",
       lhs: ctx.LHS[0].image,
@@ -248,7 +243,7 @@ class WardleyVisitorToAST extends BaseWardleyVisitor {
     };
   }
 
-  coordinates(ctx: any) {
+  coordinates(ctx: CoordinatesCstChildren): CoordinatesASTT {
     return [Number(ctx.LHS[0].image), Number(ctx.RHS[0].image)];
   }
 }

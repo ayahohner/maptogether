@@ -11,6 +11,8 @@ import {
   EOF,
 } from "chevrotain";
 
+import type { DefaultCstNode } from "./TogetherCst";
+
 /** Named regex sources, so token patterns can reuse each other. */
 const fragments = new Map<string, string>();
 
@@ -370,6 +372,7 @@ class TogetherParser extends CstParser {
 const parserInstance = new TogetherParser(togetherTokens);
 
 export const BaseTogetherVisitor = parserInstance.getBaseCstVisitorConstructor();
+export const togetherProductions = parserInstance.getGAstProductions();
 
 export interface ParseProblem {
   /** 1-based line number. */
@@ -379,7 +382,7 @@ export interface ParseProblem {
 
 export interface ParseResult {
   /** Undefined when the text couldn't be tokenized. */
-  cst: CstNode | undefined;
+  cst: DefaultCstNode | undefined;
   problems: ParseProblem[];
 }
 
@@ -406,7 +409,8 @@ export const tryParse = (text: string): ParseResult => {
     return { cst: undefined, problems };
   }
   parserInstance.input = tokenized.tokens;
-  const cst = parserInstance.default();
+  // The parser's rules all return CstNode; the default rule's is a DefaultCstNode.
+  const cst = parserInstance.default() as DefaultCstNode;
   return { cst, problems: parserInstance.errors.map(problemAt) };
 };
 

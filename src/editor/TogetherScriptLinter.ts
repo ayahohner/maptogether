@@ -1,9 +1,9 @@
 import type { Diagnostic } from "@codemirror/lint";
 import type { Text } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
-import type { CstNode, IToken } from "chevrotain";
 
 import { parseMap } from "../parser/lenient";
+import type { DefaultCstNode } from "../parser/TogetherCst";
 import type { ParseProblem } from "../parser/TogetherParser";
 
 const SELF_LINK = "A component can't need itself, so the map leaves out this link.";
@@ -19,12 +19,13 @@ export const toDiagnostics = (doc: Text, problems: readonly ParseProblem[]): Dia
   problems.map(({ line, message }) => onLine(doc, line, message, "error"));
 
 /** The lines of links from a component to itself, which a find-and-replace can leave. */
-export const selfLinkLines = (cst: CstNode): number[] =>
-  ((cst.children.statement ?? []) as CstNode[]).flatMap((statement) => {
-    const [link] = (statement.children.edgeDeclaration ?? []) as CstNode[];
-    const [lhs] = (link?.children.LHS ?? []) as IToken[];
-    const [rhs] = (link?.children.RHS ?? []) as IToken[];
-    return lhs && lhs.image === rhs?.image ? [lhs.startLine ?? 1] : [];
+export const selfLinkLines = (cst: DefaultCstNode): number[] =>
+  (cst.children.statement ?? []).flatMap((statement) => {
+    const [link] = statement.children.edgeDeclaration ?? [];
+    if (!link) return [];
+    const [lhs] = link.children.LHS;
+    const [rhs] = link.children.RHS;
+    return lhs.image === rhs.image ? [lhs.startLine ?? 1] : [];
   });
 
 /** Marks the lines the map leaves out: errors where they don't parse, warnings for self-links. */
