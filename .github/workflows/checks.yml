@@ -43,3 +43,5 @@ jobs:
         run: node .yarn/releases/yarn-4.18.0.cjs biome ci .
       - name: Type-check
         run: node .yarn/releases/yarn-4.18.0.cjs tsc --noEmit
+      - name: Unused files, exports and dependencies
+        run: node .yarn/releases/yarn-4.18.0.cjs knip --no-progress
