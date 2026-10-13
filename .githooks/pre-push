@@ -1,4 +1,6 @@
 #!/bin/sh
-# Blocks pushes whose edited code fails the CRAP / maintainability gate.
+# Blocks pushes that change shipped files without a version bump, or whose
+# edited code fails the CRAP / maintainability gate.
 # Skip once with: git push --no-verify
+node scripts/version-check.mjs || exit 1
 exec node scripts/quality-gate.mjs --head HEAD

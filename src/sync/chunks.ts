@@ -7,7 +7,7 @@ import * as decoding from "lib0/decoding";
  * Channels are ordered, so parts arrive in sequence.
  */
 
-export const CHUNK_BYTES = 16 * 1024;
+const CHUNK_BYTES = 16 * 1024;
 const WHOLE = 0;
 const PART = 1;
 
@@ -20,7 +20,7 @@ export function split(message: Uint8Array, id: number, size = CHUNK_BYTES): Uint
       encoding.writeVarUint(e, index);
       encoding.writeVarUint(e, count);
       encoding.writeUint8Array(e, message.subarray(index * size, (index + 1) * size));
-    })
+    }),
   );
 }
 
@@ -58,6 +58,10 @@ export class Assembler {
 
 function concat(parts: Uint8Array[]) {
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
-  parts.reduce((offset, p) => (out.set(p, offset), offset + p.length), 0);
+  let offset = 0;
+  for (const p of parts) {
+    out.set(p, offset);
+    offset += p.length;
+  }
   return out;
 }

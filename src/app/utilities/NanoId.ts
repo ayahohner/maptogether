@@ -1,16 +1,6 @@
-/// local version of nanoid so we don't have to add a dependency for 130 bytes
-export let nanoid = (size = 21) =>
-  crypto
-    .getRandomValues(new Uint8Array(size))
-    .reduce(
-      (t, e) =>
-        (t +=
-          (e &= 63) < 36
-            ? e.toString(36)
-            : e < 62
-            ? (e - 26).toString(36).toUpperCase()
-            : e > 62
-            ? "-"
-            : "_"),
-      ""
-    );
+/** URL-safe characters, as nanoid uses. 64 of them, so each random byte picks one by its low 6 bits. */
+const ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
+
+/** A random URL-safe id, as nanoid makes, without the dependency. */
+export const nanoid = (size = 21) =>
+  Array.from(crypto.getRandomValues(new Uint8Array(size)), (byte) => ALPHABET[byte & 63]).join("");

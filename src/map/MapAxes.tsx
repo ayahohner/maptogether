@@ -2,7 +2,7 @@
  * Evolution stages and the names they go by for each kind of component
  * (Wardley's characteristics table).
  */
-export const evolutionStages = [
+const evolutionStages = [
   {
     name: "Genesis",
     alternatives: [
@@ -42,7 +42,7 @@ export const evolutionStages = [
 ] as const;
 
 /** Evolution percentages where each stage after Genesis begins. */
-export const stageBoundaries = [17.4, 40, 70] as const;
+const stageBoundaries = [17.4, 40, 70] as const;
 
 const stageEdges = [0, ...stageBoundaries, 100];
 
@@ -52,11 +52,7 @@ const stageEdges = [0, ...stageBoundaries, 100];
  */
 export function StageDividers() {
   return stageBoundaries.map((boundary) => (
-    <span
-      key={boundary}
-      className="axis-x-divider"
-      style={{ left: `${boundary}%` }}
-    />
+    <span key={boundary} className="axis-x-divider" style={{ left: `${boundary}%` }} />
   ));
 }
 
@@ -64,10 +60,10 @@ export function StageDividers() {
 export function MapAxes() {
   return (
     <>
-      <div className="axis-y" aria-label="Visibility">
+      <div className="axis-y">
         <span className="axis-y-label">Visibility</span>
       </div>
-      <div className="axis-x" aria-label="Evolution">
+      <div className="axis-x">
         {evolutionStages.map((stage, i) => (
           <span
             key={stage.name}
@@ -79,6 +75,7 @@ export function MapAxes() {
               width: `${stageEdges[i + 1] - stageEdges[i]}%`,
             }}
           >
+            {/* biome-ignore lint/a11y/noNoninteractiveTabindex: focus shows the stage's other names, for keyboard users. */}
             <span className="axis-x-label" tabIndex={0}>
               {stage.name}
               <span className="axis-x-popover" role="tooltip">

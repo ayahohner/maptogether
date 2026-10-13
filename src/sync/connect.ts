@@ -30,7 +30,13 @@ export class MapSync {
   readonly saveStatus: SaveStatus;
   private readonly changed: () => void;
 
-  constructor(url: string, private readonly doc: Y.Doc, awareness: Awareness, iceServers: RTCIceServer[], opts: SyncOptions = {}) {
+  constructor(
+    url: string,
+    private readonly doc: Y.Doc,
+    awareness: Awareness,
+    iceServers: RTCIceServer[],
+    opts: SyncOptions = {},
+  ) {
     const report = opts.onStatus ?? (() => {});
     report("connecting");
     this.saveStatus = new SaveStatus((message) => this.socket.sendJSON(message), report);
@@ -41,12 +47,15 @@ export class MapSync {
     this.mesh = new PeerMesh(
       (to, data) => this.socket.sendJSON({ type: "signal", to, data }),
       (peerId, channel) => this.peers.attach(peerId, channel),
-      { iceServers, RTCPeerConnection: opts.RTCPeerConnection }
+      { iceServers, RTCPeerConnection: opts.RTCPeerConnection },
     );
     this.socket = new RelaySocket(
       url,
       {
-        onOpen: () => { report("connecting"); this.storage.start(); },
+        onOpen: () => {
+          report("connecting");
+          this.storage.start();
+        },
         onClose: () => this.saveStatus.disconnected(),
         onError: () => report("error"),
         onText: (message) => {
@@ -58,7 +67,7 @@ export class MapSync {
           if (this.storage.loaded) this.saveStatus.loaded();
         },
       },
-      { WebSocket: opts.WebSocket }
+      { WebSocket: opts.WebSocket },
     );
   }
 
@@ -76,10 +85,13 @@ export async function connectSync(
   doc: Y.Doc,
   awareness: Awareness,
   mapId: string,
-  opts: SyncOptions = {}
+  opts: SyncOptions = {},
 ): Promise<MapSync> {
   const relayUrl = opts.relayUrl ?? (import.meta.env.VITE_SYNC_RELAY_URL || DEFAULT_RELAY_URL);
-  const [url, iceServers] = await Promise.all([roomUrl(relayUrl, mapId), fetchIceServers(relayUrl, opts.fetch)]);
+  const [url, iceServers] = await Promise.all([
+    roomUrl(relayUrl, mapId),
+    fetchIceServers(relayUrl, opts.fetch),
+  ]);
   return new MapSync(url, doc, awareness, iceServers, opts);
 }
 
@@ -88,7 +100,10 @@ export async function roomUrl(relayUrl: string, mapId: string): Promise<string> 
 }
 
 /** STUN plus short-lived TURN credentials from the relay; STUN alone if that fails. */
-export async function fetchIceServers(relayUrl: string, fetcher: typeof fetch = fetch): Promise<RTCIceServer[]> {
+export async function fetchIceServers(
+  relayUrl: string,
+  fetcher: typeof fetch = fetch,
+): Promise<RTCIceServer[]> {
   try {
     const res = await fetcher(`${trimSlash(relayUrl)}/ice`);
     if (!res.ok) throw new Error(`relay /ice ${res.status}`);

@@ -6,7 +6,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("cloudflare:workers", () => ({
   DurableObject: class {
-    constructor(readonly ctx: unknown, readonly env: unknown) {}
+    constructor(
+      readonly ctx: unknown,
+      readonly env: unknown,
+    ) {}
   },
 }));
 
@@ -30,7 +33,10 @@ class FakeSocket {
 }
 
 class FakeResponse {
-  constructor(readonly body: unknown, readonly init: { status?: number; headers?: Record<string, string> } = {}) {}
+  constructor(
+    readonly body: unknown,
+    readonly init: { status?: number; headers?: Record<string, string> } = {},
+  ) {}
   get status() {
     return this.init.status ?? 200;
   }
@@ -74,10 +80,13 @@ beforeEach(() => {
   vi.stubGlobal("Response", FakeResponse);
   vi.stubGlobal("WebSocketRequestResponsePair", class {});
   vi.stubGlobal("crypto", { randomUUID: () => `peer-${Math.random()}` });
-  vi.stubGlobal("WebSocketPair", class {
-    0 = new FakeSocket();
-    1 = new FakeSocket();
-  });
+  vi.stubGlobal(
+    "WebSocketPair",
+    class {
+      0 = new FakeSocket();
+      1 = new FakeSocket();
+    },
+  );
 });
 
 const ROOM = "0123456789abcdef0123456789abcdef";
@@ -111,9 +120,14 @@ describe("worker fetch", async () => {
 describe("worker /ice", async () => {
   const { default: worker } = await import("./index");
   it("returns STUN without TURN secrets, private to the origin", async () => {
-    const res = (await worker.fetch(request("/ice", { Origin: "https://maptogether.io" }) as any, env() as any)) as unknown as FakeResponse;
+    const res = (await worker.fetch(
+      request("/ice", { Origin: "https://maptogether.io" }) as any,
+      env() as any,
+    )) as unknown as FakeResponse;
     expect(res.body).toEqual({ iceServers: [{ urls: ["stun:stun.cloudflare.com:3478"] }] });
-    expect(res.init.headers).toMatchObject({ "Access-Control-Allow-Origin": "https://maptogether.io" });
+    expect(res.init.headers).toMatchObject({
+      "Access-Control-Allow-Origin": "https://maptogether.io",
+    });
   });
 });
 
@@ -136,9 +150,15 @@ describe("MapRoom", async () => {
 
     await room.webSocketMessage(a as any, updateFrame("edit"));
     await room.webSocketMessage(a as any, new ArrayBuffer(2 * 1024 * 1024));
-    await room.webSocketMessage(a as any, JSON.stringify({ type: "signal", to: welcome.id, data: { sdp: 1 } }));
+    await room.webSocketMessage(
+      a as any,
+      JSON.stringify({ type: "signal", to: welcome.id, data: { sdp: 1 } }),
+    );
     await room.webSocketMessage(a as any, "x".repeat(65 * 1024));
-    expect(b.sent.filter((m) => typeof m === "string").map((m) => JSON.parse(m).type)).toEqual(["welcome", "signal"]);
+    expect(b.sent.filter((m) => typeof m === "string").map((m) => JSON.parse(m).type)).toEqual([
+      "welcome",
+      "signal",
+    ]);
     expect(state.alarms).toHaveLength(1);
 
     await room.alarm();
@@ -169,14 +189,19 @@ describe("MapRoom", async () => {
     const socket = state.sockets[0];
     await room.webSocketMessage(socket as any, updateFrame("checkpoint"));
     let finish!: () => void;
-    state.ctx.storage.put = () => new Promise<void>((resolve) => { finish = resolve; });
+    state.ctx.storage.put = () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      });
     const request = room.webSocketMessage(socket as any, JSON.stringify({ type: "save", id: 7 }));
     await Promise.resolve();
     expect(socket.sent.some((m) => typeof m === "string" && m.includes('"saved"'))).toBe(false);
     finish();
     await request;
     expect(JSON.parse(socket.sent.at(-1))).toEqual({ type: "saved", id: 7 });
-    state.ctx.storage.put = async () => { throw new Error("disk unavailable"); };
+    state.ctx.storage.put = async () => {
+      throw new Error("disk unavailable");
+    };
     const errors = vi.spyOn(console, "error").mockImplementation(() => {});
     await room.webSocketMessage(socket as any, updateFrame("unsaved"));
     await room.webSocketMessage(socket as any, JSON.stringify({ type: "save", id: 8 }));
@@ -189,7 +214,10 @@ describe("MapRoom", async () => {
     const room = new MapRoom(state.ctx as any, env() as any);
     let puts = 0;
     const put = state.ctx.storage.put;
-    state.ctx.storage.put = async (key, value) => { puts++; await put(key, value); };
+    state.ctx.storage.put = async (key, value) => {
+      puts++;
+      await put(key, value);
+    };
     await room.fetch();
     const socket = state.sockets[0];
     await room.webSocketMessage(socket as any, JSON.stringify({ type: "save", id: 1 }));
@@ -238,7 +266,8 @@ describe("MapRoom", async () => {
     const errors = vi.spyOn(console, "error").mockImplementation(() => {});
     await room.fetch();
     const big = "x".repeat(1024 * 1024 - 64);
-    for (let i = 0; i < 3; i++) await room.webSocketMessage(state.sockets[0] as any, updateFrame(big));
+    for (let i = 0; i < 3; i++)
+      await room.webSocketMessage(state.sockets[0] as any, updateFrame(big));
     await room.alarm();
     expect(state.storage.has("doc")).toBe(false);
     expect(errors).toHaveBeenCalled();

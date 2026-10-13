@@ -1,0 +1,24 @@
+# MapTogether
+
+> MapTogether (https://maptogether.io) is a free, collaborative (multiplayer) Wardley mapping tool that runs in the browser. Teams edit the same Wardley map in real time, on a canvas or as plain text, with no account or install.
+
+## What it does
+
+- Opening https://maptogether.io starts a blank map; it gets its own URL as soon as you edit it or click Share. Anyone with the link can edit it at the same time; everyone sees each other's named cursors.
+- Maps can be drawn on the canvas (double-click to add a component, drag to move, hold Cmd/Ctrl and click two components to link them) or written in the text editor beside it. Both views stay in sync.
+- The evolution axis is marked Genesis, Custom, Product and Commodity. Dependencies and pipelines are supported.
+- Maps save automatically. It works on desktop browsers, tablets and phones.
+- It is free, and in alpha.
+
+## Map syntax
+
+- `Name [visibility, evolution]` places a component; both numbers run from 0 to 100.
+- `Needer.Needed` draws a dependency.
+- `Name [v, e] { Child [v, e] ... }` makes a pipeline.
+- `// comment` lines are ignored.
+
+## Links
+
+- App: https://maptogether.io/
+- Source and issues: https://github.com/ayahohner/wmaps
+- About Wardley mapping: https://learnwardleymapping.com/

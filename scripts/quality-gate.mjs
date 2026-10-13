@@ -13,12 +13,16 @@ function runCoverage(files) {
   execFileSync(
     "npx",
     [
-      "vitest", "run", "--silent",
-      "--coverage.enabled=true", "--coverage.provider=v8",
-      "--coverage.reporter=json", `--coverage.reportsDirectory=${REPORT_DIR}`,
+      "vitest",
+      "run",
+      "--silent",
+      "--coverage.enabled=true",
+      "--coverage.provider=v8",
+      "--coverage.reporter=json",
+      `--coverage.reportsDirectory=${REPORT_DIR}`,
       ...files.map((file) => `--coverage.include=${file}`),
     ],
-    { stdio: ["ignore", "ignore", "inherit"] }
+    { stdio: ["ignore", "ignore", "inherit"] },
   );
   return JSON.parse(readFileSync(`${REPORT_DIR}/coverage-final.json`, "utf8"));
 }

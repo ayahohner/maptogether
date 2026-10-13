@@ -30,7 +30,7 @@ export class PeerMesh {
   constructor(
     private readonly signal: (to: string, data: SignalData) => void,
     private readonly onChannel: (peerId: string, channel: Channel) => void,
-    private readonly opts: PeerMeshOptions
+    private readonly opts: PeerMeshOptions,
   ) {
     this.PC = opts.RTCPeerConnection ?? globalThis.RTCPeerConnection;
   }
@@ -47,11 +47,11 @@ export class PeerMesh {
   }
 
   destroy() {
-    this.peerIds.forEach((id) => this.drop(id));
+    for (const id of this.peerIds) this.drop(id);
   }
 
   private async welcome(id: string, peers: string[]) {
-    // A new id means the relay forgot us: start the mesh over.
+    // A new id means the relay no longer has this peer, so the mesh starts over.
     this.destroy();
     this.selfId = id;
     await Promise.all(peers.map((peer) => this.call(peer)));
@@ -59,7 +59,7 @@ export class PeerMesh {
 
   private async call(peerId: string) {
     const pc = this.create(peerId);
-    this.onChannel(peerId, pc.createDataChannel("yjs", { ordered: true }) as unknown as Channel);
+    this.onChannel(peerId, pc.createDataChannel("yjs", { ordered: true }) as Channel);
     await pc.setLocalDescription(await pc.createOffer());
     this.signal(peerId, { sdp: pc.localDescription!.toJSON?.() ?? pc.localDescription! });
   }
@@ -93,11 +93,11 @@ export class PeerMesh {
   }
 
   private create(peerId: string): RTCPeerConnection {
-    // Replace any old connection, but keep candidates that beat the offer here.
+    // Replaces any old connection, but keeps candidates that arrived before the offer.
     this.pcs.get(peerId)?.close();
     const pc = new this.PC({ iceServers: this.opts.iceServers });
     pc.onicecandidate = (e) => this.sendCandidate(peerId, e.candidate);
-    pc.ondatachannel = (e) => this.onChannel(peerId, e.channel as unknown as Channel);
+    pc.ondatachannel = (e) => this.onChannel(peerId, e.channel as Channel);
     pc.onconnectionstatechange = () => this.watch(peerId, pc);
     this.pcs.set(peerId, pc);
     return pc;

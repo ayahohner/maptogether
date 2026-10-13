@@ -4,7 +4,9 @@ import { RelaySocket, type RelayHandlers } from "./RelaySocket";
 import { createFakeRelay, until } from "./testing/fakeRelay";
 
 const sockets: RelaySocket[] = [];
-afterEach(() => sockets.splice(0).forEach((s) => s.destroy()));
+afterEach(() => {
+  for (const s of sockets.splice(0)) s.destroy();
+});
 
 function open(relay: ReturnType<typeof createFakeRelay>, opts = {}) {
   const seen = { opens: 0, texts: [] as unknown[], binaries: 0 };
@@ -13,7 +15,10 @@ function open(relay: ReturnType<typeof createFakeRelay>, opts = {}) {
     onText: (m) => seen.texts.push(m),
     onBinary: () => seen.binaries++,
   };
-  const socket = new RelaySocket("ws://relay/sync/x", handlers, { WebSocket: relay.WebSocket, ...opts });
+  const socket = new RelaySocket("ws://relay/sync/x", handlers, {
+    WebSocket: relay.WebSocket,
+    ...opts,
+  });
   sockets.push(socket);
   return { socket, seen };
 }
@@ -37,7 +42,7 @@ describe("RelaySocket", () => {
     await until(() => seen.opens === 2);
   });
 
-  it("pings, ignores pongs, and reconnects when the relay goes silent", async () => {
+  it("pings, ignores pongs, and reconnects when nothing arrives from the relay", async () => {
     const relay = createFakeRelay();
     const { seen } = open(relay, { pingIntervalMs: 10, silenceTimeoutMs: 40, maxBackoffMs: 5 });
     await until(() => relay.state.pings > 1);

@@ -7,7 +7,9 @@ import { MapSync, connectSync, fetchIceServers, roomUrl } from "./connect";
 import { createFakeRelay, until } from "./testing/fakeRelay";
 
 const syncs: MapSync[] = [];
-afterEach(() => syncs.splice(0).forEach((s) => s.destroy()));
+afterEach(() => {
+  for (const s of syncs.splice(0)) s.destroy();
+});
 
 function client(relay: ReturnType<typeof createFakeRelay>) {
   const doc = new Y.Doc();
@@ -90,7 +92,9 @@ describe("connectSync", () => {
     expect(ok).toHaveBeenCalledWith("https://r/ice");
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const down = async () => new Response("", { status: 500 });
-    expect((await fetchIceServers("https://r", down as any))[0].urls).toEqual(["stun:stun.cloudflare.com:3478"]);
+    expect((await fetchIceServers("https://r", down as any))[0].urls).toEqual([
+      "stun:stun.cloudflare.com:3478",
+    ]);
   });
 
   it("opens the relay socket for the map", async () => {

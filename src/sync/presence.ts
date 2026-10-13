@@ -9,28 +9,24 @@ export interface ConnectedUser {
   self: boolean;
 }
 
+/** "draft": a new map that isn't saved or shared until someone edits it. */
+export type CollaborationStatus = SyncStatus | "draft";
+
 export const collaboration = proxy<{
-  status: SyncStatus;
+  status: CollaborationStatus;
   users: ConnectedUser[];
 }>({
   status: "connecting",
   users: [],
 });
 
-export function readUser(
-  id: number,
-  value: any,
-  localId: number,
-): ConnectedUser {
+/** A user from their awareness state, which any peer can set to anything. */
+export function readUser(id: number, value: unknown, localId: number): ConnectedUser {
+  const { name, color } = (value as { user?: Record<string, unknown> } | null)?.user ?? {};
   return {
     id,
-    name:
-      typeof value?.user?.name === "string"
-        ? value.user.name.slice(0, 80)
-        : "Anonymous",
-    color: /^#[0-9a-f]{6}$/i.test(value?.user?.color)
-      ? value.user.color
-      : "#666666",
+    name: typeof name === "string" ? name.slice(0, 80) : "Anonymous",
+    color: typeof color === "string" && /^#[0-9a-f]{6}$/i.test(color) ? color : "#666666",
     self: id === localId,
   };
 }
@@ -42,8 +38,7 @@ export function bindPresence(awareness: Awareness) {
     );
     users.sort((a, b) => Number(b.self) - Number(a.self) || a.id - b.id);
     // Pointer movement must not rerender the menu.
-    if (JSON.stringify(users) !== JSON.stringify(collaboration.users))
-      collaboration.users = users;
+    if (JSON.stringify(users) !== JSON.stringify(collaboration.users)) collaboration.users = users;
   };
   awareness.on("change", update);
   update();

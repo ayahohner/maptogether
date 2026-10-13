@@ -1,9 +1,4 @@
-export type SyncStatus =
-  | "connecting"
-  | "saving"
-  | "saved"
-  | "disconnected"
-  | "error";
+export type SyncStatus = "connecting" | "saving" | "saved" | "disconnected" | "error";
 
 /** A receipt confirms only edits sent before its checkpoint, including deletions. */
 export class SaveStatus {

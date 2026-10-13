@@ -12,8 +12,8 @@ import { Assembler, split } from "./chunks";
  * spreads if one link of the mesh is down.
  */
 
-export const MESSAGE_SYNC = 0;
-export const MESSAGE_AWARENESS = 1;
+const MESSAGE_SYNC = 0;
+const MESSAGE_AWARENESS = 1;
 
 /** The parts of RTCDataChannel this uses. */
 export interface Channel {
@@ -26,7 +26,7 @@ export interface Channel {
 }
 
 /** Transaction origin of changes received from a peer. */
-export class PeerOrigin {
+class PeerOrigin {
   constructor(readonly peerId: string) {}
 }
 
@@ -43,7 +43,7 @@ export class PeerSync {
 
   constructor(
     readonly doc: Y.Doc,
-    readonly awareness: awarenessProtocol.Awareness
+    readonly awareness: awarenessProtocol.Awareness,
   ) {
     doc.on("update", this.onDocUpdate);
     awareness.on("update", this.onAwarenessUpdate);
@@ -54,7 +54,12 @@ export class PeerSync {
   }
 
   attach(peerId: string, channel: Channel) {
-    const link = { channel, origin: new PeerOrigin(peerId), assembler: new Assembler(), clients: new Set<number>() };
+    const link = {
+      channel,
+      origin: new PeerOrigin(peerId),
+      assembler: new Assembler(),
+      clients: new Set<number>(),
+    };
     this.links.set(peerId, link);
     channel.binaryType = "arraybuffer";
     channel.onopen = () => this.greet(link);
@@ -77,7 +82,10 @@ export class PeerSync {
   }
 
   private greet(link: PeerLink) {
-    this.send(link, encode(MESSAGE_SYNC, (e) => syncProtocol.writeSyncStep1(e, this.doc)));
+    this.send(
+      link,
+      encode(MESSAGE_SYNC, (e) => syncProtocol.writeSyncStep1(e, this.doc)),
+    );
     this.send(link, this.awarenessMessage([this.doc.clientID]));
   }
 
@@ -87,7 +95,8 @@ export class PeerSync {
     const decoder = decoding.createDecoder(message);
     const type = decoding.readVarUint(decoder);
     if (type === MESSAGE_SYNC) this.receiveSync(link, decoder);
-    else if (type === MESSAGE_AWARENESS) this.receiveAwareness(link, decoding.readVarUint8Array(decoder));
+    else if (type === MESSAGE_AWARENESS)
+      this.receiveAwareness(link, decoding.readVarUint8Array(decoder));
   }
 
   private receiveSync(link: PeerLink, decoder: decoding.Decoder) {
@@ -112,9 +121,9 @@ export class PeerSync {
 
   private onAwarenessUpdate = (
     { added, updated, removed }: Record<"added" | "updated" | "removed", number[]>,
-    origin: unknown
+    origin: unknown,
   ) => {
-    // Only our own state: peers' states reach everyone directly.
+    // Only this client's state: each peer sends its own state to everyone directly.
     if (origin instanceof PeerOrigin) return;
     this.broadcast(this.awarenessMessage([...added, ...updated, ...removed]), origin);
   };
@@ -132,7 +141,8 @@ export class PeerSync {
 
   private send(link: PeerLink, message: Uint8Array) {
     if (link.channel.readyState !== "open") return;
-    for (const frame of split(message, this.nextMessageId++)) link.channel.send(frame as Uint8Array<ArrayBuffer>);
+    for (const frame of split(message, this.nextMessageId++))
+      link.channel.send(frame as Uint8Array<ArrayBuffer>);
   }
 }
 

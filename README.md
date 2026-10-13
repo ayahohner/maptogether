@@ -1,6 +1,6 @@
 # MapTogether
 
-**Multiplayer Wardley Mapping in your browser.** Open a link, start mapping, and
+**Collaborative Wardley mapping in your browser.** Open a link, start mapping, and
 see your team's edits and cursors live.
 
 [![Open maptogether.io](https://img.shields.io/website?url=https%3A%2F%2Fmaptogether.io&label=maptogether.io&up_message=live&style=flat-square)](https://maptogether.io)
@@ -39,19 +39,21 @@ a picture one person emails around.
 
 ## Get started
 
-1. Go to **[maptogether.io](https://maptogether.io)**. You land on a new, empty map.
+1. Go to **[maptogether.io](https://maptogether.io)**. You land on a blank map. It is saved, with its own link, as soon as you edit it.
 2. Double-click the canvas, type a component name, and press Enter.
 3. Click **Share** to copy the link and send it to your team.
 
-| To | Do this |
-| --- | --- |
-| Add a component | Double-click the canvas, type a name, press Enter |
-| Rename a component | Double-click it |
-| Link two components | Hold Ctrl/Cmd, click the first, then the second |
-| Move components | Drag them |
-| Select several | Drag on the empty canvas; hold Shift to add to the selection |
-| Delete | Select, then press Delete or Backspace |
-| Start a new map | Click **New** |
+| To | With a mouse | On a touch screen |
+| --- | --- | --- |
+| Add a component | Double-click the canvas, or pick the component tool (C) and click | Double-tap the canvas |
+| Rename a component | Double-click it | Double-tap it |
+| Link two components | Hold Ctrl/Cmd, or pick the link tool (L), then click both | Tap the link tool, then tap both |
+| Move components | Drag them | Press and hold, then drag |
+| Select | Click a component or link; drag on the empty canvas or hold Shift for several | Tap a component or link |
+| Pan | Scroll, drag with Space held, or pick the pan tool (H) | Drag with one finger |
+| Zoom | Ctrl/Cmd + scroll, or the zoom buttons | Pinch |
+| Delete | Select, then press Delete or Backspace | Select, then tap the bin in the toolbar |
+| Start a new map | Click **New** | Tap **New** |
 
 ## Try the sample map
 

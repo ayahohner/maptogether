@@ -7,8 +7,10 @@ export function changedLines(diffText) {
   let current = null;
   for (const line of diffText.split("\n")) {
     const file = line.match(/^\+\+\+ b\/(.+)$/);
-    if (file) files.set(file[1], (current = new Set()));
-    else addHunk(current, line);
+    if (file) {
+      current = new Set();
+      files.set(file[1], current);
+    } else addHunk(current, line);
   }
   return files;
 }

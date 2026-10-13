@@ -1,364 +1,71 @@
 import Graph from "graphology";
 
 import MapSingleton from "../map/components/MapSingleton";
-import { Component } from "../map/components/Component";
-import { Line } from "../map/components/Line";
-import { ComponentT, LineT } from "../map/components/types";
-
-import { state, setInitialLinkTarget } from "./State";
-import { BaseTogetherVisitor, parseToCST } from "../parser/TogetherParser";
-import { disableErrorMode, enableErrorMode } from "../editor/Editor";
+import type { ComponentConfig } from "../map/components/componentLayout";
+import type { ComponentT, LineT } from "../map/components/types";
 
 export type NodeAttributes = {
-  type: "normal";
   nodeKey: string;
+  /** Where the component is (px), from the text or as dragged. */
   coordinates: { x: number; y: number };
+  /** What the component was drawn from. */
+  config: ComponentConfig;
   component: ComponentT;
-  mounted: boolean;
 };
 
 export type EdgeAttributes = {
-  type: "edge";
+  /** "needer->needed", as the link is first written. */
   nodeKey: string;
-  coordinates: {
-    start: { x: number; y: number };
-    stop: { x: number; y: number };
-  };
   component: LineT;
-  mounted: boolean;
 };
 
-export type GraphAttributes = {
-  name?: string;
-};
+export type WardleyGraph = Graph<NodeAttributes, EdgeAttributes>;
 
-export type WardleyGraph = Graph<
-  NodeAttributes,
-  EdgeAttributes,
-  GraphAttributes
->;
-
+/** The components and links on the map, with the Pixi objects that draw them (see drawMap.ts). */
 export const graph: WardleyGraph = new Graph({ type: "undirected" });
 
-// Allow adding to window object
-// declare global {
-//   interface Window {
-//     graph: Graph<NodeAttributes, EdgeAttributes, GraphAttributes>;
-//   }
-// }
-// window.graph = graph
-
-interface IAddComponentConfig {
-  x: number;
-  y: number;
-  name: NodeAttributes["nodeKey"];
-  type: NodeAttributes["type"];
-  parent?: Object;
-  labelX?: number;
-  labelY?: number;
-  children?: Object[];
-}
-
-// ACTIONS
-export const addComponent = (config: IAddComponentConfig) => {
-  let { x, y, name, type } = config;
-  const component = Component(config); // ->Renderer
-
-  // TODO: Find out what characters aren't possible in nodeKeys and prevent them from being used in Identifiers
-  try {
-    graph.addNode(name, {
-      nodeKey: name,
-      type,
-      coordinates: { x, y },
-      component,
-      mounted: true,
-    });
-  } catch (e) {
-    console.error(e);
+/**
+ * Moves components by (x, y) px, as a drag does: a pipeline's components keep
+ * to its row as it moves, and its box keeps around them. A selected component
+ * may have left the map since.
+ */
+export const moveComponentsBy = (names: Iterable<string>, x: number, y: number) => {
+  const moving = new Set([...names].filter((name) => graph.hasNode(name)));
+  const pipelines = new Set<string>();
+  for (const name of moving) {
+    moveComponentBy(name, x, y);
+    pipelines.add(graph.getNodeAttribute(name, "config").inPipeline ?? name);
   }
-
-  MapSingleton.graphContainer.addChild(component); // ->Renderer
-  MapSingleton.dirty = true; // ->Renderer
+  for (const pipeline of pipelines) fitPipeline(pipeline, moving.has(pipeline) ? y : 0, moving);
 };
 
-export const updateComponentPosition = (
-  nodeKey: string,
-  x: number,
-  y: number
-) => {
+/** Moves those of a pipeline's components that aren't moving already by `y` px, and redraws its box around them. */
+const fitPipeline = (pipeline: string, y: number, moving: Set<string>) => {
+  if (!graph.hasNode(pipeline) || !graph.getNodeAttribute(pipeline, "config").pipeline) return;
+  const inside = graph.filterNodes((_name, node) => node.config.inPipeline === pipeline);
+  for (const name of inside) if (!moving.has(name)) moveComponentBy(name, 0, y);
+  const childXs = inside.map((name) => graph.getNodeAttribute(name, "component").x);
+  graph.getNodeAttribute(pipeline, "component").fitPipe(childXs);
+};
+
+const moveComponentBy = (nodeKey: string, x: number, y: number) => {
   const node = graph.getNodeAttributes(nodeKey);
-  if (node) {
-    node.component.position.x = x; // ->Renderer
-    node.component.position.y = y; // ->Renderer
-    node.coordinates.x = x;
-    node.coordinates.y = y;
-    MapSingleton.dirty = true; // ->Renderer
-    graph.forEachEdge(nodeKey, updateEdgePosition);
-  }
+  node.component.position.x += x;
+  node.component.position.y += y;
+  node.coordinates.x += x;
+  node.coordinates.y += y;
+  redrawLinks(nodeKey);
 };
 
-export const updateComponentPositionOffset = (
-  nodeKey: string,
-  x: number,
-  y: number
-) => {
-  const node = graph.getNodeAttributes(nodeKey);
-  if (node) {
-    node.component.position.x += x; // ->Renderer
-    node.component.position.y += y; // ->Renderer
-    node.coordinates.x += x;
-    node.coordinates.y += y;
-    MapSingleton.dirty = true; // ->Renderer
-    graph.forEachEdge(nodeKey, updateEdgePosition);
-  }
-};
-
-export const addEdge = (componentAKey: string, componentBKey: string) => {
-  let componentA: NodeAttributes | undefined;
-  let componentB: NodeAttributes | undefined;
-
-  try {
-    componentA = graph.getNodeAttributes(componentAKey);
-  } catch (error) {
-    console.error(
-      `Node ${componentAKey} not found. Check to make sure it's declared in the graph.\n${error}`
+/** Moves the ends of a component's links to where the component is drawn. */
+export const redrawLinks = (nodeKey: string) => {
+  graph.forEachEdge(nodeKey, (_edge, link, _source, _target, source, target) => {
+    link.component.updateLine(
+      source.component.x,
+      source.component.y,
+      target.component.x,
+      target.component.y,
     );
-  }
-  try {
-    componentB = graph.getNodeAttributes(componentBKey);
-  } catch (error) {
-    console.error(
-      `Node ${componentBKey} not found. Check to make sure it's declared in the graph.\n${error}`
-    );
-  }
-
-  if (!(componentA || componentB)) {
-    return;
-  }
-
-  // If reverse edge already exists
-  if (graph.hasEdge(componentBKey, componentAKey)) {
-    return;
-  }
-
-  if (componentA?.mounted && componentB?.mounted) {
-    const componentAx = componentA.component.x;
-    const componentAy = componentA.component.y;
-    const componentBx = componentB.component.x;
-    const componentBy = componentB.component.y;
-    const nodeKey = `${componentA.nodeKey}->${componentB.nodeKey}`;
-    const component = Line(
-      componentAx,
-      componentAy,
-      componentBx,
-      componentBy,
-      nodeKey
-    ); // ->Renderer
-
-    MapSingleton.graphContainer.addChild(component); // ->Renderer
-    MapSingleton.dirty = true; // ->Renderer
-
-    graph.addEdge(componentA.nodeKey, componentB.nodeKey, {
-      type: "edge",
-      coordinates: {
-        start: { x: componentA.coordinates.x, y: componentA.coordinates.y },
-        stop: { x: componentB.coordinates.x, y: componentB.coordinates.y },
-      },
-      nodeKey,
-      mounted: true,
-      component,
-    });
-  }
+  });
+  MapSingleton.dirty = true;
 };
-
-const updateEdgePosition = (
-  edge: string,
-  attributes: EdgeAttributes,
-  source: string,
-  target: string,
-  sourceAttributes: NodeAttributes,
-  targetAttributes: NodeAttributes,
-  undirected: boolean
-) => {
-  attributes.coordinates.start.x = sourceAttributes.component.x;
-  attributes.coordinates.start.y = sourceAttributes.component.y;
-  attributes.coordinates.stop.x = targetAttributes.component.x;
-  attributes.coordinates.stop.y = targetAttributes.component.y;
-
-  attributes.component.updateLine(
-    attributes.coordinates.start.x,
-    attributes.coordinates.start.y,
-    attributes.coordinates.stop.x,
-    attributes.coordinates.stop.y
-  ); // ->Renderer
-  MapSingleton.dirty = true; // ->Renderer
-};
-
-// SUBSCRIPTIONS
-export class TogetherVisitorToGraph extends BaseTogetherVisitor {
-  // <-Parser
-  // Local reference to graph for speed
-  graph: WardleyGraph;
-
-  constructor(graph: WardleyGraph) {
-    super();
-
-    this.graph = graph;
-
-    // The "validateVisitor" method is a helper utility which performs static analysis
-    // to detect missing or redundant visitor methods
-    this.validateVisitor();
-  }
-
-  /* Visit methods */
-  default(ctx: any) {
-    // Don't keep reference to deleted item
-    setInitialLinkTarget(undefined); // <-State
-    graph.clear();
-
-    if (ctx.statement) {
-      const edgeDecs: any = [];
-
-      ctx.statement.forEach((dec: any) => {
-        // Only edgeDeclarations return objects to the top level
-        const edgeDec = this.visit(dec);
-
-        if (edgeDec) {
-          edgeDecs.push(edgeDec);
-        }
-      });
-
-      // render edges last to allow edges to be declared before components
-      edgeDecs.forEach((edgeDec: any) => {
-        addEdge(edgeDec.lhs, edgeDec.rhs);
-      });
-    } else {
-      // If map is empty, rerender once
-      MapSingleton.dirty = true; // ->Renderer
-    }
-  }
-
-  statement(ctx: any) {
-    if (ctx.componentDeclaration) {
-      this.visit(ctx.componentDeclaration[0]);
-      return;
-    } else if (ctx.edgeDeclaration) {
-      // we only return edgeDecs because they need to be created last
-      // so pass them to the top level function which will run last
-      return this.visit(ctx.edgeDeclaration[0]);
-    }
-    // TODO: add command and note
-  }
-
-  command(ctx: any) {
-    return;
-  }
-
-  attributes(ctx: any) {
-    return ctx.attributes;
-  }
-
-  attribute(ctx: any) {
-    return;
-  }
-
-  edgeDeclaration(ctx: any) {
-    return {
-      type: "edgeDeclaration",
-      lhs: ctx.LHS[0].image,
-      rhs: ctx.RHS[0].image,
-    };
-  }
-
-  componentDeclaration(ctx: any, parentComponent?: any) {
-    let children = undefined; // No pipeline
-    if (ctx.pipeline) {
-      children = this.visit(ctx.pipeline, ctx);
-
-      // prevent nested pipelines for now, but still display as pipeline without children
-      if (children && parentComponent) {
-        children = [];
-      }
-    }
-
-    let coordinates = [10, 10];
-    if (ctx.coordinates) {
-      coordinates = this.visit(ctx.coordinates);
-    }
-
-    let parentCoordinates = undefined;
-    if (parentComponent && parentComponent.coordinates) {
-      parentCoordinates = this.visit(parentComponent.coordinates);
-    } else if (parentComponent) {
-      parentCoordinates = [10, 10];
-    }
-    // wardleyscript has coordinates backwards
-    const rendererCoords = MapSingleton.wardleyToRendererCoords(
-      coordinates[1],
-      parentCoordinates ? parentCoordinates[0] : coordinates[0] // if we're a child of a pipeline we want to use parent's y
-    ); // <-Renderer
-
-    addComponent({
-      x: rendererCoords[0],
-      y: rendererCoords[1],
-      name: ctx.Identifier[0].image,
-      type: "normal",
-      parent: parentComponent ?? undefined,
-      labelY: parentComponent ? 26 : undefined,
-      children,
-    });
-  }
-
-  pipeline(ctx: any, parentComponent?: Object | undefined) {
-    let components: any[] = [];
-
-    if (ctx.statement) {
-      ctx.statement.forEach((statement: any) => {
-        // Only visit componentDeclarations for now
-        if (statement?.children?.componentDeclaration) {
-          this.visit(statement.children.componentDeclaration, parentComponent);
-          components.push(statement.children.componentDeclaration[0]);
-        }
-      });
-    }
-    return components;
-  }
-
-  coordinates(ctx: any) {
-    return [Number(ctx.LHS[0].image), Number(ctx.RHS[0].image)];
-  }
-
-  note(ctx: any) {
-    return;
-  }
-}
-
-const visitorInstance = new TogetherVisitorToGraph(graph);
-
-let wasRerenderError = false;
-
-export const rerenderGraph = () => {
-  let isError = false;
-
-  try {
-    visitorInstance.visit(parseToCST(state.editor.editorText)); // <-State
-    MapSingleton.renderIndicator.reset();
-  } catch (e: any) {
-    enableErrorMode(); // ->Editor
-
-    wasRerenderError = true;
-    isError = true;
-
-    console.error(e);
-  }
-
-  if (wasRerenderError && !isError) {
-    disableErrorMode(); // ->Editor
-
-    wasRerenderError = false;
-  }
-};
-
-graph.on("cleared", function () {
-  MapSingleton.graphContainer.removeChildren(); // ->Renderer
-});

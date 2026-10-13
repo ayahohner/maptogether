@@ -16,11 +16,14 @@ yarn dev       # app on http://localhost:5173, using the deployed relay
 | Script | What it does |
 | --- | --- |
 | `yarn dev` | Vite dev server |
+| `yarn dev:local` | Local relay and the dev server against it (see [Multiplayer](#multiplayer)) |
 | `yarn build` / `yarn serve` | Production build and a local preview of it |
 | `yarn test` | Vitest in watch mode |
 | `yarn coverage` | One Vitest run with coverage |
 | `yarn quality` | Code quality gate (see below) |
-| `yarn relay:dev` | Local relay on `:8787` |
+| `yarn version:check` | Semver check (see below) |
+| `yarn lint` / `yarn format` | Biome lint and format check / apply fixes |
+| `yarn relay:dev` | Local relay on `:8787`, for any `localhost` origin |
 | `yarn relay:deploy` | Deploy the relay (needs `CLOUDFLARE_API_TOKEN`) |
 | `yarn test:live` | WebRTC and saving against the deployed relay |
 
@@ -34,7 +37,9 @@ of that one text:
    (`src/parser/TogetherParser.ts`) into a graphology graph (`src/state/Graph.ts`).
 3. The graph is drawn with PixiJS (`src/map/`).
 4. Canvas interactions (adding, moving, renaming, linking, deleting) edit the
-   text, which flows back through the same path.
+   text, which flows back through the same path. Pointer input, mouse and
+   touch, goes through `src/map/gestures.ts`; the tools live in
+   `src/state/Tools.ts` and the pan and zoom in `src/map/viewport.ts`.
 
 UI state uses valtio (`src/state/State.ts`); the menu is React with Headless UI
 and Tailwind (`src/menu/`).
@@ -52,9 +57,11 @@ See [relay/README.md](relay/README.md) for the protocol, limits, and deployment.
 | `VITE_SYNC_RELAY_URL` | `https://wmaps-relay.innerlattice.workers.dev` | Signaling and storage relay |
 | `VITE_RENDER_INDICATOR` | unset | `true` draws a render counter in the canvas corner |
 
-To develop against a local relay: `yarn relay:dev`, then run the app with
-`VITE_SYNC_RELAY_URL=http://localhost:8787 yarn dev`. To try multiplayer
-locally, open the same map URL in two browser windows.
+To try multiplayer without the deployed relay, run `yarn dev:local`: it starts
+a local relay on `:8790` (apart from `yarn relay:dev`'s `:8787`) and the app
+against it. Open the same map URL in two
+browser windows. The local relay accepts any `localhost` port and keeps its
+maps in `.wrangler/`.
 
 Deploy relay changes before releasing a client that depends on them. The
 [Deploy Cloudflare relay](.github/workflows/deploy-relay.yml) workflow validates
@@ -69,6 +76,39 @@ maintainability index above 75, and every edited file an MI above 75
 
 It runs automatically before `git push` (`.githooks/pre-push`, enabled by
 `yarn install`). Use `--verbose` to see every function, `--help` for options.
+
+## Formatting and linting
+
+[Biome](https://biomejs.dev) formats and lints the code (`biome.jsonc`). Before
+each commit, `.githooks/pre-commit` runs it on the staged files through
+lint-staged and applies safe fixes; a lint error stops the commit. Pull requests
+run `biome ci`. `index.html` is excluded, because its copy is laid out by hand.
+
+The commit that first formatted the codebase is listed in
+`.git-blame-ignore-revs`. To have `git blame` skip it, run
+`git config blame.ignoreRevsFile .git-blame-ignore-revs` (GitHub skips it already).
+
+## Unused code
+
+[knip](https://knip.dev) finds unused files, exports and dependencies
+(`knip.jsonc`). Pull requests run it; run `yarn knip` to check locally.
+
+## Versioning
+
+MapTogether follows [semver](https://semver.org). The version in
+`package.json` is shown in the app's menu. Any change to shipped files
+(`src/`, `public/`, `examples/`, `relay/src/`, `index.html`; tests don't count)
+must raise it:
+
+- **patch**: bug fixes only.
+- **minor**: new features. Existing maps, links and map text still work.
+- **major**: existing maps, links or map text no longer work as before, for
+  example a syntax change that old maps don't parse under.
+
+`yarn version:check` compares `package.json` with the merge-base with `main`.
+It runs before `git push` and on every pull request
+([Checks](.github/workflows/checks.yml)). Bump once per branch, not per
+commit.
 
 ## README screenshot
 

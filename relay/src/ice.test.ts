@@ -10,9 +10,19 @@ describe("iceServers", () => {
 
   it("returns Cloudflare TURN credentials minus port 53", async () => {
     const fetcher = vi.fn(async () =>
-      Response.json({ iceServers: [{ urls: ["turn:a:3478", "turn:a:53?transport=udp", "turn:a:53"], username: "u", credential: "c" }] })
+      Response.json({
+        iceServers: [
+          {
+            urls: ["turn:a:3478", "turn:a:53?transport=udp", "turn:a:53"],
+            username: "u",
+            credential: "c",
+          },
+        ],
+      }),
     );
-    expect(await iceServers(env, fetcher as any)).toEqual([{ urls: ["turn:a:3478"], username: "u", credential: "c" }]);
+    expect(await iceServers(env, fetcher as any)).toEqual([
+      { urls: ["turn:a:3478"], username: "u", credential: "c" },
+    ]);
     expect(fetcher.mock.calls[0][0]).toContain("/turn/keys/k/");
   });
 

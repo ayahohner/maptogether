@@ -1,6 +1,8 @@
-import { parseToAST, WardleyASTT } from "./WardleyParser";
-
 import { it, expect, describe } from "vitest";
+
+import withComments from "../../examples/owm/component-comment.owm?raw";
+import withPipelines from "../../examples/owm/component-pipeline-comment.owm?raw";
+import { parseToAST } from "./WardleyParser";
 
 describe("parseInput with whitespace", () => {
   it("works with an empty string", () => {
@@ -52,21 +54,19 @@ describe("parseInput with component declarations", () => {
   });
 
   it("with coordinates", () => {
-    expect(parseToAST("component _apples 1h92+   \t [-1,2.3e1]")).toStrictEqual(
-      [
-        {
-          componentName: "_apples 1h92+",
-          coordinates: [-1, 2.3e1],
-          type: "componentDeclaration",
-        },
-      ]
-    );
+    expect(parseToAST("component _apples 1h92+   \t [-1,2.3e1]")).toStrictEqual([
+      {
+        componentName: "_apples 1h92+",
+        coordinates: [-1, 2.3e1],
+        type: "componentDeclaration",
+      },
+    ]);
   });
 
   it("fails with coordinates that aren't numbers", () => {
-    expect(() =>
-      parseToAST('component _apples 1h92+   \t [aoo,"2"]')
-    ).toThrowError("NumberLiteral");
+    expect(() => parseToAST('component _apples 1h92+   \t [aoo,"2"]')).toThrowError(
+      "NumberLiteral",
+    );
   });
 });
 
@@ -80,4 +80,11 @@ describe("parseInput with edge statement", () => {
       },
     ]);
   });
+});
+
+it.each([
+  ["component-comment.owm", withComments],
+  ["component-pipeline-comment.owm", withPipelines],
+])("reads the OnlineWardleyMaps example %s", (_file, text) => {
+  expect(parseToAST(text).length).toBeGreaterThan(50);
 });

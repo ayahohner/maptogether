@@ -1,53 +1,48 @@
 import * as Y from "yjs";
-// @ts-ignore because no typings
 import { yCollab } from "y-codemirror.next";
 import { Awareness } from "y-protocols/awareness";
 import { bindPresence, collaboration } from "../sync/presence";
 import { connectSync } from "../sync/connect";
 
-import { ChangeSpec, EditorState } from "@codemirror/state";
+import { EditorState } from "@codemirror/state";
 import { basicSetup, EditorView } from "codemirror";
 import { keymap } from "@codemirror/view";
-import { RegExpCursor } from "@codemirror/search";
 import { linter, lintGutter } from "@codemirror/lint";
 
-// @ts-ignore because no typings
 import { vscodeKeymap } from "@replit/codemirror-vscode-keymap";
 
 import debounce from "lodash/debounce";
-import { matchComponentRegex, matchEdgeRegex } from "../parser/TogetherParser";
 
 import {
-  removeFromSelection,
-  addToSelection,
+  clearSelection,
+  type Move,
+  renameInSelection,
   setEditorText,
   state,
   subscribe,
-  clearSelection,
 } from "../state/State";
 import MapSingleton from "../map/components/MapSingleton";
 import { togetherScriptLinter } from "./TogetherScriptLinter";
+import { deletionRanges } from "./deletions";
+import { moveChanges, renameChanges } from "./edits";
 import { generateRandomAnimal } from "../user/utilities/generateRandomAnimal";
-import { rerenderGraph } from "../state/Graph";
-import { nanoid } from "../app/utilities/NanoId";
+import { drawMap } from "../map/drawMap";
+import { mapLifecycle, resolveRoom } from "../app/room";
+import { keepMapOutOfSearch } from "../app/seo";
 
-let room = document.location.pathname.replace("/", "");
-if (!room) {
-  room = nanoid(8);
-  history.replaceState({}, "", room);
-}
+export const room = resolveRoom(document.location);
 
 const Theme = EditorView.theme({
   "&": {
     fontSize: "1rem",
   },
   ".cm-content": {
-    fontFamily: "'JetBrains Mono', Consolas, Courier New, monospace",
+    fontFamily: "var(--font-mono)",
     fontWeight: "400",
     cursor: "text",
   },
   ".cm-scroller": {
-    fontFamily: "'JetBrains Mono', Consolas, Courier New, monospace",
+    fontFamily: "var(--font-mono)",
     fontWeight: "400",
   },
   ".cm-gutters": {
@@ -58,14 +53,18 @@ const Theme = EditorView.theme({
   ".cm-gutterElement": {
     userSelect: "none",
   },
+  // Lines left off the map because they don't parse.
+  ".cm-lintRange-error": {
+    backgroundColor: "rgba(220, 38, 38, 0.08)",
+  },
   ".cm-ySelectionInfo": {
-    fontFamily: "'JetBrains Mono', Consolas, Courier New, monospace",
+    fontFamily: "var(--font-mono)",
     fontWeight: "400",
     color: "black",
   },
 });
 
-export const userColors = [
+const userColors = [
   { color: "#30bced", light: "#30bced33" },
   { color: "#6eeb83", light: "#6eeb8333" },
   { color: "#ffbc42", light: "#ffbc4233" },
@@ -76,23 +75,39 @@ export const userColors = [
   { color: "#1be7ff", light: "#1be7ff33" },
 ];
 
-export const userColor =
-  userColors[Math.floor(Math.random() * userColors.length)];
+const userColor = userColors[Math.floor(Math.random() * userColors.length)];
 
 const yDoc = new Y.Doc();
 const yText = yDoc.getText("maptogether");
-
-export const multiplayerClientID = yDoc.clientID;
 
 export const undoManager = new Y.UndoManager(yText, { captureTimeout: 350 });
 
 export const awareness = new Awareness(yDoc);
 
-connectSync(yDoc, awareness, room, { onStatus: (status) => { collaboration.status = status; } })
-  .then((sync) => {
-    if (import.meta.env.VITE_DEBUG_ENABLED === "true") (window as any).__sync = sync;
+const startSync = (id: string) =>
+  connectSync(yDoc, awareness, id, {
+    onStatus: (status) => {
+      collaboration.status = status;
+    },
   })
-  .catch((err) => { collaboration.status = "error"; console.error("[sync] failed to connect", err); });
+    .then((sync) => {
+      if (import.meta.env.VITE_DEBUG_ENABLED === "true")
+        (window as { __sync?: unknown }).__sync = sync;
+    })
+    .catch((err) => {
+      collaboration.status = "error";
+      console.error("[sync] failed to connect", err);
+    });
+
+/** Saves and shares the map; a new map starts once it's edited or shared. */
+if (!room.id) collaboration.status = "draft";
+export const mapLink = mapLifecycle(room, {
+  connect: (id) => void startSync(id),
+  created: (path) => {
+    history.replaceState({}, "", path);
+    keepMapOutOfSearch(false);
+  },
+});
 
 let username = localStorage.getItem("username");
 if (!username) {
@@ -124,6 +139,7 @@ const startState = EditorState.create({
     yCollab(yText, awareness, { undoManager }),
     EditorView.updateListener.of((e) => {
       if (e.docChanged) {
+        mapLink.textChanged(() => e.state.doc.toString());
         handleEditorChange(e.state.doc.toString());
       }
     }),
@@ -135,17 +151,19 @@ export const editorView = new EditorView({
   parent: document.getElementById("editor")!,
 });
 
-/* ========= Actions ========= */
-export const enableErrorMode = (): void => {
-  const editorDiv = document.getElementById("editor");
-  editorDiv!.style.backgroundColor = "rgba(255, 0, 0, 0.05)";
+/** Tints the editor when the map can't follow the text (too many errors). */
+const showMapOutOfDate = (outOfDate: boolean): void => {
+  document.getElementById("editor")!.classList.toggle("map-out-of-date", outOfDate);
 };
 
-export const disableErrorMode = (): void => {
-  const editorDiv = document.getElementById("editor");
-  editorDiv!.style.backgroundColor = "transparent";
+/** Replaces the whole map text, as one undoable edit. */
+export const replaceText = (text: string) => {
+  editorView.dispatch({
+    changes: { from: 0, to: editorView.state.doc.length, insert: text },
+  });
 };
 
+/** Adds text to the end of the map, with the cursor after it. */
 export const appendText = (text: string) => {
   editorView.dispatch({
     changes: {
@@ -158,220 +176,40 @@ export const appendText = (text: string) => {
   });
 };
 
-export const replaceCoordinates = (
-  componentName: string,
-  x: number,
-  y: number
-) => {
-  const searchCursor = new RegExpCursor(
-    editorView.state.doc,
-    matchComponentRegex(componentName),
-    {}
-  );
-
-  let changes = [];
-  var coords = MapSingleton.rendererToWardleyCoords(x, y);
-
-  for (const next of searchCursor) {
-    const to =
-      next.from +
-      next.match.slice(1, 6).reduce((prev, current) => {
-        if (current) {
-          return prev + current.length;
-        } else {
-          return prev;
-        }
-      }, 0);
-
-    changes.push({
-      from: next.from,
-      to,
-      insert: `${next.match[1] || ""}${next.match[2]}${next.match[3] || ""}${
-        next.match[4] || ""
-      }[${coords[1]},${coords[0]}]`, // TODO: should be coming from Parser
-    });
-  }
-
-  if (changes.length === 0) {
-    throw new Error(
-      `Error: "${componentName}" not found in text document. State sync lost or regex error.`
-    );
-  }
-
-  editorView.dispatch({
-    changes,
-    // selection: { anchor: changes[changes.length - 1].from + changes[changes.length -1].insert.length },
-  });
+/** Writes the components' new places on the canvas into the text, as one undoable edit. */
+export const moveComponents = (moves: Move[]) => {
+  const changes = moveChanges(editorView.state.doc.toString(), moves.map(toMapCoordinates));
+  if (changes.length) editorView.dispatch({ changes });
 };
 
+const toMapCoordinates = ({ name, x, y }: Move) => {
+  const [evolution, visibility] = MapSingleton.rendererToWardleyCoords(x, y);
+  return { name, coordinates: [visibility, evolution] as const };
+};
+
+/** Renames a component and its links, as one undoable edit. */
 export const renameComponent = (oldName: string, newName: string) => {
-  let changes: ChangeSpec[] = [];
-
-  const componentSearchCursor = new RegExpCursor(
-    editorView.state.doc,
-    matchComponentRegex(oldName),
-    {}
-  );
-
-  for (const next of componentSearchCursor) {
-    const to =
-      next.from +
-      next.match.slice(2, 3).reduce((prev, current) => {
-        if (current) {
-          return prev + current.length;
-        } else {
-          return prev;
-        }
-      }, 0);
-
-    changes.push({
-      from: next.from,
-      to,
-      insert: `${newName}`,
-    });
-  }
-
-  const edgeSearchCursor = new RegExpCursor(
-    editorView.state.doc,
-    matchEdgeRegex(oldName),
-    {}
-  );
-
-  for (const next of edgeSearchCursor) {
-    let from = next.from;
-    let to = next.from;
-
-    // LHS Match
-    if (next.match[2]) {
-      const lhsWs = next.match[1] ? next.match[1].length : 0;
-      const lhsComponentIdentifier = next.match[2].length;
-      // const lhsWs2 = next.match[3] ? next.match[3].length : 0
-      // const lhsRest = next.match[4].length
-
-      from += lhsWs;
-      to = from + lhsComponentIdentifier;
-
-      //RHS Match
-    } else if (next.match[9]) {
-      const rhsRest = next.match[5].length;
-      const rhsDotAttributes = next.match[6].length;
-      const rhsWs = next.match[8] ? next.match[8].length : 0;
-      const rhsComponentIdentifier = next.match[9].length;
-      // const rhsWs2 = next.match[10] ? next.match[10].length : 0
-      // const rhsComment = next.match[11] ? next.match[11].length : 0
-
-      from += rhsRest + rhsDotAttributes + rhsWs;
-      to = from + rhsComponentIdentifier;
-    } else {
-      throw new Error(
-        "Error: this shouldn't be reached. Check if regex has changed."
-      );
-    }
-
-    changes.push({
-      from,
-      to,
-      insert: newName,
-    });
-  }
-
-  if (changes.length === 0) {
-    throw new Error(
-      `RenameComponentError: "${oldName}" not found in text document. State sync lost or regex error.`
-    );
-  }
-
-  // update the selection if there is one
-  if (removeFromSelection(oldName)) {
-    addToSelection([newName]);
-  }
-
-  editorView.dispatch({
-    changes,
-  });
+  renameInSelection(oldName, newName);
+  const changes = renameChanges(editorView.state.doc.toString(), oldName, newName);
+  if (changes.length) editorView.dispatch({ changes });
 };
 
-export const deleteComponents = (names: string[]) => {
-  if (names.length === 0) return;
-
-  let changes: ChangeSpec[] = [];
-
-  names.forEach((name: string) => {
-    const componentSearchCursor = new RegExpCursor(
-      editorView.state.doc,
-      matchComponentRegex(name),
-      {}
-    );
-
-    for (const next of componentSearchCursor) {
-      changes.push({
-        from: next.from,
-        to: next.to,
-        insert: "",
-      });
-    }
-
-    const edgeSearchCursor = new RegExpCursor(
-      editorView.state.doc,
-      matchEdgeRegex(name),
-      {}
-    );
-
-    for (const next of edgeSearchCursor) {
-      // NOTE: may need to revise regex to match full line of edge.
-      changes.push({
-        from: next.from,
-        to: next.to,
-        insert: "",
-      });
-    }
+/** Deletes the selected components (with their links) and links from the text. */
+export const deleteSelection = () => {
+  const changes = deletionRanges(editorView.state.doc.toString(), {
+    components: [...state.selection.selectionItems],
+    edges: [...state.selection.edgeItems],
   });
-
-  if (changes.length === 0) {
-    throw new Error(
-      `RenameComponentError: "${names}" not found in text document. State sync lost or regex error.`
-    );
-  }
-
   clearSelection();
-
-  editorView.dispatch({
-    changes,
-  });
+  if (changes.length) editorView.dispatch({ changes });
 };
-
-/* ======== Events ======== */
-// Save editor state to browser storage before navigating away
-window.addEventListener("beforeunload", function (e) {
-  localStorage.setItem("editorText", editorView.state.doc.toString());
-});
 
 const handleEditorChange = debounce((text: string) => {
   setEditorText(text);
 }, 32);
 
-// SUBSCRIPTIONS
-subscribe(state.editor, () => {
-  // TODO: read lazy update checking to see if text makes a different graph than before
-  // Rerendering each time might be faster than diffing graph?
+/** Draws the map from the text, and tints the editor when the map can't follow it. */
+export const redrawMap = () => showMapOutOfDate(!drawMap(state.editor.editorText));
 
-  //   if (state.ast.astArr.length !== state.lastAst.astArr.length) {
-  //     state.lastAst.astArr = state.ast.astArr;
-  //     rerenderGraph();
-  //     return;
-  //   }
-
-  //   for (let i = 0; i < state.ast.astArr.length; i++) {
-  //     if (state.ast.astArr[i].type !== state.lastAst.astArr[i].type) {
-  //       state.lastAst.astArr = state.ast.astArr;
-  //       rerenderGraph();
-  //       return;
-  //     } else if (!isEqual(state.ast.astArr[i], state.lastAst.astArr[i])) {
-  //       state.lastAst.astArr = state.ast.astArr;
-  //       rerenderGraph();
-  //       return;
-  //     }
-  //   }
-
-  rerenderGraph();
-}); // <-State
+// Every text change redraws the whole map.
+subscribe(state.editor, redrawMap);

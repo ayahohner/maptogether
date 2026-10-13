@@ -3,10 +3,73 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MapTogether.io - Multiplayer Wardley Mapping</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>MapTogether: Collaborative Wardley Mapping Tool, Free Online</title>
+  <meta name="description"
+    content="Draw Wardley maps with your team in real time. MapTogether is a free online Wardley mapping tool: share a link, see live cursors, and edit the map as a diagram or as text." />
+  <link rel="canonical" href="https://maptogether.io/" />
+  <meta name="theme-color" content="#ffffff" />
+
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="MapTogether" />
+  <meta property="og:url" content="https://maptogether.io/" />
+  <meta property="og:title" content="MapTogether: Collaborative Wardley mapping in your browser" />
+  <meta property="og:description"
+    content="A free, online Wardley mapping tool for teams. Share a link and map together in real time, with no sign-up." />
+  <meta property="og:image" content="https://maptogether.io/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="A Wardley map being edited by two people in MapTogether" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://maptogether.io/#website",
+          "name": "MapTogether",
+          "url": "https://maptogether.io/"
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://maptogether.io/#app",
+          "name": "MapTogether",
+          "url": "https://maptogether.io/",
+          "description": "A free, collaborative Wardley mapping tool that runs in the browser. Teams edit the same Wardley map in real time, on a canvas or as plain text.",
+          "applicationCategory": "BusinessApplication",
+          "applicationSubCategory": "Wardley mapping",
+          "operatingSystem": "Any (runs in a web browser)",
+          "browserRequirements": "Requires JavaScript and WebGL",
+          "isAccessibleForFree": true,
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+          "image": "https://maptogether.io/og-image.png",
+          "featureList": [
+            "Real-time multiplayer editing with live cursors",
+            "Shareable map links with no sign-up",
+            "Canvas and plain-text editing kept in sync",
+            "Evolution stages, dependencies and pipelines",
+            "Automatic saving",
+            "Works on desktop, tablets and phones"
+          ],
+          "about": {
+            "@type": "Thing",
+            "name": "Wardley map",
+            "sameAs": "https://en.wikipedia.org/wiki/Wardley_map"
+          },
+          "isPartOf": { "@id": "https://maptogether.io/#website" }
+        }
+      ]
+    }
+  </script>
+
   <link rel="preconnect" href="https://fonts.bunny.net" />
-  <link href="https://fonts.bunny.net/css?family=jetbrains-mono:400" rel="stylesheet" />
+  <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700|jetbrains-mono:400&display=swap" rel="stylesheet" />
   <script>
     !(function () {
       var analytics = (window.analytics = window.analytics || []);
@@ -109,15 +172,139 @@
 </head>
 
 <body>
-  <div id="projectMenu" class="bg-zinc-700"></div>
-  <div id="toolMenu" class="bg-zinc-700"></div>
-  <div id="mainContainer">
-    <div id="map"></div>
-    <div id="resize"></div>
+  <header id="topBar"></header>
+  <main id="mainContainer">
+    <div id="map" aria-label="Wardley map canvas"></div>
+    <div id="resize" role="separator" tabindex="0" aria-orientation="vertical"
+      aria-controls="editorContainer" aria-label="Code editor divider: click to show or hide, drag to resize"></div>
     <div id="editorContainer">
       <div id="editor"></div>
     </div>
-  </div>
+  </main>
+  <div id="overlays"></div>
+
+  <!-- About MapTogether: the first-visit welcome, also opened from the menu.
+       Static so search engines and link previews can read it. -->
+  <dialog id="about" class="about" aria-labelledby="about-title" open>
+    <form method="dialog" class="about-card">
+      <button class="about-close icon-btn" value="close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+          <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+
+      <figure class="about-hero" aria-hidden="true">
+        <svg viewBox="0 0 560 210" xmlns="http://www.w3.org/2000/svg" font-family="'Instrument Sans', system-ui, sans-serif">
+          <g stroke="#d4d4d8" stroke-dasharray="3 4">
+            <path d="M157 22v158M282 22v158M424 22v158" />
+          </g>
+          <path d="M60 18v164h468" fill="none" stroke="#a1a1aa" stroke-width="1.25" />
+          <path d="M56 24l4-6 4 6M522 178l6 4-6 4" fill="none" stroke="#a1a1aa" stroke-width="1.25" />
+          <g font-size="10" fill="#71717a">
+            <text x="66" y="198">Genesis</text><text x="162" y="198">Custom</text>
+            <text x="287" y="198">Product</text><text x="429" y="198">Commodity</text>
+          </g>
+          <g stroke="#3f3f46" stroke-width="1.25">
+            <path d="M330 40L355 82M355 82L384 116M355 82L216 108M384 116L452 136M452 136L478 156" />
+          </g>
+          <g fill="#fff" stroke="#18181b" stroke-width="1.5">
+            <circle cx="330" cy="40" r="6" /><circle cx="355" cy="82" r="6" stroke="#6d4aff" stroke-width="2.25" />
+            <circle cx="216" cy="108" r="6" /><circle cx="384" cy="116" r="6" />
+            <circle cx="478" cy="156" r="6" /><circle cx="452" cy="136" r="6" />
+          </g>
+          <g font-size="12" fill="#18181b">
+            <text x="340" y="36">Customer</text><text x="365" y="78">Cup of tea</text>
+            <text x="226" y="104">Staff</text><text x="394" y="112">Hot water</text>
+            <text x="462" y="132">Kettle</text><text x="488" y="160">Power</text>
+          </g>
+          <g transform="translate(250 54)">
+            <path d="M0 0l12 7.8H6.6L4.2 12z" fill="#30bced" stroke="#fff" stroke-width=".75" />
+            <rect x="10" y="12" width="70" height="18" rx="4" fill="#30bced" />
+            <text x="16" y="25" font-size="10.5" fill="#fff" font-weight="500">Quiet Otter</text>
+          </g>
+          <g transform="translate(150 140)">
+            <path d="M0 0l12 7.8H6.6L4.2 12z" fill="#ee6352" stroke="#fff" stroke-width=".75" />
+            <rect x="10" y="12" width="66" height="18" rx="4" fill="#ee6352" />
+            <text x="16" y="25" font-size="10.5" fill="#fff" font-weight="500">Calm Finch</text>
+          </g>
+        </svg>
+      </figure>
+
+      <div class="about-body">
+        <h1 id="about-title">Collaborative Wardley mapping, right in your browser</h1>
+        <p class="about-lede">
+          MapTogether is a free, online Wardley mapping tool for teams, with no sign-up. Share
+          a link and everyone edits the same map at once, multiplayer, with live cursors, a
+          plain-text editor and automatic saving.
+        </p>
+
+        <ul class="about-features">
+          <li>
+            <strong>Map together, live.</strong>
+            Every map has its own link. Anyone with it can edit alongside you, with no accounts.
+          </li>
+          <li>
+            <strong>Draw it or write it.</strong>
+            Place components on the canvas or type them in the editor. Both stay in sync.
+          </li>
+          <li>
+            <strong>Made for Wardley maps.</strong>
+            Evolution stages, dependencies and pipelines are built in. It works on phones and tablets too.
+          </li>
+        </ul>
+
+        <div class="about-actions">
+          <button type="button" class="btn btn-secondary btn-lg" data-action="demo">Explore a demo map</button>
+          <button class="btn btn-primary btn-lg" value="start" autofocus>
+            <span class="when-new-map">Start a blank map</span>
+            <span class="when-shared-map">Start mapping</span>
+          </button>
+        </div>
+
+        <p class="about-hint">
+          Instructions are always in the <span class="about-help-dot">?</span> button in the bottom-right corner.
+        </p>
+
+        <section class="about-more" aria-label="New to Wardley mapping?">
+          <h2>What is a Wardley map?</h2>
+          <p>
+            A Wardley map is a picture of a business strategy. Its vertical axis is a value chain:
+            what your users need at the top, and the components that meet those needs below.
+            Its horizontal axis is evolution: how mature each component is, from
+            <em>Genesis</em> through <em>Custom-built</em> and <em>Product</em> to <em>Commodity</em>.
+          </p>
+          <p>
+            Seeing where each part of your business sits, and where it is moving, shows what to build,
+            what to buy and what to outsource. The method was created by Simon Wardley;
+            <a href="https://learnwardleymapping.com/" target="_blank" rel="noopener">Learn Wardley Mapping</a>
+            is a good introduction.
+          </p>
+          <h2>Why map as a team?</h2>
+          <p>
+            The value of a map is the conversation it starts. In MapTogether the whole team edits one map in
+            real time, in a workshop or remotely, instead of passing a picture around.
+          </p>
+        </section>
+      </div>
+    </form>
+  </dialog>
+  <!-- The welcome is open in the HTML itself, for crawlers and before the app
+       loads. Show it as a modal to first-time visitors and close it for others. -->
+  <script>
+    var about = document.getElementById("about");
+    about.dataset.map = location.pathname === "/" ? "new" : "shared";
+    var welcomed = false;
+    try {
+      welcomed = localStorage.getItem("shouldShowHelp") === "false";
+    } catch (e) {}
+    // Not close(): its "close" event would count as dismissing the welcome.
+    about.removeAttribute("open");
+    if (!welcomed) about.showModal();
+  </script>
+
+  <noscript>
+    <p class="noscript">MapTogether is an interactive Wardley mapping tool and needs JavaScript to run.</p>
+  </noscript>
   <script type="module" src="/src/app/index.tsx"></script>
 </body>
 

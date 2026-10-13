@@ -2,44 +2,30 @@ import {
   createToken,
   Lexer,
   CstParser,
-  ParserMethod,
-  CstNode,
-  TokenType,
-  ITokenConfig,
-  ILexingError,
+  type ParserMethod,
+  type CstNode,
+  type TokenType,
+  type ITokenConfig,
+  type IRecognitionException,
+  type IToken,
   EOF,
 } from "chevrotain";
 
-import XRegExp from "xregexp";
+import type { DefaultCstNode } from "./TogetherCst";
 
-// Fragment dictionary
-const f: { [key: string]: RegExp } = {};
+/** Named regex sources, so token patterns can reuse each other. */
+const fragments = new Map<string, string>();
 
-// Create re-usable fragments using xRegExp
 function FRAGMENT(name: string, def: string | RegExp) {
-  f[name] = XRegExp.build(def as string, f);
+  fragments.set(name, new RegExp(def).source);
 }
 
-// Create a pattern using previously defined fragments
-// function MAKE_PATTERN(def: string, flags?: Flags) {
-//   return XRegExp.build(def, f, flags);
-// }
-
-/**
- * Compose
- *
- * Return a fragment from the fragment dictionary in a composable form
- */
-
+/** A fragment's source, to build into another pattern. */
 function C(name: string) {
-  return f[name].source;
+  return fragments.get(name)!;
 }
 
-const createComposableToken = ({
-  name,
-  pattern,
-  ...args
-}: ITokenConfig): TokenType => {
+const createComposableToken = ({ name, pattern, ...args }: ITokenConfig): TokenType => {
   FRAGMENT(name, pattern as string | RegExp);
   return createToken({
     name,
@@ -48,7 +34,6 @@ const createComposableToken = ({
   });
 };
 
-// define fragments
 FRAGMENT("BaseWhitespace", " \\t");
 FRAGMENT("Command", "\\/");
 FRAGMENT("EdgeJoin", "\\.");
@@ -67,7 +52,6 @@ FRAGMENT("BracketOpen", "\\[");
 FRAGMENT("BracketClose", "\\]");
 FRAGMENT("IdentifierSymbols", `'"~\`!@$%&\\*\\-_+\\|\\\\;\\?`);
 
-// Strings
 const StringLiteral = createComposableToken({
   name: "StringLiteral",
   pattern: `"(.*?)"|'(.*?)'`,
@@ -75,12 +59,11 @@ const StringLiteral = createComposableToken({
 
 const Comment = createComposableToken({
   name: "Comment",
-  pattern: `\/\/.*`,
+  pattern: `//.*`,
   group: Lexer.SKIPPED,
 });
 
-// Reserved Symbols
-// gotta escape - / \ ^ $ * + ? . ( ) | [ ] { }
+// Reserved symbols. Patterns are strings, so - / \ ^ $ * + ? . ( ) | [ ] { } need escaping.
 const Command = createComposableToken({
   name: "Command",
   pattern: "\\/[a-zA-Z][a-zA-Z0-9]*",
@@ -137,12 +120,11 @@ const BracketClose = createComposableToken({
   pattern: "\\]",
 });
 
-// Skipped Symbols
+// Newlines end statements, so they are tokens; other whitespace is skipped.
 const Newline = createComposableToken({
   name: "Newline",
   pattern: "\\r\\n|\\n",
   line_breaks: true,
-  // group: Lexer.SKIPPED,
 });
 const Whitespace = createComposableToken({
   name: "Whitespace",
@@ -155,7 +137,6 @@ const AttributeBreak = createComposableToken({
   line_breaks: true,
 });
 
-// Identifiers & Keywords
 const AttributeIdentifier = createToken({
   name: "AttributeIdentifier",
   pattern: /[a-zA-Z_][a-zA-Z0-9-]*/,
@@ -163,15 +144,13 @@ const AttributeIdentifier = createToken({
 
 const Identifier = createToken({
   name: "Identifier",
-  // not // / . = : ^ ' " , ( ) { } [ ]
+  // Words of letters, digits and IdentifierSymbols, separated by spaces.
   pattern: new RegExp(
-    `[a-zA-Z0-9${C("IdentifierSymbols")}]+([ ]+[a-zA-Z0-9${C(
-      "IdentifierSymbols"
-    )}]+)*`
+    `[a-zA-Z0-9${C("IdentifierSymbols")}]+([ ]+[a-zA-Z0-9${C("IdentifierSymbols")}]+)*`,
   ),
 });
 
-// Tokens are out of order because of longer_alt
+// After Identifier, which longer_alt refers to: "2nd hand" is a name, not a number.
 const NumberLiteral = createToken({
   name: "NumberLiteral",
   pattern: /-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/,
@@ -183,7 +162,7 @@ const AttributeNumberLiteral = createToken({
   pattern: /-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/,
 });
 
-export const togetherTokens = {
+const togetherTokens = {
   modes: {
     normal_mode: [
       Command,
@@ -191,7 +170,6 @@ export const togetherTokens = {
       DefinitionSpecifier,
       FutureSpecifier,
       NoteSpecifier,
-      // only because brackets with coords for now
       Comma,
       ParenOpen,
       BraceOpen,
@@ -203,7 +181,6 @@ export const togetherTokens = {
       Newline,
       Comment,
 
-      // only because brackets with coords for now
       NumberLiteral,
       Identifier,
     ],
@@ -222,21 +199,13 @@ export const togetherTokens = {
     ],
   },
   defaultMode: "normal_mode",
-
-  // can match anything, have to come last
-  // Name,
 };
 
-// ============== Lexer ===============
-export const TogetherLexer = new Lexer(togetherTokens, {
-  // Optimize position info for performance
-  // positionTracking: "onlyStart",
-  // Throw error if Lexer isn't able to use all optimizations
-  // disabled because /[^]/ (Complement Sets) can't be optimized
+const TogetherLexer = new Lexer(togetherTokens, {
+  // Throws if a token pattern stops Chevrotain from using its fast lexer paths.
   ensureOptimizations: true,
 });
 
-// ============== Parser ==============
 class TogetherParser extends CstParser {
   public default!: ParserMethod<[], CstNode>;
   private statement!: ParserMethod<[], CstNode>;
@@ -251,94 +220,87 @@ class TogetherParser extends CstParser {
 
   constructor(tokens: typeof togetherTokens) {
     super(tokens, {
-      // This can cause some problems
-      // TODO: enable once debugged
+      // Off: lenient.ts sets aside lines with errors instead, which keeps line numbers exact.
       recoveryEnabled: false,
     });
 
-    // shorthand for easier writing and comprehension
-    const $ = this;
-
-    $.default = $.RULE("default", () => {
-      $.MANY(() => {
-        $.OR([
-          { ALT: () => $.CONSUME(Newline) },
-          { ALT: () => $.SUBRULE($.statement) },
-          { ALT: () => $.CONSUME(Comment) },
+    this.default = this.RULE("default", () => {
+      this.MANY(() => {
+        this.OR([
+          { ALT: () => this.CONSUME(Newline) },
+          { ALT: () => this.SUBRULE(this.statement) },
+          { ALT: () => this.CONSUME(Comment) },
         ]);
       });
     });
 
-    $.statement = $.RULE("statement", () => {
-      $.OR({
+    this.statement = this.RULE("statement", () => {
+      this.OR({
         DEF: [
-          { ALT: () => $.SUBRULE($.command) },
+          { ALT: () => this.SUBRULE(this.command) },
           {
-            GATE: $.BACKTRACK($.edgeDeclaration),
-            ALT: () => $.SUBRULE($.edgeDeclaration),
+            GATE: this.BACKTRACK(this.edgeDeclaration),
+            ALT: () => this.SUBRULE(this.edgeDeclaration),
           },
-          {
-            // GATE: $.BACKTRACK($.componentDeclaration), // Do we need this?
-            ALT: () => $.SUBRULE($.componentDeclaration),
-          },
-          { ALT: () => $.SUBRULE($.note) },
+          { ALT: () => this.SUBRULE(this.componentDeclaration) },
+          { ALT: () => this.SUBRULE(this.note) },
         ],
         ERR_MSG: "a statement",
       });
-      $.OR1({
-        DEF: [{ ALT: () => $.CONSUME(Newline) }, { ALT: () => $.CONSUME(EOF) }],
+      this.OR1({
+        DEF: [{ ALT: () => this.CONSUME(Newline) }, { ALT: () => this.CONSUME(EOF) }],
         ERR_MSG: "a new line",
       });
     });
 
-    $.command = $.RULE("command", () => {
-      $.CONSUME(Command);
-      $.OPTION(() => $.SUBRULE($.attributes));
+    this.command = this.RULE("command", () => {
+      this.CONSUME(Command);
+      this.OPTION(() => this.SUBRULE(this.attributes));
     });
 
-    $.attributes = $.RULE("attributes", () => {
-      $.CONSUME(ParenOpen);
-      $.MANY(() => {
-        $.OR([
+    this.attributes = this.RULE("attributes", () => {
+      this.CONSUME(ParenOpen);
+      this.MANY(() => {
+        this.OR([
           {
-            ALT: () => $.SUBRULE($.attribute),
+            ALT: () => this.SUBRULE(this.attribute),
           },
           {
-            ALT: () => $.CONSUME(AttributeBreak),
+            ALT: () => this.CONSUME(AttributeBreak),
           },
         ]);
       });
-      $.CONSUME(ParenClose);
+      this.CONSUME(ParenClose);
     });
 
-    $.attribute = $.RULE("attribute", () => {
-      $.CONSUME(AttributeIdentifier, { LABEL: "AttributeName" });
-      $.OPTION(() => {
-        $.CONSUME(Assign);
-        $.OR([
+    this.attribute = this.RULE("attribute", () => {
+      this.CONSUME(AttributeIdentifier, { LABEL: "AttributeName" });
+      this.OPTION(() => {
+        this.CONSUME(Assign);
+        this.OR([
           {
             ALT: () => {
-              $.CONSUME1(AttributeNumberLiteral);
-              $.OPTION1(() => {
-                $.CONSUME(Comma);
-                $.CONSUME2(AttributeNumberLiteral);
+              this.CONSUME1(AttributeNumberLiteral);
+              this.OPTION1(() => {
+                this.CONSUME(Comma);
+                this.CONSUME2(AttributeNumberLiteral);
               });
             },
           },
           {
             ALT: () => {
-              $.CONSUME(StringLiteral);
+              this.CONSUME(StringLiteral);
             },
           },
           {
             ALT: () => {
-              $.AT_LEAST_ONE_SEP({
+              this.AT_LEAST_ONE_SEP({
                 SEP: Comma,
                 DEF: () => {
-                  $.CONSUME1(AttributeIdentifier);
-                  $.OPTION2(() => {
-                    $.CONSUME2(AttributeSubvalueSpecifier);
-                    $.CONSUME3(AttributeNumberLiteral);
+                  this.CONSUME1(AttributeIdentifier);
+                  this.OPTION2(() => {
+                    this.CONSUME2(AttributeSubvalueSpecifier);
+                    this.CONSUME3(AttributeNumberLiteral);
                   });
                 },
               });
@@ -348,148 +310,119 @@ class TogetherParser extends CstParser {
       });
     });
 
-    $.componentDeclaration = $.RULE("componentDeclaration", () => {
-      $.CONSUME(Identifier);
-      $.OPTION(() => {
-        $.CONSUME(DefinitionSpecifier);
-        $.CONSUME(NumberLiteral);
+    this.componentDeclaration = this.RULE("componentDeclaration", () => {
+      this.CONSUME(Identifier);
+      this.OPTION(() => {
+        this.CONSUME(DefinitionSpecifier);
+        this.CONSUME(NumberLiteral);
       });
-      $.OPTION1(() => {
-        $.SUBRULE($.coordinates);
+      this.OPTION1(() => {
+        this.SUBRULE(this.coordinates);
       });
-      $.OPTION2(() => {
-        $.SUBRULE($.attributes);
+      this.OPTION2(() => {
+        this.SUBRULE(this.attributes);
       });
-      $.OPTION3(() => {
-        $.SUBRULE($.pipeline);
-      });
-    });
-
-    $.edgeDeclaration = $.RULE("edgeDeclaration", () => {
-      $.CONSUME(Identifier, { LABEL: "LHS" });
-      $.CONSUME(EdgeJoin);
-      $.OPTION(() => $.SUBRULE($.attributes));
-      $.CONSUME1(Identifier, { LABEL: "RHS" });
-    });
-
-    $.pipeline = $.RULE("pipeline", () => {
-      $.CONSUME(BraceOpen);
-      $.OPTION(() => $.CONSUME(Newline));
-      $.MANY(() => {
-        $.SUBRULE($.statement);
-      });
-      $.OPTION1(() => $.CONSUME1(Newline));
-      $.CONSUME(BraceClose);
-    });
-
-    $.coordinates = $.RULE("coordinates", () => {
-      $.CONSUME(BracketOpen);
-      $.CONSUME(NumberLiteral, { LABEL: "LHS" });
-      $.OPTION1(() => $.CONSUME1(Whitespace));
-      $.CONSUME(Comma);
-      $.OPTION2(() => $.CONSUME2(Whitespace));
-      $.CONSUME1(NumberLiteral, { LABEL: "RHS" });
-      $.CONSUME(BracketClose);
-    });
-
-    $.note = $.RULE("note", () => {
-      $.CONSUME(NoteSpecifier);
-      $.CONSUME(Identifier);
-      $.OPTION1(() => {
-        $.SUBRULE($.coordinates);
+      this.OPTION3(() => {
+        this.SUBRULE(this.pipeline);
       });
     });
 
-    // very important to call this after all the rules have been setup.
-    // otherwise the parser may not work correctly as it will lack information
-    // derived from the self analysis.
+    this.edgeDeclaration = this.RULE("edgeDeclaration", () => {
+      this.CONSUME(Identifier, { LABEL: "LHS" });
+      this.CONSUME(EdgeJoin);
+      this.OPTION(() => this.SUBRULE(this.attributes));
+      this.CONSUME1(Identifier, { LABEL: "RHS" });
+    });
+
+    this.pipeline = this.RULE("pipeline", () => {
+      this.CONSUME(BraceOpen);
+      // Blank lines are allowed anywhere inside, as at the top level.
+      this.MANY(() => {
+        this.OR([
+          { ALT: () => this.CONSUME(Newline) },
+          { ALT: () => this.SUBRULE(this.statement) },
+        ]);
+      });
+      this.CONSUME(BraceClose);
+    });
+
+    this.coordinates = this.RULE("coordinates", () => {
+      this.CONSUME(BracketOpen);
+      this.CONSUME(NumberLiteral, { LABEL: "LHS" });
+      this.OPTION1(() => this.CONSUME1(Whitespace));
+      this.CONSUME(Comma);
+      this.OPTION2(() => this.CONSUME2(Whitespace));
+      this.CONSUME1(NumberLiteral, { LABEL: "RHS" });
+      this.CONSUME(BracketClose);
+    });
+
+    this.note = this.RULE("note", () => {
+      this.CONSUME(NoteSpecifier);
+      this.CONSUME(Identifier);
+      this.OPTION1(() => {
+        this.SUBRULE(this.coordinates);
+      });
+    });
+
+    // Must follow every RULE: it analyses the grammar the rules define.
     this.performSelfAnalysis();
   }
 }
 
 const parserInstance = new TogetherParser(togetherTokens);
 
-export const BaseTogetherVisitor =
-  parserInstance.getBaseCstVisitorConstructor();
+export const BaseTogetherVisitor = parserInstance.getBaseCstVisitorConstructor();
+export const togetherProductions = parserInstance.getGAstProductions();
 
-export class TokenError extends Error {
-  column: number | undefined = undefined;
-  length: number | undefined = undefined;
-  line: number | undefined = undefined;
-  offset: number | undefined = undefined;
-  errors: ILexingError[] = [];
-
-  constructor(message: string | undefined, options?: ErrorOptions | undefined) {
-    super(message, options);
-  }
+export interface ParseProblem {
+  /** 1-based line number. */
+  line: number;
+  message: string;
 }
 
-export const parseToCST = (text: string) => {
-  // Initiate parse from top level aka default rule ("default")
-  let tokenized = TogetherLexer.tokenize(text);
+export interface ParseResult {
+  /** Undefined when the text couldn't be tokenized. */
+  cst: DefaultCstNode | undefined;
+  problems: ParseProblem[];
+}
 
-  if (tokenized.errors.length > 0) {
-    let error = new TokenError("TokenizingError");
-    error.errors = tokenized.errors;
-    throw error;
-  }
+const isLine = (line: number | undefined): line is number => (line ?? 0) >= 1;
 
-  parserInstance.input = tokenized.tokens;
-  const cst = parserInstance.default();
-
-  if (parserInstance.errors.length > 0) {
-    parserInstance.errors.forEach((e) => {
-      throw e;
-    });
-  }
-
-  return cst;
+/** The line an error is on. End-of-input errors belong to the token before, or else the last line. */
+const problemAt = (e: IRecognitionException): ParseProblem => {
+  const previous = (e as { previousToken?: IToken }).previousToken?.startLine;
+  const line = [e.token.startLine, previous].find(isLine) ?? Infinity;
+  return { line, message: e.message };
 };
 
-// Disabled until implement AST
-// export function parseToAST(text: string) {
-//   const visitorInstance = new WardleyVisitorToAST();
-//   return visitorInstance.visit(parseToCST(text)) as WardleyASTT;
-// }
+/**
+ * Parses map text. Reports every tokenizing error, or else the first parse
+ * error (recovery is off), by line; see `parseLeniently` to get past them.
+ */
+export const tryParse = (text: string): ParseResult => {
+  const tokenized = TogetherLexer.tokenize(text);
+  if (tokenized.errors.length > 0) {
+    const problems = tokenized.errors.map((e) => ({
+      line: e.line ?? Infinity,
+      message: e.message,
+    }));
+    return { cst: undefined, problems };
+  }
+  parserInstance.input = tokenized.tokens;
+  // The parser's rules all return CstNode; the default rule's is a DefaultCstNode.
+  const cst = parserInstance.default() as DefaultCstNode;
+  return { cst, problems: parserInstance.errors.map(problemAt) };
+};
 
-/* ============ Regexes ============ */
+/** `string` as a literal regex pattern. "-" is only special inside [ ], so it is left as is. */
 function escapeRegex(string: string) {
-  return string.replace(/[\/\\^$*+?.()|[\]{}]/g, "\\$&"); // Note: removed '-' as it creates invalid escapes?
+  return string.replace(/[/\\^$*+?.()|[\]{}]/g, "\\$&");
 }
 
-// $.componentDeclaration = $.RULE("componentDeclaration", () => {
-//   $.CONSUME(Identifier);
-//   $.OPTION(() => {
-//     $.CONSUME(DefinitionSpecifier);
-//     $.CONSUME(NumberLiteral);
-//   });
-//   $.OPTION1(() => {
-//     $.SUBRULE($.coordinates);
-//   });
-//   $.OPTION2(() => {
-//     $.SUBRULE($.attributes);
-//   });
-//   $.OPTION3(() => {
-//     $.SUBRULE($.pipeline);
-//   });
-// });
-
 /**
- * matchComponentRegex
- * Capture Groups
- * - 0: everything
- * - 1: Whitespace (optional)
- * - 2: component name
- * - 3: DefinitionSpecifier (optional)
- * - 4: Whitespace (optional)
- * - 5: Coordinates (optional)
- * - 6: Whitespace (optional)
- * - 7: Attributes (optional)
- * - 8: Whitespace (optional)
- * - 9: Pipeline (optional)
- * - 10: Whitespace (optional)
- * - 11: Comment (optional)
- *
+ * Matches a line that declares `componentName`. Groups, each optional but 2:
+ * 1 indent, 2 name, 3 definition specifier (":1"), 4 space, 5 coordinates,
+ * 6 space, 7 attributes, 8 space, 9 pipeline, 10 space, 11 comment.
  */
 export const matchComponentRegex = (componentName: string) => {
   return [
@@ -499,27 +432,37 @@ export const matchComponentRegex = (componentName: string) => {
     `(${C("Whitespace")})?`,
     `(${C("BracketOpen")}.+${C("BracketClose")})?`,
     `(${C("Whitespace")})?`,
-    `(${C("ParenOpen")}[^${C("ParenClose")}]*$|${C("ParenOpen")}.*?${C(
-      "ParenClose"
-    )})?`,
+    `(${C("ParenOpen")}[^${C("ParenClose")}]*$|${C("ParenOpen")}.*?${C("ParenClose")})?`,
     `(${C("Whitespace")})?`,
-    `(${C("BraceOpen")}[^${C("BraceClose")}]*$|${C("BraceOpen")}.*?${C(
-      "BraceClose"
-    )})?`,
+    `(${C("BraceOpen")}[^${C("BraceClose")}]*$|${C("BraceOpen")}.*?${C("BraceClose")})?`,
     `(${C("Whitespace")})?`,
     `(${C("Comment")})?$`,
   ].join("");
 };
 
-export const matchEdgeRegex = (edgeComponentName: string) => {
-  return [
-    `^(${C("Whitespace")})?(${escapeRegex(edgeComponentName)})(${C(
-      "Whitespace"
-    )})?\\.(.*)$`,
-    `|(.*?)(\\.(${C("ParenOpen")}.*?${C("ParenClose")})?|\\))(${C(
-      "Whitespace"
-    )})?(${escapeRegex(edgeComponentName)})(${C("Whitespace")})?(${C(
-      "Comment"
-    )})?$`,
-  ].join("");
+/** Matches a link line from `name`: groups 1–4 are indent, name, space and the rest. */
+export const matchEdgeFromRegex = (name: string) =>
+  `^(${C("Whitespace")})?(${escapeRegex(name)})(${C("Whitespace")})?\\.(.*)$`;
+
+/**
+ * Matches a link line to `name`: groups 1–4 come before it (2 is the "." or
+ * label, 3 the label alone), 5 is the name, then 6 space and 7 comment.
+ */
+export const matchEdgeToRegex = (name: string) =>
+  `(.*?)(\\.(${C("ParenOpen")}.*?${C("ParenClose")})?|\\))(${C("Whitespace")})?(${escapeRegex(name)})(${C("Whitespace")})?(${C("Comment")})?$`;
+
+/**
+ * Matches a link line with `name` on either side. With the name on the left,
+ * groups 1–4 are as in matchEdgeFromRegex; on the right, groups 5–11 are
+ * matchEdgeToRegex's 1–7.
+ */
+export const matchEdgeRegex = (name: string) =>
+  `${matchEdgeFromRegex(name)}|${matchEdgeToRegex(name)}`;
+
+/** A line that is just the link between `a` and `b`, written either way round. */
+export const matchEdgeBetweenRegex = (a: string, b: string) => {
+  const ws = `(?:${C("Whitespace")})?`;
+  const link = (from: string, to: string) =>
+    `${escapeRegex(from)}${ws}\\.(?:${C("ParenOpen")}.*?${C("ParenClose")})?${ws}${escapeRegex(to)}`;
+  return `^${ws}(?:${link(a, b)}|${link(b, a)})${ws}(?:${C("Comment")})?$`;
 };

@@ -27,6 +27,7 @@ From the repo root (the relay shares its dependencies):
 
 ```sh
 yarn relay:dev      # local relay on :8787
+yarn dev:local      # local relay on :8790 and the app against it
 yarn relay:deploy   # needs CLOUDFLARE_API_TOKEN
 yarn test:live      # WebRTC + saving against the deployed relay
 ```

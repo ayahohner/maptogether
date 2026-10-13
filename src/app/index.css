@@ -1,229 +1,144 @@
 @import "tailwindcss";
+@import "./design.css";
+@import "../map/map.css";
+@import "../map/toolbar.css";
+@import "../menu/menu.css";
+@import "../onboarding/about.css";
+@import "../help/help.css";
 
-:root {
-  --topMenuHeight: 48px;
+/* App shell: a top bar over the canvas | divider | editor row. */
+html,
+body {
+  height: 100%;
 }
 
 body {
   margin: 0;
-  height: 100vh;
-  /* TODO: change to grid */
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: var(--top-bar-height) minmax(0, 1fr);
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  /* Instrument Sans alternates: round dots, straight-leg R, angled M,
+     alternate 2, et-style ampersand, solid $ and ¢. */
+  font-feature-settings: "ss01", "ss05", "ss06", "ss10", "ss11", "ss12";
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
-body,
-input {
-  font-family: "JetBrains Mono", "Consolas", "Courier New", monospace;
-}
-
-#topMenu {
-  height: var(--topMenuHeight);
-  flex: 0 0 var(--topMenuHeight);
+#topBar {
+  position: relative;
+  z-index: 20;
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-surface);
 }
 
 #mainContainer {
-  width: 100%;
-  flex: 1 1;
-  height: calc(100vh - var(--topMenuHeight));
   display: flex;
-  flex-direction: row;
+  /* Don't let the canvas's pixel size widen the page when the editor opens. */
+  min-width: 0;
+  min-height: 0;
   position: relative;
 }
 
-#editorContainer,
-#map {
+#map,
+#editorContainer {
   margin: 0;
   padding: 0;
   overflow: hidden;
   user-select: none;
 }
 
+#map {
+  flex: 1 1 0;
+  min-width: 0;
+  line-height: 0;
+}
+
 #editorContainer {
-  width: 30vw;
   display: flex;
   flex-direction: column;
+  flex: none;
+  width: var(--editor-width, 30vw);
+  background: var(--color-surface);
 }
 
 #editor {
-  min-width: 380px;
   overflow: hidden;
   height: 100%;
+  font-family: var(--font-mono);
 }
 
-#map {
-  width: 70vw;
-  line-height: 0;
-  flex: 1 1;
-  height: calc(100vh - var(--topMenuHeight));
-}
-
-#resize {
-  background-color: light-grey;
-  width: 8px;
-  cursor: ew-resize;
-  position: relative;
-  transition: all 0.3s;
-}
-
-#resize:hover {
-  background-color: grey;
-}
-
-#resize:active {
-  background-color: #237893;
-}
-
-#resize::before {
-  content: "";
-  display: block;
-  position: absolute;
-
-  top: 50%;
-  -webkit-transform: translateY(-50%);
-  -moz-transform: translateY(-50%);
-  -ms-transform: translateY(-50%);
-  transform: translateY(-50%);
-
-  left: 1px;
-  background-image: radial-gradient(
-    circle at center,
-    black 1px,
-    transparent 1px
-  );
-
-  background-size: 3px 3px;
-  background-position: top left;
-  background-repeat: repeat;
-
-  width: 6px;
-  height: 9px;
-}
-
-.componentInput {
-  border: none;
-  border-radius: 2px;
-  background-color: #e2f2ff;
-  border-bottom: 2px solid rgb(30, 73, 142);
-}
-
-.componentInput:focus {
-  outline: none;
+#editor.map-out-of-date {
+  background-color: rgb(255 0 0 / 0.05);
 }
 
 .cm-editor {
   max-height: 100%;
 }
+
 .cm-scroller {
   overflow-y: auto;
   overflow-x: auto;
 }
 
-/* Presence never intercepts map interaction or enters document history. */
-#map { position: relative; background: #f0f0f0; }
-/* Positioned so it stacks above the stage dividers inserted before it. */
-#map canvas { position: relative; }
-.canvas-presence { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-.remote-pointer {
-  position: absolute; line-height: 1.3;
-  /* Match the 50 ms canvas presence publish interval. */
-  transition: left 50ms linear, top 50ms linear;
+/* Divider between canvas and editor: click to collapse, drag to resize. */
+#resize {
+  position: relative;
+  flex: none;
+  width: 9px;
+  cursor: ew-resize;
+  touch-action: none;
+  background: var(--color-surface-muted);
+  border-inline: 1px solid var(--color-line);
+  transition: background-color 150ms;
 }
-.remote-pointer-arrow {
-  display: block; width: 16px; height: 20px; background: var(--pointer-color);
-  clip-path: polygon(0 0, 100% 65%, 55% 65%, 35% 100%);
-  filter: drop-shadow(0 0 1px black);
+
+#resize::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--color-ink-subtle);
+  transform: translate(-50%, -50%);
+  transition:
+    background-color 150ms,
+    height 150ms;
 }
-.remote-pointer-label {
-  position: absolute; top: 18px; left: 12px; white-space: nowrap;
-  padding: 2px 4px; border-radius: 3px; border-left: 2px solid var(--pointer-color);
-  background: rgb(24 24 27 / 45%); color: white; opacity: 0.75;
-  /* TitleFont uses Pixi's default Arial face for canvas component labels. */
-  font-family: Arial, sans-serif; font-size: 11px; font-weight: 400; max-width: 260px;
-  overflow: hidden; text-overflow: ellipsis;
+
+/* A wider invisible hit area so the thin divider is easy to grab. */
+#resize::after {
+  content: "";
+  position: absolute;
+  inset: 0 -6px;
 }
-.remote-pointer.near-right .remote-pointer-label { left: auto; right: 4px; }
-.remote-pointer.near-bottom .remote-pointer-label { top: auto; bottom: 4px; }
-.collaboration-badge { position: relative; margin-right: 10px; }
-.collaboration-indicator {
-  display: flex; align-items: center; gap: 8px; min-height: 36px; min-width: 48px;
-  padding: 6px 10px; color: white;
-  font-size: 14px; font-variant-numeric: tabular-nums; cursor: default;
+
+#resize:hover,
+#resize:focus-visible,
+#resize.dragging {
+  background: var(--color-accent-soft);
+  outline: none;
 }
-.collaboration-indicator:focus-visible { outline: 2px solid white; outline-offset: 2px; }
-.sync-light { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-.sync-saved { background: #4ade80; }
-.sync-saving, .sync-connecting { background: #fb923c; }
-.sync-disconnected, .sync-error { background: #f87171; }
-.collaboration-popover {
-  position: absolute; right: 0; top: 100%; z-index: 50; width: max-content;
-  max-width: calc(100vw - 24px); padding: 6px; border-radius: 8px;
-  background: #fff; color: #18181b; box-shadow: 0 6px 24px #0003;
-  font-size: 12px; line-height: 1.5;
+
+#resize:hover::before,
+#resize:focus-visible::before,
+#resize.dragging::before {
+  background: var(--color-accent);
+  height: 40px;
 }
-.collaboration-popover ul { list-style: none; padding: 0; margin: 0; max-height: 240px; overflow: auto; }
-.collaboration-popover li { display: flex; gap: 8px; align-items: center; padding: 6px 8px; overflow-wrap: anywhere; }
+
 @media (max-width: 639px) {
-  .collaboration-popover { position: fixed; top: 48px; right: 12px; }
-}
+  #resize {
+    width: 14px;
+  }
 
-.presence-triangle {
-  width: 10px; height: 12px; flex: none;
-  clip-path: polygon(0 0, 100% 65%, 0 100%);
-}
-
-/* Map axes: a passive overlay; only the stage labels take the pointer. */
-.map-axes {
-  position: absolute; inset: 0; pointer-events: none; line-height: 1.3;
-  --axis-color: #a1a1aa; --axis-text: #71717a;
-  font-family: Arial, sans-serif; font-size: 11px; color: var(--axis-text);
-}
-.axis-x { position: absolute; left: 0; right: 0; bottom: 0; height: 20px; }
-/* The line starts at the visibility axis; stages still span the full width
-   so they line up with component evolution coordinates. */
-.axis-x::before {
-  content: ""; position: absolute; top: 0; left: 8px; right: 2px; height: 1px;
-  background: var(--axis-color);
-}
-/* Arrowhead: mirrors the visibility axis, pointing right along the x-axis. */
-.axis-x::after {
-  content: ""; position: absolute; top: -2.5px; right: 2px; width: 6px; height: 6px;
-  border-top: 1px solid var(--axis-color); border-right: 1px solid var(--axis-color);
-  transform: translateX(-0.5px) rotate(45deg); transform-origin: center;
-}
-/* Dashed stage boundaries running the full height of the map and just past
-   the x-axis, lighter than the axes; dashes start from the bottom so each
-   line ends on a dash. */
-.axis-x-divider {
-  position: absolute; top: 0; bottom: 15.5px; width: 1px;
-  background: repeating-linear-gradient(to top, #c4c4c8 0 4px, transparent 4px 8px);
-}
-/* Labels sit just right of their stage line (Genesis: of the visibility axis). */
-.axis-x-stage { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; padding-left: 2px; }
-.axis-x-stage.first { padding-left: 10px; }
-.axis-x-label { position: relative; pointer-events: auto; cursor: default; padding: 0 4px; border-radius: 3px; }
-.axis-x-label:hover, .axis-x-label:focus-visible { color: #18181b; outline: none; }
-.axis-x-popover {
-  display: none; position: absolute; bottom: calc(100% + 6px); left: 0;
-  z-index: 5; padding: 6px 8px; border-radius: 8px; background: #fff; color: #18181b;
-  box-shadow: 0 6px 24px #0003; font-size: 12px; white-space: nowrap;
-}
-/* Right-align the last popover only when its stage is too narrow to fit it. */
-.axis-x-stage.last { container-type: inline-size; }
-@container (max-width: 200px) { .axis-x-popover { left: auto; right: 0; } }
-.axis-x-label:hover .axis-x-popover, .axis-x-label:focus-visible .axis-x-popover { display: block; }
-.axis-x-popover th { text-align: left; font-weight: 400; color: var(--axis-text); padding: 2px 12px 2px 0; }
-.axis-x-popover td { padding: 2px 0; }
-.axis-y {
-  position: absolute; left: 8px; top: 4px; bottom: 20px; width: 1px; background: var(--axis-color);
-}
-/* Arrowhead: two short strokes meeting at the top of the line, centred on it. */
-.axis-y::before {
-  content: ""; position: absolute; top: 0; left: 50%; width: 6px; height: 6px;
-  border-top: 1px solid var(--axis-color); border-left: 1px solid var(--axis-color);
-  transform: translate(-50%, 0.5px) rotate(45deg); transform-origin: center;
-}
-.axis-y-label {
-  position: absolute; top: 12px; left: 4px;
-  writing-mode: vertical-rl; transform: rotate(180deg);
+  #resize::before {
+    width: 4px;
+    height: 40px;
+  }
 }

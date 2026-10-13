@@ -31,7 +31,10 @@ describe("MapStore", () => {
     const client = new Y.Doc();
     client.getText("t").insert(0, "hi");
     const c = conn();
-    store.receive(c, frame(MESSAGE_SYNC, (e) => syncProtocol.writeUpdate(e, Y.encodeStateAsUpdate(client))));
+    store.receive(
+      c,
+      frame(MESSAGE_SYNC, (e) => syncProtocol.writeUpdate(e, Y.encodeStateAsUpdate(client))),
+    );
     expect(store.doc.getText("t").toString()).toBe("hi");
     expect(c.sent).toHaveLength(0);
     expect(changes).toBe(1);
@@ -40,8 +43,14 @@ describe("MapStore", () => {
   it("answers sync step 1 and ignores other message types", () => {
     const store = new MapStore();
     const c = conn();
-    store.receive(c, frame(MESSAGE_SYNC, (e) => syncProtocol.writeSyncStep1(e, new Y.Doc())));
-    store.receive(c, frame(1, () => {}));
+    store.receive(
+      c,
+      frame(MESSAGE_SYNC, (e) => syncProtocol.writeSyncStep1(e, new Y.Doc())),
+    );
+    store.receive(
+      c,
+      frame(1, () => {}),
+    );
     expect(c.sent).toHaveLength(1);
   });
 

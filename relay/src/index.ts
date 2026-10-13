@@ -32,11 +32,15 @@ const DOC_KEY = "doc";
 
 type Conn = SignalPeer & StoreConn;
 
+/** A save request's id, which the reply echoes: a whole number from 0. */
+const isSaveId = (id: unknown): id is number => Number.isSafeInteger(id) && (id as number) >= 0;
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
     const origin = req.headers.get("Origin");
-    if (!isAllowedOrigin(origin, env.ALLOWED_ORIGINS)) return new Response("Forbidden", { status: 403 });
+    if (!isAllowedOrigin(origin, env.ALLOWED_ORIGINS))
+      return new Response("Forbidden", { status: 403 });
     if (url.pathname === "/ice") return iceResponse(env, origin!);
     return syncRoom(req, env, url.pathname.match(ROOM_PATH)?.[1]);
   },
@@ -46,7 +50,13 @@ async function iceResponse(env: Env, origin: string): Promise<Response> {
   return Response.json(
     { iceServers: await iceServers(env) },
     // Credentials are per visitor: never cache them in shared caches.
-    { headers: { "Access-Control-Allow-Origin": origin, Vary: "Origin", "Cache-Control": "private, max-age=600" } }
+    {
+      headers: {
+        "Access-Control-Allow-Origin": origin,
+        Vary: "Origin",
+        "Cache-Control": "private, max-age=600",
+      },
+    },
   );
 }
 
@@ -73,11 +83,14 @@ export class MapRoom extends DurableObject<Env> {
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
     this.store = new MapStore(() => this.scheduleSave());
     this.signaling = new Signaling(() => ctx.getWebSockets().map((ws) => this.conn(ws)));
-    void ctx.blockConcurrencyWhile(async () => this.store.load(await ctx.storage.get<Uint8Array>(DOC_KEY)));
+    void ctx.blockConcurrencyWhile(async () =>
+      this.store.load(await ctx.storage.get<Uint8Array>(DOC_KEY)),
+    );
   }
 
   async fetch(): Promise<Response> {
-    if (this.ctx.getWebSockets().length >= MAX_SOCKETS) return new Response("Room full", { status: 429 });
+    if (this.ctx.getWebSockets().length >= MAX_SOCKETS)
+      return new Response("Room full", { status: 429 });
     const { 0: client, 1: server } = new WebSocketPair();
     this.ctx.acceptWebSocket(server);
     server.serializeAttachment({ id: crypto.randomUUID() });
@@ -89,7 +102,8 @@ export class MapRoom extends DurableObject<Env> {
 
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
     if (typeof message === "string") await this.receiveText(ws, message);
-    else if (message.byteLength <= MAX_BINARY_BYTES) this.store.receive(this.conn(ws), new Uint8Array(message));
+    else if (message.byteLength <= MAX_BINARY_BYTES)
+      this.store.receive(this.conn(ws), new Uint8Array(message));
     else {
       ws.serializeAttachment({ ...ws.deserializeAttachment(), uploadRejected: true });
       ws.close(1009, "Map update exceeds upload limit");
@@ -112,15 +126,19 @@ export class MapRoom extends DurableObject<Env> {
 
   private async receiveText(ws: WebSocket, text: string) {
     if (text.length > MAX_TEXT_BYTES) return;
-    let message;
-    try { message = JSON.parse(text); } catch { return; }
+    let message: { type?: string; id?: number } | null;
+    try {
+      message = JSON.parse(text);
+    } catch {
+      return;
+    }
     if (message?.type !== "save") {
       this.signaling.receive(this.conn(ws), text);
       return;
     }
-    if (!Number.isSafeInteger(message.id) || message.id < 0) return;
+    if (!isSaveId(message.id)) return;
     // Ordered socket frames guarantee preceding uploads are in this snapshot.
-    const saved = !ws.deserializeAttachment()?.uploadRejected && await this.save();
+    const saved = !ws.deserializeAttachment()?.uploadRejected && (await this.save());
     ws.send(JSON.stringify({ type: saved ? "saved" : "save-error", id: message.id }));
   }
 
@@ -158,7 +176,7 @@ export class MapRoom extends DurableObject<Env> {
     }
   }
 
-  /** One Conn per socket; the peer id lives in the attachment to survive hibernation. */
+  /** One Conn per socket. The peer id is stored in the socket attachment, which is kept through hibernation. */
   private conn(ws: WebSocket): Conn {
     let conn = this.conns.get(ws);
     if (!conn) {

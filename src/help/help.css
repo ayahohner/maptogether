@@ -1,0 +1,106 @@
+/* Floating help: a ? button in the bottom-right corner and its panel. */
+.help-launcher {
+  position: fixed;
+  right: calc(16px + env(safe-area-inset-right));
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.help-fab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px -2px rgb(24 24 27 / 0.35);
+  cursor: pointer;
+  transition:
+    transform 150ms var(--ease-out-soft),
+    background-color 150ms;
+}
+
+.help-fab:hover {
+  background: #000;
+  transform: translateY(-1px);
+}
+
+.help-fab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.help-panel {
+  width: min(400px, calc(100vw - 32px));
+  max-height: min(600px, calc(100dvh - var(--top-bar-height) - 96px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform-origin: bottom right;
+}
+
+.help-panel > div {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.help-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.help-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  outline: none;
+}
+
+.help-tab svg {
+  width: 16px;
+  height: 16px;
+}
+
+.help-tab[data-selected] {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow:
+    0 1px 2px rgb(24 24 27 / 0.1),
+    0 0 0 1px rgb(24 24 27 / 0.04);
+}
+
+.help-tab[data-focus] {
+  outline: 2px solid var(--color-accent);
+}
+
+.help-heading {
+  margin-bottom: 2px;
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: var(--font-weight-heading);
+}
+
+.help-code {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-muted);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}

@@ -3,11 +3,15 @@ import { Signaling, parseSignal, type SignalPeer } from "./signaling";
 
 const peer = (id: string) => {
   const inbox: any[] = [];
-  return { id, inbox, sendText: (t: string) => void inbox.push(JSON.parse(t)) } satisfies SignalPeer & { inbox: any[] };
+  return {
+    id,
+    inbox,
+    sendText: (t: string) => void inbox.push(JSON.parse(t)),
+  } satisfies SignalPeer & { inbox: any[] };
 };
 
 describe("Signaling", () => {
-  it("welcomes newcomers with the peer list and announces them", () => {
+  it("sends newcomers the peer list, and the others a peer-joined message", () => {
     const a = peer("a");
     const b = peer("b");
     const signaling = new Signaling(() => [a, b]);

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["relay/src/index.ts", "scripts/*.mjs", "netlify/plugins/env/index.js"],
+  "project": ["src/**/*.{ts,tsx,css}", "relay/src/**/*.ts", "scripts/**/*.mjs"],
+  // Props and options types stay exported beside the code that takes them.
+  "ignoreExportsUsedInFile": { "interface": true, "type": true },
+  "ignoreDependencies": [
+    // `cloudflare:workers` is the Workers runtime, not a package.
+    "cloudflare",
+    // Run by .githooks/pre-commit.
+    "lint-staged"
+  ]
+}

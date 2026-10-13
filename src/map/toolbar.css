@@ -1,0 +1,150 @@
+/* Map controls: toolbar (left), zoom (bottom left), tool hint (bottom). */
+.map-controls {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  line-height: normal;
+}
+
+.map-controls > * {
+  pointer-events: auto;
+}
+
+.map-toolbar {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  translate: 0 -50%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+}
+
+.map-toolbar-rule {
+  margin: 3px 6px;
+  border: 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.map-tool {
+  position: relative;
+}
+
+.map-tool[aria-pressed="true"],
+.map-tool[aria-pressed="true"]:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+/* Tooltip with the tool's shortcuts, beside the toolbar. Hover only:
+   on touch screens it would stick after a tap. */
+.map-tool-tip {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  translate: 0 -50%;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 10px;
+  border-radius: 8px;
+  background: var(--color-ink);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.map-tool-tip .kbd {
+  background: rgb(255 255 255 / 0.12);
+  box-shadow: none;
+  color: rgb(255 255 255 / 0.8);
+}
+
+@media (hover: hover) {
+  .map-tool:hover .map-tool-tip {
+    display: inline-flex;
+  }
+}
+
+.map-tool:focus-visible .map-tool-tip {
+  display: inline-flex;
+}
+
+.map-zoom {
+  position: absolute;
+  left: 12px;
+  bottom: 32px;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+}
+
+.map-zoom .icon-btn {
+  width: 32px;
+  height: 32px;
+}
+
+.map-zoom .icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.map-zoom-level {
+  min-width: 48px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--color-ink-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.map-zoom-level:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-ink);
+}
+
+/* At the bottom, where it covers the least-visible components. */
+.map-tool-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  translate: -50% 0;
+  max-width: calc(100% - 24px);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--color-ink);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  pointer-events: none;
+}
+
+.map-tool-hint[hidden] {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .map-tool-hint {
+    bottom: 80px;
+  }
+}
+
+/* Tools follow the cursor. */
+#map[data-tool="hand"] {
+  cursor: grab;
+}
+
+#map[data-tool="hand"]:active {
+  cursor: grabbing;
+}
+
+#map[data-tool="component"] {
+  cursor: crosshair;
+}

@@ -1,19 +1,12 @@
 import { afterEach, expect, it, vi } from "vitest";
 import * as Y from "yjs";
-import {
-  Awareness,
-  applyAwarenessUpdate,
-  encodeAwarenessUpdate,
-} from "y-protocols/awareness";
+import { Awareness, applyAwarenessUpdate, encodeAwarenessUpdate } from "y-protocols/awareness";
 import { initializeCanvasPresence } from "./CanvasPresence";
 import { bindPresence, collaboration } from "../sync/presence";
 
 const cleanups: (() => void)[] = [];
 afterEach(() => {
-  cleanups
-    .reverse()
-    .splice(0)
-    .forEach((fn) => fn());
+  for (const fn of cleanups.reverse().splice(0)) fn();
   document.body.replaceChildren();
   vi.useRealTimers();
 });
@@ -34,8 +27,7 @@ it("publishes canvas-relative pointers, cancels trailing movement on leave, and 
   const canvas = document.createElement("canvas");
   parent.append(canvas);
   document.body.append(parent);
-  canvas.getBoundingClientRect = () =>
-    ({ left: 100, top: 50, width: 400, height: 200 }) as DOMRect;
+  canvas.getBoundingClientRect = () => ({ left: 100, top: 50, width: 400, height: 200 }) as DOMRect;
   const cleanup = initializeCanvasPresence(canvas, awareness);
   canvas.dispatchEvent(
     new PointerEvent("pointermove", {
@@ -45,29 +37,24 @@ it("publishes canvas-relative pointers, cancels trailing movement on leave, and 
     }),
   );
   expect(awareness.getLocalState()?.mapPointer).toEqual({ x: 50, y: 75 });
-  canvas.dispatchEvent(
-    new PointerEvent("pointermove", { clientX: 310, clientY: 100 }),
-  );
+  canvas.dispatchEvent(new PointerEvent("pointermove", { clientX: 310, clientY: 100 }));
   canvas.dispatchEvent(new PointerEvent("pointerleave"));
   vi.advanceTimersByTime(100);
   expect(awareness.getLocalState()?.mapPointer).toBeNull();
-  canvas.dispatchEvent(
-    new PointerEvent("pointermove", { clientX: 300, clientY: 100 }),
-  );
+  canvas.dispatchEvent(new PointerEvent("pointermove", { clientX: 300, clientY: 100 }));
   window.dispatchEvent(new Event("blur"));
   expect(awareness.getLocalState()?.mapPointer).toBeNull();
   cleanup();
   expect(parent.querySelector(".canvas-presence")).toBeNull();
 });
 
-it("renders remote presence safely, tracks users independently of pointers, and removes departed peers", () => {
+it("shows remote pointers with names as text, hides off-map ones without changing the people list, and drops peers who leave", () => {
   const a = peer(),
     b = peer();
   const canvas = document.createElement("canvas");
   document.body.append(canvas);
   cleanups.push(bindPresence(a), initializeCanvasPresence(canvas, a));
-  const deliver = () =>
-    applyAwarenessUpdate(a, encodeAwarenessUpdate(b, [b.clientID]), "test");
+  const deliver = () => applyAwarenessUpdate(a, encodeAwarenessUpdate(b, [b.clientID]), "test");
   b.setLocalState({
     user: { name: "<img src=x>", color: "#30bced" },
     mapPointer: { x: 85, y: 5 },
@@ -87,4 +74,20 @@ it("renders remote presence safely, tracks users independently of pointers, and 
   b.setLocalState(null);
   deliver();
   expect(collaboration.users).toHaveLength(1);
+});
+
+it("shares pointers in map coordinates when the view is panned or zoomed", () => {
+  const awareness = peer();
+  const parent = document.createElement("div");
+  const canvas = document.createElement("canvas");
+  parent.append(canvas);
+  document.body.append(parent);
+  canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: 400, height: 200 }) as DOMRect;
+  // Zoomed in 2× on the top-left corner.
+  const toWorld = (p: { x: number; y: number }) => ({ x: p.x / 2, y: p.y / 2 });
+  cleanups.push(initializeCanvasPresence(canvas, awareness, toWorld));
+  canvas.dispatchEvent(
+    new PointerEvent("pointermove", { clientX: 400, clientY: 200, pointerType: "mouse" }),
+  );
+  expect(awareness.getLocalState()?.mapPointer).toEqual({ x: 50, y: 50 });
 });

@@ -28,14 +28,24 @@ const OPTIONS = {
  * logging so this stays testable. Returns the process exit code.
  */
 export function run(argv, io) {
-  const { values, positionals } = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true });
+  const { values, positionals } = parseArgs({
+    args: argv,
+    options: OPTIONS,
+    allowPositionals: true,
+  });
   if (values.help) return io.log(USAGE) ?? 0;
   const targets = positionals.length ? explicitTargets(positionals) : diffTargets(values, io);
   if (targets.size === 0) return io.log("quality gate: no code changes to check") ?? 0;
   const coverage = io.runCoverage([...targets.keys()]);
   const limits = limitsFrom(values);
   const results = [...targets].map(([file, changed]) =>
-    checkFile({ file, code: io.readFile(file), coverage: coverage[io.resolve(file)], changed, limits })
+    checkFile({
+      file,
+      code: io.readFile(file),
+      coverage: coverage[io.resolve(file)],
+      changed,
+      limits,
+    }),
   );
   return report(results, values.verbose ? formatFile : formatWorst, io.log);
 }
@@ -68,9 +78,13 @@ function limitsFrom(values) {
 }
 
 function report(results, format, log) {
-  results.forEach((result) => log(format(result)));
+  for (const result of results) log(format(result));
   const violations = results.flatMap((r) => r.violations);
-  log(violations.length ? `\n✗ quality gate failed:\n  ${violations.join("\n  ")}` : "\n✓ quality gate passed");
+  log(
+    violations.length
+      ? `\n✗ quality gate failed:\n  ${violations.join("\n  ")}`
+      : "\n✓ quality gate passed",
+  );
   return violations.length ? 1 : 0;
 }
 
@@ -82,7 +96,8 @@ export function formatWorst(result) {
 
 export function formatFile({ file, mi, functions }) {
   const rows = functions.map(
-    (f) => `  ${f.name.padEnd(28)} CC ${String(f.cc).padStart(2)}  cov ${pct(f.coverage).padStart(4)}  CRAP ${f.crap.toFixed(1).padStart(5)}  MI ${f.mi.toFixed(1)}`
+    (f) =>
+      `  ${f.name.padEnd(28)} CC ${String(f.cc).padStart(2)}  cov ${pct(f.coverage).padStart(4)}  CRAP ${f.crap.toFixed(1).padStart(5)}  MI ${f.mi.toFixed(1)}`,
   );
   return [`${file}  (file MI ${mi.toFixed(1)})`, ...rows].join("\n");
 }

@@ -1,0 +1,217 @@
+/* About / welcome dialog (markup in index.html). */
+.about {
+  width: min(600px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-dialog);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-overlay);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.about[open] {
+  animation: about-in 320ms var(--ease-out-soft);
+}
+
+.about::backdrop {
+  background: rgb(24 24 27 / 0.42);
+  backdrop-filter: blur(3px);
+  animation: fade-in 200ms ease-out;
+}
+
+@keyframes about-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.about-card {
+  position: relative;
+}
+
+.about-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgb(255 255 255 / 0.7);
+}
+
+.about-hero {
+  margin: 0;
+  padding: 24px 24px 4px;
+  background:
+    radial-gradient(circle at 1px 1px, var(--color-canvas-dot) 1px, transparent 0) 0 0 / 16px 16px,
+    linear-gradient(180deg, var(--color-accent-soft), var(--color-canvas));
+  border-bottom: 1px solid var(--color-line);
+}
+
+.about-hero svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.about-body {
+  padding: 24px 32px 28px;
+}
+
+.about h1 {
+  margin: 0;
+  font-size: clamp(24px, 4.2vw, 30px);
+  font-weight: var(--font-weight-heading);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.about-lede {
+  margin: 12px 0 0;
+  color: var(--color-ink-muted);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.about-features {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-ink-muted);
+}
+
+.about-features li {
+  position: relative;
+  padding-left: 26px;
+}
+
+.about-features li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background:
+    var(--color-accent-soft)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 8.2l2.2 2.2 4.8-4.8' fill='none' stroke='%236d4aff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / 16px no-repeat;
+}
+
+.about-features strong {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.about-actions {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.about[data-map="new"] .when-shared-map,
+.about:not([data-map="new"]) .when-new-map {
+  display: none;
+}
+
+.about-hint {
+  margin: 16px 0 0;
+  color: var(--color-ink-subtle);
+  font-size: 13px;
+  text-align: right;
+}
+
+.about-help-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: 1px;
+}
+
+.about-more {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-line);
+  color: var(--color-ink-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.about-more h2 {
+  margin: 0 0 4px;
+  color: var(--color-ink);
+  font-size: 15px;
+  font-weight: var(--font-weight-heading);
+}
+
+.about-more p {
+  margin: 0 0 8px;
+}
+
+.about-more p + h2 {
+  margin-top: 16px;
+}
+
+.about-more a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.noscript {
+  position: fixed;
+  inset: auto 16px 16px;
+  padding: 12px 16px;
+  border-radius: var(--radius-control);
+  background: var(--color-ink);
+  color: #fff;
+}
+
+@media (max-width: 639px) {
+  .about {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 92dvh;
+    margin: auto 0 0;
+    border-radius: var(--radius-dialog) var(--radius-dialog) 0 0;
+  }
+
+  .about-hero {
+    padding: 16px 12px 0;
+  }
+
+  .about-body {
+    padding: 20px 20px calc(24px + env(safe-area-inset-bottom));
+  }
+
+  .about-actions .btn {
+    flex: 1 1 100%;
+  }
+
+  .about-hint {
+    text-align: center;
+  }
+}

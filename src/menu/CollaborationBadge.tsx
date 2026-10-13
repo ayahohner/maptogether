@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useSnapshot } from "valtio";
-import { collaboration } from "../sync/presence";
-import type { SyncStatus } from "../sync/SaveStatus";
+import { collaboration, type CollaborationStatus } from "../sync/presence";
 
-const labels = {
+const labels: Record<CollaborationStatus, string> = {
+  draft: "Not saved yet: edit the map or share it to save it",
   connecting: "Connecting…",
   saving: "Saving changes…",
   saved: "Saved",
@@ -24,6 +24,7 @@ export function CollaborationBadge() {
     return () => document.removeEventListener("pointerdown", dismiss);
   }, []);
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: hovering shows the same list that focusing the indicator does.
     <div
       ref={root}
       className="collaboration-badge"
@@ -36,9 +37,11 @@ export function CollaborationBadge() {
         if (event.key === "Escape") setOpen(false);
       }}
     >
+      {/* biome-ignore lint/a11y/useSemanticElements: a fieldset groups form fields. */}
       <span
         className="collaboration-indicator"
         role="group"
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: focus shows who is on the map, for keyboard users.
         tabIndex={0}
         aria-describedby={open ? id : undefined}
         aria-label="People"
@@ -53,10 +56,8 @@ export function CollaborationBadge() {
   );
 }
 
-function SyncLight({ status }: { status: SyncStatus }) {
-  return (
-    <span className={`sync-light sync-${status}`} role="img" aria-label={labels[status]} />
-  );
+function SyncLight({ status }: { status: CollaborationStatus }) {
+  return <span className={`sync-light sync-${status}`} role="img" aria-label={labels[status]} />;
 }
 
 function PeopleList({
@@ -71,7 +72,11 @@ function PeopleList({
       <ul>
         {users.map((user) => (
           <li key={user.id}>
-            <span className="presence-triangle" style={{ backgroundColor: user.color }} aria-hidden="true" />
+            <span
+              className="presence-triangle"
+              style={{ backgroundColor: user.color }}
+              aria-hidden="true"
+            />
             <span>{user.name}</span>
           </li>
         ))}

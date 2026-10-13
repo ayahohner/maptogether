@@ -7,11 +7,7 @@ import { it, expect, describe, vi } from "vitest";
 vi.mock("./Graph", () => ({}));
 vi.mock("../editor/Editor", () => ({}));
 
-import {
-  state,
-  setInitialLinkTarget,
-  startPotentialSelect,
-} from "./State";
+import { state, setInitialLinkTarget, startPotentialSelect } from "./State";
 
 /**
  * Regression test for the Command-link freeze (2026-09-26):
@@ -26,23 +22,15 @@ import {
  * Pixi class instances.
  */
 describe("valtio state holds plain data, not Pixi objects", () => {
-  it("setInitialLinkTarget stores the node key as a plain string", () => {
-    const component = new Container();
-    (component as { nodeKey?: string }).nodeKey = "MyComponent";
-    const childrenBefore = component.children;
-
+  it("stores the link source as its node key", () => {
     setInitialLinkTarget("MyComponent");
-
     expect(state.linking.initialLinkTarget).toBe("MyComponent");
-    expect(typeof state.linking.initialLinkTarget).toBe("string");
-    // The live container is never handed to valtio, so it stays intact.
-    expect(component.children).toBe(childrenBefore);
-
     setInitialLinkTarget(undefined);
     expect(state.linking.initialLinkTarget).toBeUndefined();
   });
 
-  it("setInitialLinkTarget rejects Pixi containers at the type level", () => {
+  // Checked by tsc, not at run time.
+  it("doesn't accept a Pixi container as the link source", () => {
     const component = new Container();
     // @ts-expect-error - live Pixi objects must never enter valtio state
     setInitialLinkTarget(component);
@@ -50,7 +38,7 @@ describe("valtio state holds plain data, not Pixi objects", () => {
     setInitialLinkTarget(undefined);
   });
 
-  it("drag points are stored as plain objects", () => {
+  it("stores drag points as plain objects", () => {
     startPotentialSelect({ x: 10, y: 20 });
     const p = state.selectDrag.selectionStartPoint;
     expect(p).toEqual({ x: 10, y: 20 });
