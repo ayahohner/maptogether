@@ -3,7 +3,12 @@ import { beforeEach, expect, it, vi } from "vitest";
 // State pulls in Graph (which builds the Pixi map) and Editor (which opens a
 // sync connection) at load; stand in for the parts these actions use.
 const graph = vi.hoisted(() => ({
-  filterNodes: vi.fn((): string[] => []),
+  // Calls back like graphology: (node, attributes).
+  filterNodes: vi.fn((test: (key: string, node: unknown) => boolean) =>
+    Object.entries(nodes)
+      .filter(([key, coordinates]) => test(key, { coordinates }))
+      .map(([key]) => key),
+  ),
   areNeighbors: vi.fn(() => false),
   getNodeAttribute: vi.fn(() => ({ x: 1, y: 2 })),
   // Calls back like graphology: (edge, attributes, source, target, sourceAttributes, targetAttributes).
@@ -20,6 +25,8 @@ const graph = vi.hoisted(() => ({
     ),
   ),
 }));
+/** Components on the map, by key. */
+let nodes: Record<string, { x: number; y: number }> = {};
 /** Links on the map: key, start and end. */
 let links: [string, { x: number; y: number }, { x: number; y: number }][] = [];
 const editor = vi.hoisted(() => ({ appendText: vi.fn(), replaceCoordinates: vi.fn() }));
@@ -36,6 +43,7 @@ import {
   pressComponent,
   pressEdge,
   releaseDrag,
+  renameInSelection,
   replaceSelection,
   setInitialLinkTarget,
   state,
@@ -48,6 +56,7 @@ const selectedLinks = () => [...state.selection.edgeItems];
 
 beforeEach(() => {
   vi.clearAllMocks();
+  nodes = {};
   links = [];
   releaseDrag();
   replaceSelection([]);
@@ -102,8 +111,8 @@ it("moves components once past the drag threshold, then commits on release", () 
   expect(state.translateDrag.translationStartPoint).toBeUndefined();
 });
 
-it("draws a marquee once past the threshold, replacing or adding to the selection", () => {
-  graph.filterNodes.mockReturnValue(["C"]);
+it("draws a marquee once past the threshold, adding the components inside it", () => {
+  nodes = { C: { x: 15, y: 5 }, D: { x: 25, y: 25 } };
   replaceSelection(["A"]);
   pressCanvas({ x: 0, y: 0 }, true);
   dragTo({ x: 1, y: 0 }, true);
@@ -112,8 +121,19 @@ it("draws a marquee once past the threshold, replacing or adding to the selectio
   expect(state.selectDrag.isSelecting).toBe(true);
   dragTo({ x: 20, y: 20 }, true);
   expect(selected()).toEqual(["A", "C"]);
-  dragTo({ x: 30, y: 30 }, false);
-  expect(selected()).toEqual(["C"]);
+  releaseDrag();
+  expect(state.selectDrag.isSelecting).toBe(false);
+});
+
+it("replaces the selection with what a marquee holds, dragged in any direction", () => {
+  nodes = { C: { x: 15, y: 5 }, D: { x: 25, y: 25 } };
+  replaceSelection(["A"]);
+  pressCanvas({ x: 30, y: 30 }, true);
+  dragTo({ x: 20, y: 20 }, false);
+  dragTo({ x: 10, y: 0 }, false);
+  expect(selected()).toEqual(["C", "D"]);
+  dragTo({ x: 20, y: 20 }, false);
+  expect(selected()).toEqual(["D"]);
   releaseDrag();
   expect(state.selectDrag.isSelecting).toBe(false);
 });
@@ -141,6 +161,13 @@ it("marquee-selects links more than half inside it", () => {
   expect(selectedLinks()).toEqual(["A->B"]);
   dragTo({ x: 60, y: 60 }, true);
   expect(selectedLinks()).toEqual(["A->B", "B->C"]);
+});
+
+it("keeps a renamed component selected under its new name", () => {
+  replaceSelection(["Cup", "Tea"]);
+  renameInSelection("Cup", "Mug");
+  renameInSelection("Kettle", "Urn");
+  expect(selected().sort()).toEqual(["Mug", "Tea"]);
 });
 
 it("counts links as a selection, and clears them with components", () => {

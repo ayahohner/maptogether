@@ -103,56 +103,33 @@ export const updateComponentPositionOffset = (nodeKey: string, x: number, y: num
   }
 };
 
+/** A component's attributes, if it is on the map. */
+const mountedNode = (nodeKey: string) =>
+  graph.hasNode(nodeKey) && graph.getNodeAttribute(nodeKey, "mounted")
+    ? graph.getNodeAttributes(nodeKey)
+    : undefined;
+
+/** Draws a link. Links to undeclared components, and repeated links, are skipped. */
 export const addEdge = (componentAKey: string, componentBKey: string) => {
-  let componentA: NodeAttributes | undefined;
-  let componentB: NodeAttributes | undefined;
+  const a = mountedNode(componentAKey);
+  const b = mountedNode(componentBKey);
+  if (!a || !b || graph.hasEdge(componentAKey, componentBKey)) return;
 
-  try {
-    componentA = graph.getNodeAttributes(componentAKey);
-  } catch (error) {
-    console.error(
-      `Node ${componentAKey} not found. Check to make sure it's declared in the graph.\n${error}`,
-    );
-  }
-  try {
-    componentB = graph.getNodeAttributes(componentBKey);
-  } catch (error) {
-    console.error(
-      `Node ${componentBKey} not found. Check to make sure it's declared in the graph.\n${error}`,
-    );
-  }
+  const nodeKey = `${a.nodeKey}->${b.nodeKey}`;
+  const component = Line(a.component.x, a.component.y, b.component.x, b.component.y, nodeKey); // ->Renderer
+  MapSingleton.graphContainer.addChild(component); // ->Renderer
+  MapSingleton.dirty = true; // ->Renderer
 
-  if (!(componentA || componentB)) {
-    return;
-  }
-
-  // If reverse edge already exists
-  if (graph.hasEdge(componentBKey, componentAKey)) {
-    return;
-  }
-
-  if (componentA?.mounted && componentB?.mounted) {
-    const componentAx = componentA.component.x;
-    const componentAy = componentA.component.y;
-    const componentBx = componentB.component.x;
-    const componentBy = componentB.component.y;
-    const nodeKey = `${componentA.nodeKey}->${componentB.nodeKey}`;
-    const component = Line(componentAx, componentAy, componentBx, componentBy, nodeKey); // ->Renderer
-
-    MapSingleton.graphContainer.addChild(component); // ->Renderer
-    MapSingleton.dirty = true; // ->Renderer
-
-    graph.addEdge(componentA.nodeKey, componentB.nodeKey, {
-      type: "edge",
-      coordinates: {
-        start: { x: componentA.coordinates.x, y: componentA.coordinates.y },
-        stop: { x: componentB.coordinates.x, y: componentB.coordinates.y },
-      },
-      nodeKey,
-      mounted: true,
-      component,
-    });
-  }
+  graph.addEdge(a.nodeKey, b.nodeKey, {
+    type: "edge",
+    coordinates: {
+      start: { ...a.coordinates },
+      stop: { ...b.coordinates },
+    },
+    nodeKey,
+    mounted: true,
+    component,
+  });
 };
 
 const updateEdgePosition = (
@@ -178,8 +155,11 @@ const updateEdgePosition = (
   MapSingleton.dirty = true; // ->Renderer
 };
 
-// SUBSCRIPTIONS
-export class TogetherVisitorToGraph extends BaseTogetherVisitor {
+/** Where a component written without coordinates is drawn. */
+const DEFAULT_COORDINATES = [10, 10];
+
+/** Builds the graph, and the map's Pixi objects, from the parsed text. */
+class TogetherVisitorToGraph extends BaseTogetherVisitor {
   // <-Parser
   // Local reference to graph for speed
   graph: WardleyGraph;
@@ -255,42 +235,33 @@ export class TogetherVisitorToGraph extends BaseTogetherVisitor {
   }
 
   componentDeclaration(ctx: any, parentComponent?: any) {
-    let children ; // No pipeline
-    if (ctx.pipeline) {
-      children = this.visit(ctx.pipeline, ctx);
-
-      // prevent nested pipelines for now, but still display as pipeline without children
-      if (children && parentComponent) {
-        children = [];
-      }
-    }
-
-    let coordinates = [10, 10];
-    if (ctx.coordinates) {
-      coordinates = this.visit(ctx.coordinates);
-    }
-
-    let parentCoordinates ;
-    if (parentComponent && parentComponent.coordinates) {
-      parentCoordinates = this.visit(parentComponent.coordinates);
-    } else if (parentComponent) {
-      parentCoordinates = [10, 10];
-    }
-    // wardleyscript has coordinates backwards
-    const rendererCoords = MapSingleton.wardleyToRendererCoords(
-      coordinates[1],
-      parentCoordinates ? parentCoordinates[0] : coordinates[0], // if we're a child of a pipeline we want to use parent's y
-    ); // <-Renderer
+    const children = this.pipelineChildren(ctx, parentComponent);
+    const [visibility, evolution] = this.coordinatesOf(ctx);
+    // A pipeline's components sit at the pipeline's visibility.
+    const rowVisibility = parentComponent ? this.coordinatesOf(parentComponent)[0] : visibility;
+    const [x, y] = MapSingleton.wardleyToRendererCoords(evolution, rowVisibility); // <-Renderer
 
     addComponent({
-      x: rendererCoords[0],
-      y: rendererCoords[1],
+      x,
+      y,
       name: ctx.Identifier[0].image,
       type: "normal",
-      parent: parentComponent ?? undefined,
+      parent: parentComponent,
       labelY: parentComponent ? 26 : undefined,
       children,
     });
+  }
+
+  /** `[visibility, evolution]`, or the default for a component written without them. */
+  private coordinatesOf(ctx: any): number[] {
+    return ctx.coordinates ? this.visit(ctx.coordinates) : DEFAULT_COORDINATES;
+  }
+
+  /** The components a pipeline holds. A pipeline nested in another is drawn empty. */
+  private pipelineChildren(ctx: any, parentComponent?: any) {
+    if (!ctx.pipeline) return undefined;
+    const children = this.visit(ctx.pipeline, ctx);
+    return parentComponent ? [] : children;
   }
 
   pipeline(ctx: any, parentComponent?: Object | undefined) {

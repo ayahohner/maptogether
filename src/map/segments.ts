@@ -22,6 +22,10 @@ export const rectBetween = (a: Point, b: Point): Rect => ({
   bottom: Math.max(a.y, b.y),
 });
 
+/** True when `p` is inside `rect` or on its edge. */
+export const contains = (rect: Rect, p: Point) =>
+  p.x >= rect.left && p.x <= rect.right && p.y >= rect.top && p.y <= rect.bottom;
+
 /** Distance from `p` to the nearest point of the segment a–b. */
 export function distanceToSegment(p: Point, a: Point, b: Point) {
   const dx = b.x - a.x;

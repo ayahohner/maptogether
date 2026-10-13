@@ -2,7 +2,7 @@ import { proxy, subscribe } from "valtio/vanilla";
 import { proxySet } from "valtio/utils";
 
 import type { ComponentT } from "../map/components/types";
-import { fractionInside, rectBetween, type Segment } from "../map/segments";
+import { contains, fractionInside, rectBetween, type Segment } from "../map/segments";
 import { graph, type NodeAttributes, updateComponentPositionOffset } from "./Graph";
 
 import { appendText, replaceCoordinates } from "../editor/Editor";
@@ -87,18 +87,12 @@ export const stopSelecting = () => {
   state.selectDrag.selectionCurrentPoint = undefined;
 };
 
-export const nodeInSelection = (nodeKey: string, nodeAttributes: NodeAttributes) => {
-  const startX = state.selectDrag.selectionStartPoint!.x;
-  const startY = state.selectDrag.selectionStartPoint!.y;
-  const curX = state.selectDrag.selectionCurrentPoint!.x;
-  const curY = state.selectDrag.selectionCurrentPoint!.y;
-  const [left, right] = startX <= curX ? [startX, curX] : [curX, startX];
-  const [bottom, top] = startY <= curY ? [startY, curY] : [curY, startY];
+/** The marquee, while one is being drawn. */
+const marquee = () =>
+  rectBetween(state.selectDrag.selectionStartPoint!, state.selectDrag.selectionCurrentPoint!);
 
-  const nodeX = nodeAttributes.coordinates.x;
-  const nodeY = nodeAttributes.coordinates.y;
-  return nodeX >= left && nodeX <= right && nodeY >= bottom && nodeY <= top;
-};
+const nodeInSelection = (_nodeKey: string, node: NodeAttributes) =>
+  contains(marquee(), node.coordinates);
 
 /** Each link's line, from the components' drawn positions. */
 export const edgeSegments = (): Segment[] =>
@@ -110,10 +104,7 @@ export const edgeSegments = (): Segment[] =>
 
 /** Links more than half inside the marquee, so a box around one component skips its links. */
 const edgesInSelection = () => {
-  const rect = rectBetween(
-    state.selectDrag.selectionStartPoint!,
-    state.selectDrag.selectionCurrentPoint!,
-  );
+  const rect = marquee();
   return edgeSegments()
     .filter(({ start, stop }) => fractionInside(start, stop, rect) > 0.5)
     .map(({ key }) => key);
@@ -134,8 +125,10 @@ export const clearSelection = () => {
   state.selection.edgeItems.clear();
 };
 
-export const removeFromSelection = (item: ComponentT["nodeKey"]) =>
-  state.selection.selectionItems.delete(item);
+/** Keeps a renamed component selected under its new name. */
+export const renameInSelection = (oldName: string, newName: string) => {
+  if (state.selection.selectionItems.delete(oldName)) state.selection.selectionItems.add(newName);
+};
 
 export const addToSelection = (items: ComponentT["nodeKey"][], edges: string[] = []) => {
   items.forEach((item) => state.selection.selectionItems.add(item));

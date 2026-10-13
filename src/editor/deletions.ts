@@ -51,7 +51,8 @@ function doomedLines(lines: readonly string[], deletion: Deletion) {
   return doomed;
 }
 
-const lineStarts = (lines: readonly string[]) => {
+/** Each line's offset in the text the lines were split from. */
+export const lineStarts = (lines: readonly string[]) => {
   let offset = 0;
   return lines.map((line) => {
     const start = offset;

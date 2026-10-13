@@ -1,9 +1,27 @@
 import { describe, expect, it } from "vitest";
 
-import { distanceToSegment, fractionInside, hitSegment, rectBetween } from "./segments";
+import { contains, distanceToSegment, fractionInside, hitSegment, rectBetween } from "./segments";
 
 const a = { x: 0, y: 0 };
 const b = { x: 100, y: 0 };
+
+describe("contains", () => {
+  const rect = rectBetween({ x: 10, y: 40 }, { x: 0, y: 20 });
+
+  it("includes points inside and on the edge", () => {
+    expect(contains(rect, { x: 5, y: 30 })).toBe(true);
+    expect(contains(rect, { x: 10, y: 20 })).toBe(true);
+  });
+
+  it.each([
+    ["left", { x: -1, y: 30 }],
+    ["right", { x: 11, y: 30 }],
+    ["above", { x: 5, y: 19 }],
+    ["below", { x: 5, y: 41 }],
+  ])("excludes a point to the %s", (_, p) => {
+    expect(contains(rect, p)).toBe(false);
+  });
+});
 
 describe("distanceToSegment", () => {
   it("measures to the nearest point on the segment", () => {

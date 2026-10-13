@@ -4,20 +4,17 @@ import { Awareness } from "y-protocols/awareness";
 import { bindPresence, collaboration } from "../sync/presence";
 import { connectSync } from "../sync/connect";
 
-import { type ChangeSpec, EditorState } from "@codemirror/state";
+import { EditorState } from "@codemirror/state";
 import { basicSetup, EditorView } from "codemirror";
 import { keymap } from "@codemirror/view";
-import { RegExpCursor } from "@codemirror/search";
 import { linter, lintGutter } from "@codemirror/lint";
 
 import { vscodeKeymap } from "@replit/codemirror-vscode-keymap";
 
 import debounce from "lodash/debounce";
-import { matchComponentRegex, matchEdgeRegex } from "../parser/TogetherParser";
 
 import {
-  removeFromSelection,
-  addToSelection,
+  renameInSelection,
   setEditorText,
   state,
   subscribe,
@@ -26,6 +23,7 @@ import {
 import MapSingleton from "../map/components/MapSingleton";
 import { togetherScriptLinter } from "./TogetherScriptLinter";
 import { deletionRanges } from "./deletions";
+import { coordinateChanges, renameChanges } from "./edits";
 import { generateRandomAnimal } from "../user/utilities/generateRandomAnimal";
 import { rerenderGraph } from "../state/Graph";
 import { mapLifecycle, resolveRoom } from "../app/room";
@@ -178,127 +176,21 @@ export const appendText = (text: string) => {
   });
 };
 
+/** Moves a component in the text to a point on the canvas. */
 export const replaceCoordinates = (componentName: string, x: number, y: number) => {
-  const searchCursor = new RegExpCursor(
-    editorView.state.doc,
-    matchComponentRegex(componentName),
-    {},
-  );
-
-  const changes = [];
-  var coords = MapSingleton.rendererToWardleyCoords(x, y);
-
-  for (const next of searchCursor) {
-    const to =
-      next.from +
-      next.match.slice(1, 6).reduce((prev, current) => {
-        if (current) {
-          return prev + current.length;
-        } else {
-          return prev;
-        }
-      }, 0);
-
-    changes.push({
-      from: next.from,
-      to,
-      insert: `${next.match[1] || ""}${next.match[2]}${next.match[3] || ""}${
-        next.match[4] || ""
-      }[${coords[1]},${coords[0]}]`, // TODO: should be coming from Parser
-    });
-  }
-
-  if (changes.length === 0) {
-    throw new Error(
-      `Error: "${componentName}" not found in text document. State sync lost or regex error.`,
-    );
-  }
-
-  editorView.dispatch({
-    changes,
-    // selection: { anchor: changes[changes.length - 1].from + changes[changes.length -1].insert.length },
-  });
+  const [evolution, visibility] = MapSingleton.rendererToWardleyCoords(x, y);
+  const changes = coordinateChanges(editorView.state.doc.toString(), componentName, [
+    visibility,
+    evolution,
+  ]);
+  if (changes.length) editorView.dispatch({ changes });
 };
 
+/** Renames a component and its links, as one undoable edit. */
 export const renameComponent = (oldName: string, newName: string) => {
-  const changes: ChangeSpec[] = [];
-
-  const componentSearchCursor = new RegExpCursor(
-    editorView.state.doc,
-    matchComponentRegex(oldName),
-    {},
-  );
-
-  for (const next of componentSearchCursor) {
-    const to =
-      next.from +
-      next.match.slice(2, 3).reduce((prev, current) => {
-        if (current) {
-          return prev + current.length;
-        } else {
-          return prev;
-        }
-      }, 0);
-
-    changes.push({
-      from: next.from,
-      to,
-      insert: `${newName}`,
-    });
-  }
-
-  const edgeSearchCursor = new RegExpCursor(editorView.state.doc, matchEdgeRegex(oldName), {});
-
-  for (const next of edgeSearchCursor) {
-    let from = next.from;
-    let to = next.from;
-
-    // LHS Match
-    if (next.match[2]) {
-      const lhsWs = next.match[1] ? next.match[1].length : 0;
-      const lhsComponentIdentifier = next.match[2].length;
-      // const lhsWs2 = next.match[3] ? next.match[3].length : 0
-      // const lhsRest = next.match[4].length
-
-      from += lhsWs;
-      to = from + lhsComponentIdentifier;
-
-      //RHS Match
-    } else if (next.match[9]) {
-      const rhsRest = next.match[5].length;
-      const rhsDotAttributes = next.match[6].length;
-      const rhsWs = next.match[8] ? next.match[8].length : 0;
-      const rhsComponentIdentifier = next.match[9].length;
-      // const rhsWs2 = next.match[10] ? next.match[10].length : 0
-      // const rhsComment = next.match[11] ? next.match[11].length : 0
-
-      from += rhsRest + rhsDotAttributes + rhsWs;
-      to = from + rhsComponentIdentifier;
-    } else {
-      throw new Error("Error: this shouldn't be reached. Check if regex has changed.");
-    }
-
-    changes.push({
-      from,
-      to,
-      insert: newName,
-    });
-  }
-
-  if (changes.length === 0) {
-    throw new Error(
-      `RenameComponentError: "${oldName}" not found in text document. State sync lost or regex error.`,
-    );
-  }
-
-  // update the selection if there is one
-  if (removeFromSelection(oldName)) {
-    addToSelection([newName]);
-  }
-
-  editorView.dispatch({
-    changes,
-  });
+  renameInSelection(oldName, newName);
+  const changes = renameChanges(editorView.state.doc.toString(), oldName, newName);
+  if (changes.length) editorView.dispatch({ changes });
 };
 
 /** Deletes the selected components (with their links) and links from the text. */
