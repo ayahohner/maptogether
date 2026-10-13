@@ -1,6 +1,8 @@
-import { parseToAST } from "./WardleyParser";
-
 import { it, expect, describe } from "vitest";
+
+import withComments from "../../examples/owm/component-comment.owm?raw";
+import withPipelines from "../../examples/owm/component-pipeline-comment.owm?raw";
+import { parseToAST } from "./WardleyParser";
 
 describe("parseInput with whitespace", () => {
   it("works with an empty string", () => {
@@ -78,4 +80,11 @@ describe("parseInput with edge statement", () => {
       },
     ]);
   });
+});
+
+it.each([
+  ["component-comment.owm", withComments],
+  ["component-pipeline-comment.owm", withPipelines],
+])("reads the OnlineWardleyMaps example %s", (_file, text) => {
+  expect(parseToAST(text).length).toBeGreaterThan(50);
 });
