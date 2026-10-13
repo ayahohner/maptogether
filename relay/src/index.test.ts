@@ -214,7 +214,10 @@ describe("MapRoom", async () => {
     const room = new MapRoom(state.ctx as any, env() as any);
     let puts = 0;
     const put = state.ctx.storage.put;
-    state.ctx.storage.put = async (key, value) => { puts++; await put(key, value); };
+    state.ctx.storage.put = async (key, value) => {
+      puts++;
+      await put(key, value);
+    };
     await room.fetch();
     const socket = state.sockets[0];
     await room.webSocketMessage(socket as any, JSON.stringify({ type: "save", id: 1 }));
