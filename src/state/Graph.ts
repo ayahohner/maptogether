@@ -1,78 +1,49 @@
 import Graph from "graphology";
 
 import MapSingleton from "../map/components/MapSingleton";
+import type { ComponentConfig } from "../map/components/componentLayout";
 import type { ComponentT, LineT } from "../map/components/types";
 
 export type NodeAttributes = {
-  type: "normal";
   nodeKey: string;
+  /** Where the component is (px), from the text or as dragged. */
   coordinates: { x: number; y: number };
+  /** What the component was drawn from. */
+  config: ComponentConfig;
   component: ComponentT;
-  mounted: boolean;
 };
 
 export type EdgeAttributes = {
-  type: "edge";
+  /** "needer->needed", as the link is first written. */
   nodeKey: string;
-  coordinates: {
-    start: { x: number; y: number };
-    stop: { x: number; y: number };
-  };
   component: LineT;
-  mounted: boolean;
 };
 
-export type GraphAttributes = {
-  name?: string;
-};
-
-export type WardleyGraph = Graph<NodeAttributes, EdgeAttributes, GraphAttributes>;
+export type WardleyGraph = Graph<NodeAttributes, EdgeAttributes>;
 
 /** The components and links on the map, with the Pixi objects that draw them (see drawMap.ts). */
 export const graph: WardleyGraph = new Graph({ type: "undirected" });
 
-export const updateComponentPosition = (nodeKey: string, x: number, y: number) => {
-  const node = graph.getNodeAttributes(nodeKey);
-  if (node) {
-    node.component.position.x = x;
-    node.component.position.y = y;
-    node.coordinates.x = x;
-    node.coordinates.y = y;
-    MapSingleton.dirty = true;
-    graph.forEachEdge(nodeKey, updateEdgePosition);
-  }
-};
-
+/** Moves a component by (x, y) px. A selected component may have left the map since. */
 export const updateComponentPositionOffset = (nodeKey: string, x: number, y: number) => {
+  if (!graph.hasNode(nodeKey)) return;
   const node = graph.getNodeAttributes(nodeKey);
-  if (node) {
-    node.component.position.x += x;
-    node.component.position.y += y;
-    node.coordinates.x += x;
-    node.coordinates.y += y;
-    MapSingleton.dirty = true;
-    graph.forEachEdge(nodeKey, updateEdgePosition);
-  }
+  node.component.position.x += x;
+  node.component.position.y += y;
+  node.coordinates.x += x;
+  node.coordinates.y += y;
+  redrawLinks(nodeKey);
 };
 
-const updateEdgePosition = (
-  _edge: string,
-  attributes: EdgeAttributes,
-  _source: string,
-  _target: string,
-  sourceAttributes: NodeAttributes,
-  targetAttributes: NodeAttributes,
-) => {
-  attributes.coordinates.start.x = sourceAttributes.component.x;
-  attributes.coordinates.start.y = sourceAttributes.component.y;
-  attributes.coordinates.stop.x = targetAttributes.component.x;
-  attributes.coordinates.stop.y = targetAttributes.component.y;
-
-  attributes.component.updateLine(
-    attributes.coordinates.start.x,
-    attributes.coordinates.start.y,
-    attributes.coordinates.stop.x,
-    attributes.coordinates.stop.y,
-  );
+/** Moves the ends of a component's links to where the component is drawn. */
+export const redrawLinks = (nodeKey: string) => {
+  graph.forEachEdge(nodeKey, (_edge, link, _source, _target, source, target) => {
+    link.component.updateLine(
+      source.component.x,
+      source.component.y,
+      target.component.x,
+      target.component.y,
+    );
+  });
   MapSingleton.dirty = true;
 };

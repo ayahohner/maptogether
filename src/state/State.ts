@@ -166,10 +166,9 @@ export interface Move extends PointLike {
 /** Ends a move; returns the components it moved, for the text to follow. */
 export const stopTranslation = (): Move[] => {
   const moves = state.translateDrag.translationCurrentPoint
-    ? [...state.selection.selectionItems].map((name) => ({
-        name,
-        ...graph.getNodeAttribute(name, "coordinates"),
-      }))
+    ? [...state.selection.selectionItems]
+        .filter((name) => graph.hasNode(name))
+        .map((name) => ({ name, ...graph.getNodeAttribute(name, "coordinates") }))
     : [];
 
   state.translateDrag.isTranslating = false;

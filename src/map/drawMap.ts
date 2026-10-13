@@ -1,80 +1,41 @@
 import type { CstNode } from "chevrotain";
 
-import { graph, type NodeAttributes } from "../state/Graph";
+import { graph, type NodeAttributes, redrawLinks } from "../state/Graph";
 import { BaseTogetherVisitor } from "../parser/TogetherParser";
 import { parseMap } from "../parser/lenient";
 import MapSingleton from "./components/MapSingleton";
 import { Component } from "./components/Component";
 import { Line } from "./components/Line";
-import type { ComponentConfig } from "./components/componentLayout";
+import { type ComponentConfig, layoutComponent } from "./components/componentLayout";
 
-type AddComponentConfig = ComponentConfig & { type: NodeAttributes["type"] };
-
-/** Draws a component. A name already on the map is drawn once, where it is first written. */
-export const addComponent = (config: AddComponentConfig) => {
-  const { x, y, name, type } = config;
-  if (graph.hasNode(name)) return;
-  const component = Component(config);
-  graph.addNode(name, { nodeKey: name, type, coordinates: { x, y }, component, mounted: true });
-  MapSingleton.graphContainer.addChild(component);
-  MapSingleton.dirty = true;
-};
-
-/** A component's attributes, if it is on the map. */
-const mountedNode = (nodeKey: string) =>
-  graph.hasNode(nodeKey) && graph.getNodeAttribute(nodeKey, "mounted")
-    ? graph.getNodeAttributes(nodeKey)
-    : undefined;
-
-/**
- * Draws a link. Links to undeclared components, from a component to itself
- * (the editor warns of these), and repeated links are skipped.
- */
-export const addEdge = (componentAKey: string, componentBKey: string) => {
-  const a = mountedNode(componentAKey);
-  const b = mountedNode(componentBKey);
-  if (!a || !b || a === b || graph.hasEdge(componentAKey, componentBKey)) return;
-
-  const nodeKey = `${a.nodeKey}->${b.nodeKey}`;
-  const component = Line(a.component.x, a.component.y, b.component.x, b.component.y, nodeKey);
-  MapSingleton.graphContainer.addChild(component);
-  MapSingleton.dirty = true;
-
-  graph.addEdge(a.nodeKey, b.nodeKey, {
-    type: "edge",
-    coordinates: {
-      start: { ...a.coordinates },
-      stop: { ...b.coordinates },
-    },
-    nodeKey,
-    mounted: true,
-    component,
-  });
-};
+/** What the text puts on the map: each component where it is first written, and the links. */
+export interface MapModel {
+  components: Map<string, ComponentConfig>;
+  links: [string, string][];
+}
 
 /** Where a component written without coordinates is drawn. */
 const DEFAULT_COORDINATES = [10, 10];
 
-/** Builds the graph, and the map's Pixi objects, from the parsed text. */
-class TogetherVisitorToGraph extends BaseTogetherVisitor {
+/** Reads the map's components and links from the parsed text. */
+class TogetherVisitorToModel extends BaseTogetherVisitor {
+  private model: MapModel = { components: new Map(), links: [] };
+
   constructor() {
     super();
     // Throws if a grammar rule has no visit method, or a visit method no rule.
     this.validateVisitor();
   }
 
-  default(ctx: any) {
-    graph.clear();
-    // Links are drawn after every component, so a link may come before the components it joins.
-    const links = (ctx.statement ?? []).map((statement: CstNode) => this.visit(statement));
-    for (const link of links.filter(Boolean)) addEdge(link.lhs, link.rhs);
-    MapSingleton.dirty = true;
+  default(ctx: any): MapModel {
+    this.model = { components: new Map(), links: [] };
+    for (const statement of ctx.statement ?? []) this.visit(statement);
+    return this.model;
   }
 
-  /** Draws a component, or returns a link to draw once every component is drawn. */
   statement(ctx: any) {
     if (ctx.componentDeclaration) this.visit(ctx.componentDeclaration[0]);
-    else if (ctx.edgeDeclaration) return this.visit(ctx.edgeDeclaration[0]);
+    else if (ctx.edgeDeclaration) this.model.links.push(this.visit(ctx.edgeDeclaration[0]));
   }
 
   // Commands, attributes and notes are parsed but not drawn.
@@ -89,7 +50,7 @@ class TogetherVisitorToGraph extends BaseTogetherVisitor {
   note(_ctx: any) {}
 
   edgeDeclaration(ctx: any) {
-    return { lhs: ctx.LHS[0].image, rhs: ctx.RHS[0].image };
+    return [ctx.LHS[0].image, ctx.RHS[0].image];
   }
 
   componentDeclaration(ctx: any, parentComponent?: any) {
@@ -99,11 +60,13 @@ class TogetherVisitorToGraph extends BaseTogetherVisitor {
     const rowVisibility = parentComponent ? this.coordinatesOf(parentComponent)[0] : visibility;
     const [x, y] = MapSingleton.wardleyToRendererCoords(evolution, rowVisibility);
 
-    addComponent({
+    const name = ctx.Identifier[0].image;
+    // A name written twice is drawn once, where it is first written.
+    if (this.model.components.has(name)) return;
+    this.model.components.set(name, {
       x,
       y,
-      name: ctx.Identifier[0].image,
-      type: "normal",
+      name,
       inPipeline: Boolean(parentComponent),
       pipeline: children?.map((child) => this.rendererX(child.children)),
     });
@@ -126,7 +89,7 @@ class TogetherVisitorToGraph extends BaseTogetherVisitor {
     return parentComponent ? [] : children;
   }
 
-  /** Draws a pipeline's components; returns their parse nodes. */
+  /** Reads a pipeline's components; returns their parse nodes. */
   pipeline(ctx: any, parentComponent?: unknown) {
     const declarations: CstNode[] = (ctx.statement ?? []).flatMap(
       (statement: CstNode) => statement.children.componentDeclaration ?? [],
@@ -140,7 +103,7 @@ class TogetherVisitorToGraph extends BaseTogetherVisitor {
   }
 }
 
-const visitorInstance = new TogetherVisitorToGraph();
+const visitor = new TogetherVisitorToModel();
 
 /**
  * Draws the map from its text, leaving out lines that don't parse. Returns
@@ -148,19 +111,84 @@ const visitorInstance = new TogetherVisitorToGraph();
  */
 export const drawMap = (text: string) => {
   const { cst } = parseMap(text);
-  if (cst) drawGraph(cst);
+  if (cst) drawModel(cst);
   return Boolean(cst);
 };
 
-const drawGraph = (cst: CstNode) => {
+const drawModel = (cst: CstNode) => {
   try {
-    visitorInstance.visit(cst);
+    reconcile(visitor.visit(cst));
     MapSingleton.renderIndicator.reset();
   } catch (e) {
     console.error(e);
   }
 };
 
-graph.on("cleared", () => {
-  MapSingleton.graphContainer.removeChildren();
-});
+/**
+ * Brings the map's Pixi objects in line with the model: unchanged ones stay,
+ * moved ones move, and only added or reshaped ones are drawn anew.
+ */
+export const reconcile = ({ components, links }: MapModel) => {
+  for (const name of graph.filterNodes((name) => !components.has(name))) removeComponent(name);
+  for (const config of components.values()) placeComponent(config);
+  const wanted = linksToDraw(links, components);
+  for (const edge of graph.filterEdges((_edge, link) => !wanted.has(link.nodeKey))) {
+    graph.getEdgeAttribute(edge, "component").removeFromParent();
+    graph.dropEdge(edge);
+  }
+  for (const [a, b] of wanted.values()) addLink(a, b);
+  MapSingleton.dirty = true;
+};
+
+/** Each link once, by key, leaving out links to undeclared components and from a component to itself. */
+export const linksToDraw = (links: [string, string][], components: Map<string, unknown>) => {
+  const wanted = new Map<string, [string, string]>();
+  for (const [a, b] of links) {
+    const drawable = a !== b && components.has(a) && components.has(b);
+    if (drawable && !wanted.has(`${b}->${a}`)) wanted.set(`${a}->${b}`, [a, b]);
+  }
+  return wanted;
+};
+
+const placeComponent = (config: ComponentConfig) => {
+  const node = graph.hasNode(config.name) ? graph.getNodeAttributes(config.name) : undefined;
+  if (node && sameShape(node.config, config)) return moveComponent(node, config);
+  if (node) removeComponent(config.name);
+  addComponent(config);
+};
+
+/** Whether a component can be moved to its new config rather than drawn anew. */
+const sameShape = (a: ComponentConfig, b: ComponentConfig) =>
+  a.inPipeline === b.inPipeline && String(a.pipeline) === String(b.pipeline);
+
+const moveComponent = (node: NodeAttributes, config: ComponentConfig) => {
+  const { x, y } = config;
+  node.config = config;
+  if (node.coordinates.x === x && node.coordinates.y === y) return;
+  node.coordinates = { x, y };
+  node.component.position.set(x, layoutComponent(config).y);
+  redrawLinks(node.nodeKey);
+};
+
+const addComponent = (config: ComponentConfig) => {
+  const component = Component(config);
+  const { name, x, y } = config;
+  graph.addNode(name, { nodeKey: name, coordinates: { x, y }, config, component });
+  MapSingleton.graphContainer.addChild(component);
+};
+
+/** Removes a component, its links, and their Pixi objects. */
+const removeComponent = (name: string) => {
+  graph.forEachEdge(name, (_edge, link) => link.component.removeFromParent());
+  graph.getNodeAttribute(name, "component").removeFromParent();
+  graph.dropNode(name);
+};
+
+const addLink = (a: string, b: string) => {
+  if (graph.hasEdge(a, b)) return;
+  const [from, to] = [graph.getNodeAttributes(a).component, graph.getNodeAttributes(b).component];
+  const nodeKey = `${a}->${b}`;
+  const component = Line(from.x, from.y, to.x, to.y, nodeKey);
+  graph.addEdge(a, b, { nodeKey, component });
+  MapSingleton.graphContainer.addChild(component);
+};
