@@ -3,7 +3,7 @@ import * as syncProtocol from "y-protocols/sync";
 import * as encoding from "lib0/encoding";
 import * as decoding from "lib0/decoding";
 
-export const MESSAGE_SYNC = 0;
+const MESSAGE_SYNC = 0;
 
 /**
  * Loads and saves the map through the relay's Durable Object, using the Yjs

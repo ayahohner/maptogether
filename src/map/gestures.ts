@@ -61,7 +61,7 @@ interface Press {
 }
 
 export const DOUBLE_TAP_MS = 300;
-export const LONG_PRESS_MS = 400;
+const LONG_PRESS_MS = 400;
 const slop = (touch: boolean) => (touch ? 8 : 4);
 const repeatRadius = (touch: boolean) => (touch ? 24 : 8);
 

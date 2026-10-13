@@ -155,7 +155,7 @@ function SyntaxHelp() {
 const TOKEN = /(\/\/.*$|-?\d+(?:\.\d+)?|[[\]{}.,])/gm;
 
 /** Light syntax colouring: comments, numbers and punctuation. */
-export function Highlighted({ code }: { code: string }) {
+function Highlighted({ code }: { code: string }) {
   return code.split(TOKEN).map((token, i) => (
     // biome-ignore lint/suspicious/noArrayIndexKey: tokens repeat, and the list is rebuilt whole.
     <span key={i} className={tokenClass(token)}>

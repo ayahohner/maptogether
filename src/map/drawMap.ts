@@ -128,7 +128,7 @@ const drawModel = (cst: CstNode) => {
  * Brings the map's Pixi objects in line with the model: unchanged ones stay,
  * moved ones move, and only added or reshaped ones are drawn anew.
  */
-export const reconcile = ({ components, links }: MapModel) => {
+const reconcile = ({ components, links }: MapModel) => {
   for (const name of graph.filterNodes((name) => !components.has(name))) removeComponent(name);
   for (const config of components.values()) placeComponent(config);
   const wanted = linksToDraw(links, components);
@@ -141,7 +141,7 @@ export const reconcile = ({ components, links }: MapModel) => {
 };
 
 /** Each link once, by key, leaving out links to undeclared components and from a component to itself. */
-export const linksToDraw = (links: [string, string][], components: Map<string, unknown>) => {
+const linksToDraw = (links: [string, string][], components: Map<string, unknown>) => {
   const wanted = new Map<string, [string, string]>();
   for (const [a, b] of links) {
     const drawable = a !== b && components.has(a) && components.has(b);

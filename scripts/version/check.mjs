@@ -2,7 +2,7 @@
 const SHIPPED = /^(src|public|examples|relay\/src)\/|^index\.html$/;
 const TEST = /\.test\.[cm]?[jt]sx?$/;
 
-export const USAGE = `Usage: version-check [--base <ref>]
+const USAGE = `Usage: version-check [--base <ref>]
 
 Fails when the commits since <ref> (default: merge-base with origin/HEAD) change
 shipped files (src/, public/, examples/, relay/src/, index.html) without raising

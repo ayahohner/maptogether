@@ -2,7 +2,7 @@ import type { Awareness } from "y-protocols/awareness";
 import throttle from "lodash/throttle";
 import { readUser } from "../sync/presence";
 
-export function validPointer(value: any): value is { x: number; y: number } {
+function validPointer(value: any): value is { x: number; y: number } {
   return (
     Number.isFinite(value?.x) &&
     Number.isFinite(value?.y) &&

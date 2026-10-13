@@ -160,7 +160,7 @@ const AttributeNumberLiteral = createToken({
   pattern: /-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/,
 });
 
-export const togetherTokens = {
+const togetherTokens = {
   modes: {
     normal_mode: [
       Command,
@@ -199,7 +199,7 @@ export const togetherTokens = {
   defaultMode: "normal_mode",
 };
 
-export const TogetherLexer = new Lexer(togetherTokens, {
+const TogetherLexer = new Lexer(togetherTokens, {
   // Throws if a token pattern stops Chevrotain from using its fast lexer paths.
   ensureOptimizations: true,
 });

@@ -186,7 +186,7 @@ class WardleyParser extends CstParser {
 
 const parserInstance = new WardleyParser(wardleyTokensMap);
 
-export const BaseWardleyVisitor = parserInstance.getBaseCstVisitorConstructor();
+const BaseWardleyVisitor = parserInstance.getBaseCstVisitorConstructor();
 
 class WardleyVisitorToAST extends BaseWardleyVisitor {
   constructor() {
@@ -253,7 +253,7 @@ class WardleyVisitorToAST extends BaseWardleyVisitor {
   }
 }
 
-export function parseToCST(text: string) {
+function parseToCST(text: string) {
   // Initiate parse from top level aka default rule ("wardley")
   parserInstance.input = WardleyLexer.tokenize(text).tokens;
   const cst = parserInstance.wardley();

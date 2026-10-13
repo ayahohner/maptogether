@@ -106,12 +106,12 @@ const edgesInSelection = () => {
     .map(({ key }) => key);
 };
 
-export const updateSelectionPoint = (location: PointLike) => {
+const updateSelectionPoint = (location: PointLike) => {
   state.selectDrag.selectionCurrentPoint = location;
   replaceSelection(graph.filterNodes(nodeInSelection), edgesInSelection());
 };
 
-export const addUpdateSelectionPoint = (location: PointLike) => {
+const addUpdateSelectionPoint = (location: PointLike) => {
   state.selectDrag.selectionCurrentPoint = location;
   addToSelection(graph.filterNodes(nodeInSelection), edgesInSelection());
 };
@@ -126,7 +126,7 @@ export const renameInSelection = (oldName: string, newName: string) => {
   if (state.selection.selectionItems.delete(oldName)) state.selection.selectionItems.add(newName);
 };
 
-export const addToSelection = (items: ComponentT["nodeKey"][], edges: string[] = []) => {
+const addToSelection = (items: ComponentT["nodeKey"][], edges: string[] = []) => {
   for (const item of items) state.selection.selectionItems.add(item);
   for (const edge of edges) state.selection.edgeItems.add(edge);
 };
@@ -148,11 +148,11 @@ export const xorSelection = (inputSelection: ComponentT["nodeKey"][], edges: str
 export const hasSelection = (selection: StateT["selection"] = state.selection) =>
   selection.selectionItems.size + selection.edgeItems.size > 0;
 
-export const startPotentialTranslation = (location: PointLike) => {
+const startPotentialTranslation = (location: PointLike) => {
   state.translateDrag.translationStartPoint = location;
 };
 
-export const startTranslation = (location: PointLike) => {
+const startTranslation = (location: PointLike) => {
   state.translateDrag.isTranslating = true;
   state.translateDrag.translationLastPoint = location;
   state.translateDrag.translationCurrentPoint = location;
@@ -164,7 +164,7 @@ export interface Move extends PointLike {
 }
 
 /** Ends a move; returns the components it moved, for the text to follow. */
-export const stopTranslation = (): Move[] => {
+const stopTranslation = (): Move[] => {
   const moves = state.translateDrag.translationCurrentPoint
     ? [...state.selection.selectionItems]
         .filter((name) => graph.hasNode(name))
@@ -178,7 +178,7 @@ export const stopTranslation = (): Move[] => {
   return moves;
 };
 
-export const updateTranslationPoint = (location: PointLike) => {
+const updateTranslationPoint = (location: PointLike) => {
   state.translateDrag.translationCurrentPoint = location;
 
   state.selection.selectionItems.forEach((item) => {

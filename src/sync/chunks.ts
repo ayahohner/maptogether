@@ -7,7 +7,7 @@ import * as decoding from "lib0/decoding";
  * Channels are ordered, so parts arrive in sequence.
  */
 
-export const CHUNK_BYTES = 16 * 1024;
+const CHUNK_BYTES = 16 * 1024;
 const WHOLE = 0;
 const PART = 1;
 

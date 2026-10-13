@@ -12,8 +12,8 @@ import { Assembler, split } from "./chunks";
  * spreads if one link of the mesh is down.
  */
 
-export const MESSAGE_SYNC = 0;
-export const MESSAGE_AWARENESS = 1;
+const MESSAGE_SYNC = 0;
+const MESSAGE_AWARENESS = 1;
 
 /** The parts of RTCDataChannel this uses. */
 export interface Channel {
@@ -26,7 +26,7 @@ export interface Channel {
 }
 
 /** Transaction origin of changes received from a peer. */
-export class PeerOrigin {
+class PeerOrigin {
   constructor(readonly peerId: string) {}
 }
 

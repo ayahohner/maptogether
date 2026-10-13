@@ -2,7 +2,7 @@
  * Evolution stages and the names they go by for each kind of component
  * (Wardley's characteristics table).
  */
-export const evolutionStages = [
+const evolutionStages = [
   {
     name: "Genesis",
     alternatives: [
@@ -42,7 +42,7 @@ export const evolutionStages = [
 ] as const;
 
 /** Evolution percentages where each stage after Genesis begins. */
-export const stageBoundaries = [17.4, 40, 70] as const;
+const stageBoundaries = [17.4, 40, 70] as const;
 
 const stageEdges = [0, ...stageBoundaries, 100];
 
