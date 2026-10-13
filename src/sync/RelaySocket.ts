@@ -16,7 +16,7 @@ export interface RelaySocketOptions {
   /** Injected for tests and Node. */
   WebSocket?: typeof WebSocket;
   pingIntervalMs?: number;
-  /** Reconnect when nothing (not even a pong) arrives for this long. */
+  /** Reconnect when a ping goes unanswered (no message at all) for this long. */
   silenceTimeoutMs?: number;
   maxBackoffMs?: number;
 }
@@ -25,7 +25,8 @@ export class RelaySocket {
   connected = false;
   private ws: WebSocket | null = null;
   private attempts = 0;
-  private lastMessageAt = 0;
+  /** When the oldest unanswered ping was sent; 0 once anything arrives. */
+  private pingSentAt = 0;
   private timers: ReturnType<typeof setTimeout>[] = [];
   private destroyed = false;
   private readonly opts: Required<RelaySocketOptions>;
@@ -75,7 +76,7 @@ export class RelaySocket {
   private handleOpen() {
     this.attempts = 0;
     this.connected = true;
-    this.lastMessageAt = Date.now();
+    this.pingSentAt = 0;
     this.timers.push(setInterval(() => this.keepAlive(), this.opts.pingIntervalMs));
     this.handlers.onOpen();
   }
@@ -91,13 +92,19 @@ export class RelaySocket {
     this.timers.push(setTimeout(() => this.connect(), delay));
   }
 
+  // Timed from the unanswered ping, not the last message: background tabs
+  // throttle intervals to ~1/minute, which must not look like silence.
   private keepAlive() {
-    if (Date.now() - this.lastMessageAt > this.opts.silenceTimeoutMs) this.ws?.close();
-    else this.ws?.send("ping");
+    if (this.pingSentAt && Date.now() - this.pingSentAt > this.opts.silenceTimeoutMs) {
+      this.ws?.close();
+      return;
+    }
+    this.pingSentAt ||= Date.now();
+    this.ws?.send("ping");
   }
 
   private handleMessage(data: ArrayBuffer | string) {
-    this.lastMessageAt = Date.now();
+    this.pingSentAt = 0;
     if (typeof data !== "string") this.handlers.onBinary(new Uint8Array(data));
     else if (data !== "pong") this.handlers.onText(JSON.parse(data));
   }

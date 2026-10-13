@@ -46,6 +46,14 @@ describe("RelaySocket", () => {
     await until(() => seen.opens === 2, 2000);
   });
 
+  it("stays connected when throttled timers ping less often than the silence timeout", async () => {
+    // Background tabs run intervals about once a minute; pongs still arrive.
+    const relay = createFakeRelay();
+    const { seen } = open(relay, { pingIntervalMs: 60, silenceTimeoutMs: 20, maxBackoffMs: 5 });
+    await until(() => relay.state.pings > 3, 2000);
+    expect(seen.opens).toBe(1);
+  });
+
   it("stays closed after destroy", async () => {
     const relay = createFakeRelay();
     const { socket, seen } = open(relay, { maxBackoffMs: 5 });
