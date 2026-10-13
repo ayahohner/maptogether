@@ -203,9 +203,34 @@ describe("MapRoom", async () => {
       throw new Error("disk unavailable");
     };
     const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    await room.webSocketMessage(socket as any, updateFrame("unsaved"));
     await room.webSocketMessage(socket as any, JSON.stringify({ type: "save", id: 8 }));
     expect(JSON.parse(socket.sent.at(-1))).toEqual({ type: "save-error", id: 8 });
     errors.mockRestore();
+  });
+
+  it("writes each change once and confirms later checkpoints without rewriting", async () => {
+    const state = fakeState();
+    const room = new MapRoom(state.ctx as any, env() as any);
+    let puts = 0;
+    const put = state.ctx.storage.put;
+    state.ctx.storage.put = async (key, value) => { puts++; await put(key, value); };
+    await room.fetch();
+    const socket = state.sockets[0];
+    await room.webSocketMessage(socket as any, JSON.stringify({ type: "save", id: 1 }));
+    expect(puts).toBe(0);
+    await room.webSocketMessage(socket as any, updateFrame("edit"));
+    await room.webSocketMessage(socket as any, JSON.stringify({ type: "save", id: 2 }));
+    await room.alarm();
+    await room.webSocketMessage(socket as any, JSON.stringify({ type: "save", id: 3 }));
+    await room.webSocketClose(socket as any);
+    expect(puts).toBe(1);
+    expect(socket.sent.filter((m) => typeof m === "string").map((m) => JSON.parse(m))).toEqual([
+      expect.objectContaining({ type: "welcome" }),
+      { type: "saved", id: 1 },
+      { type: "saved", id: 2 },
+      { type: "saved", id: 3 },
+    ]);
   });
 
   it("ignores malformed checkpoint requests without writing or acknowledging", async () => {

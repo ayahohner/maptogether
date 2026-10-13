@@ -37,17 +37,18 @@ Cloudflare Realtime TURN key. Without them `/ice` returns STUN only.
 
 ### Automatic deployment
 
-[Deploy Cloudflare relay](../.github/workflows/deploy-relay.yml) validates pull
-requests and deploys pushes to `main` when relay code, the client sync protocol,
-shared dependencies, Node/Yarn configuration, test configuration, or the workflow
-changes. UI-only changes do not redeploy the relay. It can also be run manually
+[Deploy Cloudflare relay](../.github/workflows/deploy-relay.yml) validates
+branch pushes against a Worker Preview and deploys pushes to `main` when relay
+code, the client sync protocol, shared dependencies, Node/Yarn configuration,
+test configuration, or the workflow changes. UI-only changes do not redeploy the relay. It can also be run manually
 from GitHub Actions on `main`.
 
 `wrangler.jsonc` is the infrastructure definition: Worker name, account, Durable
 Object binding and migrations, allowed origins, and observability are versioned
 there. CI uses the locked Wrangler dependency and runs type checks, relay/sync
-tests, and a dry-run bundle before deployment. Deployments are serialized; queued
-runs and manual reruns check out current `main`. A live test then verifies peer sync, save
+tests, and a dry-run bundle, then deploys and live-tests a Preview (see below)
+before production. Deployments are serialized; queued runs and manual reruns
+check out current `main`. A live test then verifies peer sync, save
 acknowledgements, and reloading saved data in an isolated test map. A failed live
 test marks the run failed; it does not automatically roll back database migrations.
 
@@ -62,9 +63,51 @@ One-time authentication setup:
 3. Run **Deploy Cloudflare relay** on `main` and confirm the deployment and live
    verification steps pass.
 
-The token is supplied only to the deployment step on `main`; pull requests run
-validation without Cloudflare credentials. Existing TURN secrets stay in
+The token is supplied only to the Preview and production deployment steps and
+the Preview cleanup workflow. Existing TURN secrets stay in
 Cloudflare and do not need to be copied into GitHub.
+
+### Worker Previews
+
+Every relay deploy first goes to an isolated
+[Worker Preview](https://developers.cloudflare.com/workers/previews/) with its own
+`MapRoom` Durable Object namespace, so preview maps never read or write
+production maps. CI runs the live sync test against it before going further:
+
+- **`main`** deploys the `main` Preview, tests it, then deploys production. A
+  bad migration or protocol change fails in the Preview first.
+- **Other branches** that touch the relay deploy a Preview named after the
+  branch (`claude/foo` becomes `claude-foo`) at
+  `https://<name>-wmaps-relay.innerlattice.workers.dev`, linked in the run
+  summary. No pull request needed.
+
+Previews don't expire on their own.
+[Clean up relay Worker Previews](../.github/workflows/relay-previews-cleanup.yml)
+deletes a branch's Preview when the branch is deleted, and daily deletes any
+Preview not deployed for 7 days (except `main`). To try one from the app, run
+it with `VITE_SYNC_RELAY_URL` set to the Preview's URL.
+
+By hand, from any branch:
+
+```sh
+yarn wrangler preview -c relay/wrangler.jsonc --name my-branch
+yarn wrangler preview delete -c relay/wrangler.jsonc --name my-branch -y
+```
+
+Previews don't inherit top-level `vars` or `env` bindings, so `wrangler.jsonc`
+restates them under `previews`. They use STUN only unless TURN secrets are added
+with `wrangler preview base-config secret put TURN_KEY_ID` (and
+`TURN_KEY_API_TOKEN`). The free plan keeps up to 100 Previews per Worker and
+deletes the least recently deployed beyond that.
+
+### Logs and traces
+
+Workers Logs record every invocation. Traces sample 10% of production
+invocations (`observability.traces.head_sampling_rate`) and 100% of Previews.
+From 2026-12-01 the free plan includes 0.5 GB/day of trace ingestion; 10% keeps
+roughly an order of magnitude of headroom over current traffic. Check
+ingestion under Observability in the dashboard and adjust the rate there if
+traffic grows.
 
 ## Limits and costs
 

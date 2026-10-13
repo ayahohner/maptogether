@@ -5,7 +5,13 @@
   "compatibility_date": "2026-10-01",
   "account_id": "ea273b96fe59655aa4b5ce77dccec99c",
   "workers_dev": true,
-  "observability": { "enabled": true },
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "head_sampling_rate": 1 },
+    // Free plan: 0.5 GB/day of trace ingestion from 2026-12-01. One in ten
+    // invocations keeps headroom for ~10x today's traffic; see README.
+    "traces": { "enabled": true, "head_sampling_rate": 0.1 }
+  },
   "vars": {
     // Comma-separated origins allowed to connect; * matches one DNS label.
     // Secrets (wrangler secret put): TURN_KEY_ID, TURN_KEY_API_TOKEN
@@ -17,5 +23,22 @@
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["SignalRoom"] },
     { "tag": "v2", "deleted_classes": ["SignalRoom"], "new_sqlite_classes": ["MapRoom"] }
-  ]
+  ],
+  // Worker Previews (`wrangler preview`): an isolated copy per branch or PR,
+  // with its own MapRoom namespace, so preview maps never touch production.
+  // Vars and env bindings are not inherited from the top level.
+  "previews": {
+    "vars": {
+      "ALLOWED_ORIGINS": "https://maptogether.io,https://www.maptogether.io,https://maptogether.netlify.app,https://*--maptogether.netlify.app,http://localhost:5173"
+    },
+    "durable_objects": {
+      "bindings": [{ "name": "MAP_ROOM", "class_name": "MapRoom" }]
+    },
+    // Previews see little traffic: trace all of it.
+    "observability": {
+      "enabled": true,
+      "logs": { "enabled": true, "head_sampling_rate": 1 },
+      "traces": { "enabled": true, "head_sampling_rate": 1 }
+    }
+  }
 }
