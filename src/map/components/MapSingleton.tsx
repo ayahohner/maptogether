@@ -39,14 +39,12 @@ class MapSingleton extends Application {
       backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,
-      // this may introduce coordinate bugs
+      // Twice the CSS resolution, for sharp lines on high-density screens.
       resolution: 2,
       resizeTo: this.parent,
     });
 
-    // Disable automatic rendering: we render manually in the ticker callback
-    // below, only when something has changed. (This replaces the old
-    // `Application.prototype.render = null` hack from Pixi v6.)
+    // The ticker callback in setup() renders instead, and only when `dirty`.
     this.ticker.remove(this.render, this);
 
     // The label atlas is drawn once, so the face must be loaded first.
@@ -55,7 +53,6 @@ class MapSingleton extends Application {
   }
 
   private setup(): void {
-    // Manually render only when something has changed
     this.ticker.add(() => {
       if (this.dirty) {
         this.renderIndicator.onRender();
@@ -64,13 +61,13 @@ class MapSingleton extends Application {
       }
     });
 
-    // Create a font for usage
+    // Component labels are drawn from this atlas.
     BitmapFont.install({
       name: "TitleFont",
       style: {
         fill: "#000000",
         fontFamily: LABEL_FONT,
-        // supersize font based on dpr
+        // Drawn at the renderer's resolution, so labels stay sharp.
         fontSize: 16 * this.renderer.resolution,
         fontWeight: "normal",
       },
@@ -78,10 +75,9 @@ class MapSingleton extends Application {
         "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~1234567890!@#$%^&?*-=_+()[]{}<>,./;':\"\\| ",
     });
 
-    // A container to hold all components, lines, text
     this.stage.addChild(this.world);
     this.world.addChild(this.graphContainer);
-    this.graphContainer.sortableChildren = true; // make zIndex work
+    this.graphContainer.sortableChildren = true; // so zIndex applies
     this.world.addChild(SelectionHandler());
     subscribe(viewport, this.applyView, true);
 
@@ -93,7 +89,7 @@ class MapSingleton extends Application {
     this.dirty = true;
   };
 
-  /** The map as the canvas gestures see it. */
+  /** The parts of the map that the canvas gestures use. */
   get mapView(): MapView {
     return {
       element: this.parent,
@@ -102,26 +98,23 @@ class MapSingleton extends Application {
     };
   }
 
-  // Resize container on window resize
-  // (manually place throughout app because ResizerObserver makes flashes)
+  /**
+   * Fits the canvas to #map and redraws the map at the new size. `resizeTo`
+   * follows only window resizes, and the panel divider resizes #map without
+   * one, so the panel resizer calls this too.
+   */
   handleResize = throttle(() => {
-    // The renderer's `resizeTo` only reacts to window resize events, but the
-    // panel resizer changes the container's CSS size directly, so resize the
-    // renderer explicitly here before rerendering against the new bounds.
-    // (This is what the old `this.resize()` call did; in Pixi v8 `resize`
-    // is assigned dynamically by the ResizePlugin and isn't in the types,
-    // so call `renderer.resize` directly.)
     this.renderer.resize(this.parent.clientWidth, this.parent.clientHeight);
     rerenderGraph();
   }, 32);
 
+  /** Pixels from map percentages: x is evolution, y visibility (0 at the bottom). */
   wardleyToRendererCoords(x: number, y: number) {
-    // `screen` is already in logical (CSS) pixels even with resolution > 1,
-    // so no density adjustment is needed (unlike the old `renderer.width`,
-    // which was in physical pixels).
+    // `screen` is in CSS pixels, whatever the resolution.
     return [(x / 100) * this.screen.width, (1 - y / 100) * this.screen.height];
   }
 
+  /** Map percentages, to one decimal place, from pixels. */
   rendererToWardleyCoords(x: number, y: number) {
     return [
       ((x / this.screen.width) * 100).toFixed(1),

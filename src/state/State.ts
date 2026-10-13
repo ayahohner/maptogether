@@ -42,7 +42,6 @@ export interface StateT {
   };
 }
 
-// STORE
 export const state = proxy<StateT>({
   editor: { editorText: "" },
   linking: {
@@ -63,7 +62,6 @@ export const state = proxy<StateT>({
   },
 });
 
-// ACTIONS
 export const setEditorText = (text: string) => {
   state.editor.editorText = text;
 };
@@ -166,7 +164,7 @@ export const stopTranslation = () => {
   if (state.translateDrag.translationCurrentPoint) {
     state.selection.selectionItems.forEach((item) => {
       const coords = graph.getNodeAttribute(item, "coordinates");
-      replaceCoordinates(item, coords.x, coords.y); //->Editor
+      replaceCoordinates(item, coords.x, coords.y);
     });
   }
 
@@ -254,7 +252,7 @@ export const linkTo = (nodeKey: ComponentT["nodeKey"] | undefined) => {
   const from = state.linking.initialLinkTarget;
   if (nodeKey && !from) return setInitialLinkTarget(nodeKey);
   if (nodeKey && from && from !== nodeKey && !graph.areNeighbors(from, nodeKey)) {
-    appendText(`\n${from}.${nodeKey}`); // ->Editor
+    appendText(`\n${from}.${nodeKey}`);
   }
   setInitialLinkTarget(undefined);
 };

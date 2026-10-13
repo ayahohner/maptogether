@@ -166,7 +166,7 @@ export class MapRoom extends DurableObject<Env> {
     }
   }
 
-  /** One Conn per socket; the peer id lives in the attachment to survive hibernation. */
+  /** One Conn per socket. The peer id is stored in the socket attachment, which is kept through hibernation. */
   private conn(ws: WebSocket): Conn {
     let conn = this.conns.get(ws);
     if (!conn) {

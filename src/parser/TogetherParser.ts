@@ -13,25 +13,14 @@ import {
 
 import XRegExp from "xregexp";
 
-// Fragment dictionary
+/** Named regex fragments, so token patterns can reuse each other. */
 const f: { [key: string]: RegExp } = {};
 
-// Create re-usable fragments using xRegExp
 function FRAGMENT(name: string, def: string | RegExp) {
   f[name] = XRegExp.build(def as string, f);
 }
 
-// Create a pattern using previously defined fragments
-// function MAKE_PATTERN(def: string, flags?: Flags) {
-//   return XRegExp.build(def, f, flags);
-// }
-
-/**
- * Compose
- *
- * Return a fragment from the fragment dictionary in a composable form
- */
-
+/** A fragment's source, to build into another pattern. */
 function C(name: string) {
   return f[name].source;
 }
@@ -45,7 +34,6 @@ const createComposableToken = ({ name, pattern, ...args }: ITokenConfig): TokenT
   });
 };
 
-// define fragments
 FRAGMENT("BaseWhitespace", " \\t");
 FRAGMENT("Command", "\\/");
 FRAGMENT("EdgeJoin", "\\.");
@@ -64,7 +52,6 @@ FRAGMENT("BracketOpen", "\\[");
 FRAGMENT("BracketClose", "\\]");
 FRAGMENT("IdentifierSymbols", `'"~\`!@$%&\\*\\-_+\\|\\\\;\\?`);
 
-// Strings
 const StringLiteral = createComposableToken({
   name: "StringLiteral",
   pattern: `"(.*?)"|'(.*?)'`,
@@ -76,8 +63,7 @@ const Comment = createComposableToken({
   group: Lexer.SKIPPED,
 });
 
-// Reserved Symbols
-// gotta escape - / \ ^ $ * + ? . ( ) | [ ] { }
+// Reserved symbols. Patterns are strings, so - / \ ^ $ * + ? . ( ) | [ ] { } need escaping.
 const Command = createComposableToken({
   name: "Command",
   pattern: "\\/[a-zA-Z][a-zA-Z0-9]*",
@@ -134,12 +120,11 @@ const BracketClose = createComposableToken({
   pattern: "\\]",
 });
 
-// Skipped Symbols
+// Newlines end statements, so they are tokens; other whitespace is skipped.
 const Newline = createComposableToken({
   name: "Newline",
   pattern: "\\r\\n|\\n",
   line_breaks: true,
-  // group: Lexer.SKIPPED,
 });
 const Whitespace = createComposableToken({
   name: "Whitespace",
@@ -152,7 +137,6 @@ const AttributeBreak = createComposableToken({
   line_breaks: true,
 });
 
-// Identifiers & Keywords
 const AttributeIdentifier = createToken({
   name: "AttributeIdentifier",
   pattern: /[a-zA-Z_][a-zA-Z0-9-]*/,
@@ -160,13 +144,13 @@ const AttributeIdentifier = createToken({
 
 const Identifier = createToken({
   name: "Identifier",
-  // not // / . = : ^ ' " , ( ) { } [ ]
+  // Words of letters, digits and IdentifierSymbols, separated by spaces.
   pattern: new RegExp(
     `[a-zA-Z0-9${C("IdentifierSymbols")}]+([ ]+[a-zA-Z0-9${C("IdentifierSymbols")}]+)*`,
   ),
 });
 
-// Tokens are out of order because of longer_alt
+// After Identifier, which longer_alt refers to: "2nd hand" is a name, not a number.
 const NumberLiteral = createToken({
   name: "NumberLiteral",
   pattern: /-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/,
@@ -186,7 +170,6 @@ export const togetherTokens = {
       DefinitionSpecifier,
       FutureSpecifier,
       NoteSpecifier,
-      // only because brackets with coords for now
       Comma,
       ParenOpen,
       BraceOpen,
@@ -198,7 +181,6 @@ export const togetherTokens = {
       Newline,
       Comment,
 
-      // only because brackets with coords for now
       NumberLiteral,
       Identifier,
     ],
@@ -217,21 +199,13 @@ export const togetherTokens = {
     ],
   },
   defaultMode: "normal_mode",
-
-  // can match anything, have to come last
-  // Name,
 };
 
-// ============== Lexer ===============
 export const TogetherLexer = new Lexer(togetherTokens, {
-  // Optimize position info for performance
-  // positionTracking: "onlyStart",
-  // Throw error if Lexer isn't able to use all optimizations
-  // disabled because /[^]/ (Complement Sets) can't be optimized
+  // Throws if a token pattern stops Chevrotain from using its fast lexer paths.
   ensureOptimizations: true,
 });
 
-// ============== Parser ==============
 class TogetherParser extends CstParser {
   public default!: ParserMethod<[], CstNode>;
   private statement!: ParserMethod<[], CstNode>;
@@ -246,8 +220,7 @@ class TogetherParser extends CstParser {
 
   constructor(tokens: typeof togetherTokens) {
     super(tokens, {
-      // This can cause some problems
-      // TODO: enable once debugged
+      // Off: lenient.ts sets aside lines with errors instead, which keeps line numbers exact.
       recoveryEnabled: false,
     });
 
@@ -269,10 +242,7 @@ class TogetherParser extends CstParser {
             GATE: this.BACKTRACK(this.edgeDeclaration),
             ALT: () => this.SUBRULE(this.edgeDeclaration),
           },
-          {
-            // GATE: $.BACKTRACK($.componentDeclaration), // Do we need this?
-            ALT: () => this.SUBRULE(this.componentDeclaration),
-          },
+          { ALT: () => this.SUBRULE(this.componentDeclaration) },
           { ALT: () => this.SUBRULE(this.note) },
         ],
         ERR_MSG: "a statement",
@@ -394,9 +364,7 @@ class TogetherParser extends CstParser {
       });
     });
 
-    // very important to call this after all the rules have been setup.
-    // otherwise the parser may not work correctly as it will lack information
-    // derived from the self analysis.
+    // Must follow every RULE: it analyses the grammar the rules define.
     this.performSelfAnalysis();
   }
 }
@@ -444,50 +412,15 @@ export const tryParse = (text: string): ParseResult => {
   return { cst, problems: parserInstance.errors.map(problemAt) };
 };
 
-// Disabled until implement AST
-// export function parseToAST(text: string) {
-//   const visitorInstance = new WardleyVisitorToAST();
-//   return visitorInstance.visit(parseToCST(text)) as WardleyASTT;
-// }
-
-/* ============ Regexes ============ */
+/** `string` as a literal regex pattern. "-" is only special inside [ ], so it is left as is. */
 function escapeRegex(string: string) {
-  return string.replace(/[/\\^$*+?.()|[\]{}]/g, "\\$&"); // Note: removed '-' as it creates invalid escapes?
+  return string.replace(/[/\\^$*+?.()|[\]{}]/g, "\\$&");
 }
 
-// $.componentDeclaration = $.RULE("componentDeclaration", () => {
-//   $.CONSUME(Identifier);
-//   $.OPTION(() => {
-//     $.CONSUME(DefinitionSpecifier);
-//     $.CONSUME(NumberLiteral);
-//   });
-//   $.OPTION1(() => {
-//     $.SUBRULE($.coordinates);
-//   });
-//   $.OPTION2(() => {
-//     $.SUBRULE($.attributes);
-//   });
-//   $.OPTION3(() => {
-//     $.SUBRULE($.pipeline);
-//   });
-// });
-
 /**
- * matchComponentRegex
- * Capture Groups
- * - 0: everything
- * - 1: Whitespace (optional)
- * - 2: component name
- * - 3: DefinitionSpecifier (optional)
- * - 4: Whitespace (optional)
- * - 5: Coordinates (optional)
- * - 6: Whitespace (optional)
- * - 7: Attributes (optional)
- * - 8: Whitespace (optional)
- * - 9: Pipeline (optional)
- * - 10: Whitespace (optional)
- * - 11: Comment (optional)
- *
+ * Matches a line that declares `componentName`. Groups, each optional but 2:
+ * 1 indent, 2 name, 3 definition specifier (":1"), 4 space, 5 coordinates,
+ * 6 space, 7 attributes, 8 space, 9 pipeline, 10 space, 11 comment.
  */
 export const matchComponentRegex = (componentName: string) => {
   return [
@@ -505,6 +438,11 @@ export const matchComponentRegex = (componentName: string) => {
   ].join("");
 };
 
+/**
+ * Matches a link line with `edgeComponentName` on either side. With the name
+ * on the left, groups 1–4 are indent, name, space and the rest; on the right,
+ * groups 5–8 come before it, 9 is the name, then 10 space and 11 comment.
+ */
 export const matchEdgeRegex = (edgeComponentName: string) => {
   return [
     `^(${C("Whitespace")})?(${escapeRegex(edgeComponentName)})(${C("Whitespace")})?\\.(.*)$`,

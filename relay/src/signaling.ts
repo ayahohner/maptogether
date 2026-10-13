@@ -1,6 +1,6 @@
 /**
- * WebRTC signaling for one map. Each socket gets a peer id; the server tells
- * newcomers who is already there (newcomers send the offers) and forwards
+ * WebRTC signaling for one map. Each socket gets a peer id; the server sends
+ * newcomers the ids already there (newcomers send the offers) and forwards
  * SDP and ICE candidates between peers. Runtime-free for unit tests.
  *
  * Server -> client: {type:"welcome", id, peers}, {type:"peer-joined", id},

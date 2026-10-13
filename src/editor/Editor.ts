@@ -146,7 +146,6 @@ export const editorView = new EditorView({
   parent: document.getElementById("editor")!,
 });
 
-/* ========= Actions ========= */
 /** Tints the editor when the map can't follow the text (too many errors). */
 export const showMapOutOfDate = (outOfDate: boolean): void => {
   document.getElementById("editor")!.classList.toggle("map-out-of-date", outOfDate);
@@ -159,6 +158,7 @@ export const replaceText = (text: string) => {
   });
 };
 
+/** Adds text to the end of the map, with the cursor after it. */
 export const appendText = (text: string) => {
   editorView.dispatch({
     changes: {
@@ -202,28 +202,5 @@ const handleEditorChange = debounce((text: string) => {
   setEditorText(text);
 }, 32);
 
-// SUBSCRIPTIONS
-subscribe(state.editor, () => {
-  // TODO: read lazy update checking to see if text makes a different graph than before
-  // Rerendering each time might be faster than diffing graph?
-
-  //   if (state.ast.astArr.length !== state.lastAst.astArr.length) {
-  //     state.lastAst.astArr = state.ast.astArr;
-  //     rerenderGraph();
-  //     return;
-  //   }
-
-  //   for (let i = 0; i < state.ast.astArr.length; i++) {
-  //     if (state.ast.astArr[i].type !== state.lastAst.astArr[i].type) {
-  //       state.lastAst.astArr = state.ast.astArr;
-  //       rerenderGraph();
-  //       return;
-  //     } else if (!isEqual(state.ast.astArr[i], state.lastAst.astArr[i])) {
-  //       state.lastAst.astArr = state.ast.astArr;
-  //       rerenderGraph();
-  //       return;
-  //     }
-  //   }
-
-  rerenderGraph();
-}); // <-State
+// Every text change redraws the whole map.
+subscribe(state.editor, rerenderGraph);

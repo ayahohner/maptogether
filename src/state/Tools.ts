@@ -12,7 +12,7 @@ export const tools = proxy({
   panHeld: false,
 });
 
-/** The tool in effect: a held key wins over the picked tool. */
+/** The tool in effect: a held key takes precedence over the picked tool. */
 export const activeTool = (t: typeof tools = tools): Tool => {
   if (t.linkHeld) return "link";
   return t.panHeld ? "hand" : t.tool;

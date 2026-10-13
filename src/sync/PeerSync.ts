@@ -123,7 +123,7 @@ export class PeerSync {
     { added, updated, removed }: Record<"added" | "updated" | "removed", number[]>,
     origin: unknown,
   ) => {
-    // Only our own state: peers' states reach everyone directly.
+    // Only this client's state: each peer sends its own state to everyone directly.
     if (origin instanceof PeerOrigin) return;
     this.broadcast(this.awarenessMessage([...added, ...updated, ...removed]), origin);
   };

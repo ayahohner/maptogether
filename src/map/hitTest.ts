@@ -25,7 +25,7 @@ const isComponent = (child: Hittable) =>
 /**
  * The node key of the topmost component (by zIndex, then paint order) whose
  * screen bounds contain `p`. Connection lines are skipped: their keys are
- * edges, and their bounding boxes would swallow presses on empty canvas.
+ * edges, and their bounding boxes would cover presses on empty canvas.
  */
 export function hitComponent(children: readonly Hittable[], p: Point): string | undefined {
   const ranked = children

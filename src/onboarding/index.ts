@@ -8,7 +8,7 @@ export interface MapText {
 }
 
 /**
- * Starts a `/?demo` map from the demo, welcomes first-time visitors, and
+ * Starts a `/?demo` map from the demo, shows the welcome on a first visit, and
  * returns the "open the demo map" action for the menu.
  */
 export function initializeOnboarding(

@@ -51,7 +51,7 @@ export class PeerMesh {
   }
 
   private async welcome(id: string, peers: string[]) {
-    // A new id means the relay forgot us: start the mesh over.
+    // A new id means the relay no longer has this peer, so the mesh starts over.
     this.destroy();
     this.selfId = id;
     await Promise.all(peers.map((peer) => this.call(peer)));
@@ -93,7 +93,7 @@ export class PeerMesh {
   }
 
   private create(peerId: string): RTCPeerConnection {
-    // Replace any old connection, but keep candidates that beat the offer here.
+    // Replaces any old connection, but keeps candidates that arrived before the offer.
     this.pcs.get(peerId)?.close();
     const pc = new this.PC({ iceServers: this.opts.iceServers });
     pc.onicecandidate = (e) => this.sendCandidate(peerId, e.candidate);

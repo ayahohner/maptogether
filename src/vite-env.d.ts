@@ -6,7 +6,6 @@ interface ImportMetaEnv {
   /** "true" draws a render counter in the canvas corner. */
   readonly VITE_RENDER_INDICATOR?: string;
   readonly VITE_HEAP_ID: string;
-  // put vite env variables here to allow intellisense
 }
 
 interface ImportMeta {

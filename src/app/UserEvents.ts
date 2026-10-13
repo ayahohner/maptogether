@@ -8,8 +8,8 @@ import { stopSelecting } from "../state/State";
 import { releaseHeld } from "../state/Tools";
 import { bindToolShortcuts, isEditable } from "./shortcuts";
 
-var combokeys = new Combokeys(document.documentElement);
-// Allow hotkeys when focused on inputs
+const combokeys = new Combokeys(document.documentElement);
+// Shortcuts also work while a text field has focus.
 combokeys.stopCallback = () => false;
 
 const ctrlCmd = isApple ? "command" : "ctrl";

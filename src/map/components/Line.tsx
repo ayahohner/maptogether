@@ -6,7 +6,7 @@ import type { LineT } from "./types";
 
 const strokes = {
   normal: { width: 1, color: 0x000000, alpha: 1 },
-  // The selected component border colour.
+  // The same colour as a selected component's border.
   selected: { width: 2.5, color: 0x9b5af9, alpha: 1 },
 };
 
@@ -42,7 +42,7 @@ export const Line = (
     if (selected === state.selection.edgeItems.has(nodeKey)) return;
     selected = !selected;
     draw();
-    MapSingleton.dirty = true; // ->Renderer
+    MapSingleton.dirty = true;
   });
 
   g.on("removed", () => {

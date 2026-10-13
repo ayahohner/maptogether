@@ -54,11 +54,11 @@ export const addComponent = (config: AddComponentConfig) => {
 export const updateComponentPosition = (nodeKey: string, x: number, y: number) => {
   const node = graph.getNodeAttributes(nodeKey);
   if (node) {
-    node.component.position.x = x; // ->Renderer
-    node.component.position.y = y; // ->Renderer
+    node.component.position.x = x;
+    node.component.position.y = y;
     node.coordinates.x = x;
     node.coordinates.y = y;
-    MapSingleton.dirty = true; // ->Renderer
+    MapSingleton.dirty = true;
     graph.forEachEdge(nodeKey, updateEdgePosition);
   }
 };
@@ -66,11 +66,11 @@ export const updateComponentPosition = (nodeKey: string, x: number, y: number) =
 export const updateComponentPositionOffset = (nodeKey: string, x: number, y: number) => {
   const node = graph.getNodeAttributes(nodeKey);
   if (node) {
-    node.component.position.x += x; // ->Renderer
-    node.component.position.y += y; // ->Renderer
+    node.component.position.x += x;
+    node.component.position.y += y;
     node.coordinates.x += x;
     node.coordinates.y += y;
-    MapSingleton.dirty = true; // ->Renderer
+    MapSingleton.dirty = true;
     graph.forEachEdge(nodeKey, updateEdgePosition);
   }
 };
@@ -88,9 +88,9 @@ export const addEdge = (componentAKey: string, componentBKey: string) => {
   if (!a || !b || graph.hasEdge(componentAKey, componentBKey)) return;
 
   const nodeKey = `${a.nodeKey}->${b.nodeKey}`;
-  const component = Line(a.component.x, a.component.y, b.component.x, b.component.y, nodeKey); // ->Renderer
-  MapSingleton.graphContainer.addChild(component); // ->Renderer
-  MapSingleton.dirty = true; // ->Renderer
+  const component = Line(a.component.x, a.component.y, b.component.x, b.component.y, nodeKey);
+  MapSingleton.graphContainer.addChild(component);
+  MapSingleton.dirty = true;
 
   graph.addEdge(a.nodeKey, b.nodeKey, {
     type: "edge",
@@ -122,8 +122,8 @@ const updateEdgePosition = (
     attributes.coordinates.start.y,
     attributes.coordinates.stop.x,
     attributes.coordinates.stop.y,
-  ); // ->Renderer
-  MapSingleton.dirty = true; // ->Renderer
+  );
+  MapSingleton.dirty = true;
 };
 
 /** Where a component written without coordinates is drawn. */
@@ -131,78 +131,41 @@ const DEFAULT_COORDINATES = [10, 10];
 
 /** Builds the graph, and the map's Pixi objects, from the parsed text. */
 class TogetherVisitorToGraph extends BaseTogetherVisitor {
-  // <-Parser
-  // Local reference to graph for speed
-  graph: WardleyGraph;
-
-  constructor(graph: WardleyGraph) {
+  constructor() {
     super();
-
-    this.graph = graph;
-
-    // The "validateVisitor" method is a helper utility which performs static analysis
-    // to detect missing or redundant visitor methods
+    // Throws if a grammar rule has no visit method, or a visit method no rule.
     this.validateVisitor();
   }
 
-  /* Visit methods */
   default(ctx: any) {
-    // Don't keep reference to deleted item
-    setInitialLinkTarget(undefined); // <-State
+    // The link source may no longer be on the map.
+    setInitialLinkTarget(undefined);
     graph.clear();
-
-    if (ctx.statement) {
-      const edgeDecs: any = [];
-
-      ctx.statement.forEach((dec: any) => {
-        // Only edgeDeclarations return objects to the top level
-        const edgeDec = this.visit(dec);
-
-        if (edgeDec) {
-          edgeDecs.push(edgeDec);
-        }
-      });
-
-      // render edges last to allow edges to be declared before components
-      edgeDecs.forEach((edgeDec: any) => {
-        addEdge(edgeDec.lhs, edgeDec.rhs);
-      });
-    } else {
-      // If map is empty, rerender once
-      MapSingleton.dirty = true; // ->Renderer
-    }
+    // Links are drawn after every component, so a link may come before the components it joins.
+    const links = (ctx.statement ?? []).map((statement: CstNode) => this.visit(statement));
+    for (const link of links.filter(Boolean)) addEdge(link.lhs, link.rhs);
+    MapSingleton.dirty = true;
   }
 
+  /** Draws a component, or returns a link to draw once every component is drawn. */
   statement(ctx: any) {
-    if (ctx.componentDeclaration) {
-      this.visit(ctx.componentDeclaration[0]);
-      return;
-    } else if (ctx.edgeDeclaration) {
-      // we only return edgeDecs because they need to be created last
-      // so pass them to the top level function which will run last
-      return this.visit(ctx.edgeDeclaration[0]);
-    }
-    // TODO: add command and note
+    if (ctx.componentDeclaration) this.visit(ctx.componentDeclaration[0]);
+    else if (ctx.edgeDeclaration) return this.visit(ctx.edgeDeclaration[0]);
   }
 
-  command(_ctx: any) {
-    return;
-  }
+  // Commands, attributes and notes are parsed but not drawn.
+  command(_ctx: any) {}
 
   attributes(ctx: any) {
     return ctx.attributes;
   }
 
-  attribute(_ctx: any) {
-    return;
-  }
+  attribute(_ctx: any) {}
+
+  note(_ctx: any) {}
 
   edgeDeclaration(ctx: any) {
-    return {
-      type: "edgeDeclaration",
-      lhs: ctx.LHS[0].image,
-      rhs: ctx.RHS[0].image,
-    };
+    return { lhs: ctx.LHS[0].image, rhs: ctx.RHS[0].image };
   }
 
   componentDeclaration(ctx: any, parentComponent?: any) {
@@ -210,7 +173,7 @@ class TogetherVisitorToGraph extends BaseTogetherVisitor {
     const [visibility, evolution] = this.coordinatesOf(ctx);
     // A pipeline's components sit at the pipeline's visibility.
     const rowVisibility = parentComponent ? this.coordinatesOf(parentComponent)[0] : visibility;
-    const [x, y] = MapSingleton.wardleyToRendererCoords(evolution, rowVisibility); // <-Renderer
+    const [x, y] = MapSingleton.wardleyToRendererCoords(evolution, rowVisibility);
 
     addComponent({
       x,
@@ -239,36 +202,26 @@ class TogetherVisitorToGraph extends BaseTogetherVisitor {
     return parentComponent ? [] : children;
   }
 
+  /** Draws a pipeline's components; returns their parse nodes. */
   pipeline(ctx: any, parentComponent?: unknown) {
-    const components: any[] = [];
-
-    if (ctx.statement) {
-      ctx.statement.forEach((statement: any) => {
-        // Only visit componentDeclarations for now
-        if (statement?.children?.componentDeclaration) {
-          this.visit(statement.children.componentDeclaration, parentComponent);
-          components.push(statement.children.componentDeclaration[0]);
-        }
-      });
-    }
-    return components;
+    const declarations: CstNode[] = (ctx.statement ?? []).flatMap(
+      (statement: CstNode) => statement.children.componentDeclaration ?? [],
+    );
+    for (const declaration of declarations) this.visit(declaration, parentComponent);
+    return declarations;
   }
 
   coordinates(ctx: any) {
     return [Number(ctx.LHS[0].image), Number(ctx.RHS[0].image)];
   }
-
-  note(_ctx: any) {
-    return;
-  }
 }
 
-const visitorInstance = new TogetherVisitorToGraph(graph);
+const visitorInstance = new TogetherVisitorToGraph();
 
 /** Draws the map from its text, leaving out lines that don't parse. */
 export const rerenderGraph = () => {
-  const { cst } = parseMap(state.editor.editorText); // <-State
-  showMapOutOfDate(!cst); // ->Editor
+  const { cst } = parseMap(state.editor.editorText);
+  showMapOutOfDate(!cst);
   if (cst) drawGraph(cst);
 };
 
@@ -282,5 +235,5 @@ const drawGraph = (cst: CstNode) => {
 };
 
 graph.on("cleared", () => {
-  MapSingleton.graphContainer.removeChildren(); // ->Renderer
+  MapSingleton.graphContainer.removeChildren();
 });

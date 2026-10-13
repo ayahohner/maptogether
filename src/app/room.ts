@@ -26,7 +26,7 @@ export function resolveRoom(location: Pick<Location, "pathname" | "search">): Ro
 export interface LifecycleHooks {
   /** Starts loading, saving and sharing the map with this id. */
   connect: (id: string) => void;
-  /** Moves the page URL to the new map, and the like. */
+  /** Runs once a draft becomes a map, with the map's URL path. */
   created: (path: string) => void;
   makeId?: () => string;
 }

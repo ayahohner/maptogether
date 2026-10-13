@@ -36,8 +36,7 @@ initializeUserEvents();
 keepMapOutOfSearch(room.isNew);
 
 const run = async (elementId: string) => {
-  // Pixi v8 initializes asynchronously; wait for it before touching the
-  // renderer or appending the canvas.
+  // Pixi starts asynchronously; the renderer and canvas exist only once it is ready.
   await MapSingleton.ready;
 
   initializePanelResizer(
@@ -48,7 +47,6 @@ const run = async (elementId: string) => {
 
   setEditorText(editorView.state.doc.toString());
 
-  // Bind app view to root html element
   document.getElementById(elementId)?.appendChild(MapSingleton.canvas);
 
   const dividers = document.createElement("div");
@@ -71,13 +69,13 @@ const run = async (elementId: string) => {
 
   MapSingleton.handleResize();
 
-  // Render once even if graph is empty
+  // Draws the first frame, even of an empty map.
   MapSingleton.dirty = true;
 
   initializeChrome();
 };
 
-/** Top bar, help, and the About dialog that welcomes first-time visitors. */
+/** Top bar, help, and the About dialog, which first-time visitors see as a welcome. */
 const initializeChrome = () => {
   const openDemo = initializeOnboarding(
     room,

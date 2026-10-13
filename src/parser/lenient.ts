@@ -1,6 +1,6 @@
 import { tryParse, type ParseProblem, type ParseResult } from "./TogetherParser";
 
-/** Problems to set aside before giving up. Each one costs another parse. */
+/** The most lines set aside before the map stops drawing. Each one costs another parse. */
 export const MAX_PROBLEMS = 50;
 
 const isBlank = (line: string) => line.trim() === "";
@@ -36,7 +36,7 @@ export function parseLeniently(text: string): ParseResult {
 
 let last: { text: string; result: ParseResult } | undefined;
 
-/** parseLeniently, remembering the last text: the map and the linter both ask. */
+/** parseLeniently, cached for the last text: the map and the linter both parse each change. */
 export function parseMap(text: string): ParseResult {
   if (last?.text !== text) last = { text, result: parseLeniently(text) };
   return last.result;

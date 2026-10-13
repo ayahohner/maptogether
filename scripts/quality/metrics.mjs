@@ -159,7 +159,7 @@ export function branchCount(node) {
 }
 
 function attributeTokens(tokens, ctx) {
-  // Innermost first; on a tie (a file that is one function) the function wins.
+  // Innermost first; on a tie (a file that is one function) the function is used.
   const size = (u) => u.node.end - u.node.start + (u.node.type === "Program" ? 0.5 : 0);
   const units = [...ctx.units].sort((a, b) => size(a) - size(b));
   for (const token of tokens) {

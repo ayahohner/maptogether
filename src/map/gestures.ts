@@ -2,8 +2,8 @@ import type { Tool } from "../state/Tools";
 import type { Point } from "./viewport";
 
 /**
- * What the canvas can do, in screen points relative to the canvas. Gestures
- * decide what a press means; the actions do it (see canvasActions.ts).
+ * What the canvas can do, in screen points relative to the canvas. This file
+ * works out what kind of press it is; canvasActions.ts carries it out.
  */
 export interface CanvasActions {
   tool(): Tool;
@@ -44,7 +44,7 @@ export interface WheelInput {
 }
 
 /**
- * - pending: waiting to see if it's a tap, a pan (touch) or a long press
+ * - pending: not yet known to be a tap, a pan (touch) or a long press
  * - drag: moving components or drawing a marquee
  * - pan: moving the view
  */

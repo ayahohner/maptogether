@@ -40,7 +40,7 @@ export const mapCoordinates = (map: MapView, p: Point) => {
 /** Names a new component where the user pressed. */
 const create = (map: MapView, p: Point) =>
   FloatingTextInput(map.element, p.x, p.y, (name) => {
-    if (!graph.hasNode(name)) appendText(`\n${name} ${mapCoordinates(map, p)}`); // ->Editor
+    if (!graph.hasNode(name)) appendText(`\n${name} ${mapCoordinates(map, p)}`);
   });
 
 const rename = (map: MapView, nodeKey: string, p: Point) =>
@@ -49,7 +49,7 @@ const rename = (map: MapView, nodeKey: string, p: Point) =>
     p.x,
     p.y,
     (name) => {
-      if (!graph.hasNode(name)) renameComponent(nodeKey, name); // ->Editor
+      if (!graph.hasNode(name)) renameComponent(nodeKey, name);
     },
     nodeKey,
   );
