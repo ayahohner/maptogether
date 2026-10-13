@@ -9,21 +9,21 @@ describe("coordinateChanges", () => {
   it("replaces existing coordinates and keeps what follows", () => {
     const text = "Kettle [33, 50] (inertia) // boils\nPower [10, 86]";
     expect(apply(text, coordinateChanges(text, "Kettle", ["40.0", "60.0"]))).toBe(
-      "Kettle [40.0,60.0] (inertia) // boils\nPower [10, 86]",
+      "Kettle [40.0, 60.0] (inertia) // boils\nPower [10, 86]",
     );
   });
 
   it("adds coordinates to a component that had none", () => {
     const text = "Power\nKettle.Power";
     expect(apply(text, coordinateChanges(text, "Power", ["1", "2"]))).toBe(
-      "Power[1,2]\nKettle.Power",
+      "Power[1, 2]\nKettle.Power",
     );
   });
 
   it("keeps the indent of a pipeline component", () => {
     const text = "Tea [55, 73] {\n  Loose Leaf [55, 56]\n}";
     expect(apply(text, coordinateChanges(text, "Loose Leaf", ["55", "60"]))).toBe(
-      "Tea [55, 73] {\n  Loose Leaf [55,60]\n}",
+      "Tea [55, 73] {\n  Loose Leaf [55, 60]\n}",
     );
   });
 
