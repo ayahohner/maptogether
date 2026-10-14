@@ -53,7 +53,7 @@ a picture one person emails around.
 | Pan | Scroll, drag with Space held, or pick the pan tool (H) | Drag with one finger |
 | Zoom | Ctrl/Cmd + scroll, or the zoom buttons | Pinch |
 | Delete | Select, then press Delete or Backspace | Select, then tap the bin in the toolbar |
-| Start a new map | Click **New** | Tap **New** |
+| Start a new map | Click **New map** | Tap **+** |
 
 ## Try the sample map
 
@@ -87,13 +87,20 @@ The text syntax is small:
 - `needer.needed` draws a dependency between two components.
 - `name [v, e] { ... }` makes a pipeline: put one child component per line
   inside the braces, each at its own evolution. Children sit on the pipeline's
-  row, so their visibility is ignored.
+  row, so their visibility is ignored, and they move with it when you drag it.
 - `// comments` are ignored.
 
 ## Status
 
 MapTogether is in **alpha**. Expect rough edges, and please
 [open an issue](https://github.com/ayahohner/maptogether/issues) when you hit one.
+
+## How it's built
+
+MapTogether is TypeScript and React, with the map drawn by PixiJS (WebGL) and
+the text edited in CodeMirror. A map is a Yjs document (a CRDT), so edits merge
+without conflicts. They travel between browsers over WebRTC, and a Cloudflare
+Worker with Durable Objects connects peers and saves each map.
 
 ## Contributing
 
