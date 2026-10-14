@@ -1,17 +1,28 @@
 import { useState } from "react";
-import { Menu, MenuButton, MenuItem, MenuItems, MenuSeparator } from "@headlessui/react";
+import {
+  Menu,
+  MenuButton,
+  MenuHeading,
+  MenuItem,
+  MenuItems,
+  MenuSection,
+  MenuSeparator,
+} from "@headlessui/react";
 import {
   ChatBubbleLeftEllipsisIcon,
   CheckIcon,
+  CodeBracketSquareIcon,
   EllipsisVerticalIcon,
   InformationCircleIcon,
   LinkIcon,
   MapIcon,
+  PhotoIcon,
   PlusIcon,
   QuestionMarkCircleIcon,
 } from "@heroicons/react/24/outline";
 
 import { CollaborationBadge } from "./CollaborationBadge";
+import type { ExportFormat } from "../export/exportMap";
 import { openHelp } from "../state/Ui";
 
 const ISSUES_URL = "https://github.com/ayahohner/wmaps/issues";
@@ -21,9 +32,11 @@ export interface TopBarProps {
   onDemo: () => void;
   /** Creates the map if it's still a draft, so the copied link works. */
   onShare: () => void;
+  /** Downloads the map as a picture. */
+  onExport: (format: ExportFormat) => void;
 }
 
-export function TopBar({ onAbout, onDemo, onShare }: TopBarProps) {
+export function TopBar({ onAbout, onDemo, onShare, onExport }: TopBarProps) {
   return (
     <nav className="flex h-full items-center gap-2 px-3 sm:px-4" aria-label="Map">
       <Brand />
@@ -34,7 +47,7 @@ export function TopBar({ onAbout, onDemo, onShare }: TopBarProps) {
           <span className="max-sm:hidden">New map</span>
         </a>
         <ShareButton onShare={onShare} />
-        <OverflowMenu onAbout={onAbout} onDemo={onDemo} />
+        <OverflowMenu onAbout={onAbout} onDemo={onDemo} onExport={onExport} />
       </div>
     </nav>
   );
@@ -76,7 +89,7 @@ function ShareButton({ onShare }: Pick<TopBarProps, "onShare">) {
   );
 }
 
-function OverflowMenu({ onAbout, onDemo }: Omit<TopBarProps, "onShare">) {
+function OverflowMenu({ onAbout, onDemo, onExport }: Omit<TopBarProps, "onShare">) {
   return (
     <Menu>
       <MenuButton className="icon-btn" aria-label="More">
@@ -95,6 +108,8 @@ function OverflowMenu({ onAbout, onDemo }: Omit<TopBarProps, "onShare">) {
         />
         <MenuAction icon={MapIcon} label="Open the demo map" onClick={onDemo} />
         <MenuSeparator className="my-1.5 h-px bg-line" />
+        <ExportSection onExport={onExport} />
+        <MenuSeparator className="my-1.5 h-px bg-line" />
         <MenuItem>
           <a className="menu-item" href={ISSUES_URL} target="_blank" rel="noopener">
             <ChatBubbleLeftEllipsisIcon aria-hidden="true" /> Send feedback
@@ -103,6 +118,22 @@ function OverflowMenu({ onAbout, onDemo }: Omit<TopBarProps, "onShare">) {
         <p className="px-2.5 pt-1.5 pb-1 text-xs text-ink-subtle">{`Version ${__APP_VERSION__}`}</p>
       </MenuItems>
     </Menu>
+  );
+}
+
+function ExportSection({ onExport }: Pick<TopBarProps, "onExport">) {
+  return (
+    <MenuSection>
+      <MenuHeading className="px-2.5 pt-1 pb-1 text-xs font-medium text-ink-subtle">
+        Export
+      </MenuHeading>
+      <MenuAction icon={PhotoIcon} label="PNG image" onClick={() => onExport("png")} />
+      <MenuAction
+        icon={CodeBracketSquareIcon}
+        label="SVG vector image"
+        onClick={() => onExport("svg")}
+      />
+    </MenuSection>
   );
 }
 
