@@ -17,7 +17,7 @@ import type { StoreConn } from "./store";
  */
 
 export interface Env extends IceEnv {
-  MAP_ROOM: DurableObjectNamespace<MapRoom>;
+  ROOM: DurableObjectNamespace<Room>;
   ALLOWED_ORIGINS: string;
 }
 
@@ -65,10 +65,10 @@ function syncRoom(req: Request, env: Env, room: string | undefined): Promise<Res
   if (req.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
     return new Response("Expected WebSocket", { status: 426 });
   }
-  return env.MAP_ROOM.get(env.MAP_ROOM.idFromName(room)).fetch(req);
+  return env.ROOM.get(env.ROOM.idFromName(room)).fetch(req);
 }
 
-export class MapRoom extends DurableObject<Env> {
+export class Room extends DurableObject<Env> {
   private readonly store: MapStore;
   private readonly signaling: Signaling;
   private readonly conns = new WeakMap<WebSocket, Conn>();

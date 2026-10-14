@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 env:
-  API: https://api.cloudflare.com/client/v4/accounts/ea273b96fe59655aa4b5ce77dccec99c/workers/workers/wmaps-relay/previews
+  API: https://api.cloudflare.com/client/v4/accounts/ea273b96fe59655aa4b5ce77dccec99c/workers/workers/maptogether-relay/previews
   MAX_IDLE_DAYS: 7
 
 jobs:
