@@ -1,4 +1,5 @@
 import {
+  bracesOpened,
   matchComponentRegex,
   matchEdgeBetweenRegex,
   matchEdgeRegex,
@@ -28,17 +29,6 @@ const patterns = ({ components, edges }: Deletion) =>
     ...edges.map((key) => matchEdgeBetweenRegex(...edgeEnds(key))),
   ].map((pattern) => new RegExp(pattern));
 
-const count = (text: string, char: RegExp) => text.match(char)?.length ?? 0;
-
-/** Quoted text and comments, read left to right as the lexer reads them. */
-const NOT_CODE = /"[^"]*"|'[^']*'|\/\/.*/g;
-
-/** Braces a line leaves open, ignoring any in quotes or a comment. */
-const opens = (line: string) => {
-  const code = line.replace(NOT_CODE, "");
-  return count(code, /\{/g) - count(code, /\}/g);
-};
-
 /** Indexes of the lines to delete: matches, and the rest of any pipeline a match opens. */
 function doomedLines(lines: readonly string[], deletion: Deletion) {
   const tests = patterns(deletion);
@@ -48,7 +38,7 @@ function doomedLines(lines: readonly string[], deletion: Deletion) {
     let depth = 0;
     do {
       doomed.add(i);
-      depth += opens(lines[i]);
+      depth += bracesOpened(lines[i]);
     } while (depth > 0 && ++i < lines.length);
   }
   return doomed;
