@@ -1,14 +1,24 @@
-import { layoutComponent } from "../map/components/componentLayout";
+import { type ComponentConfig, layoutComponent } from "../map/components/componentLayout";
 import type { NodeAttributes, WardleyGraph } from "../state/Graph";
 import type { ExportScene } from "./mapSvg";
 
-/** A component's config, at where it is drawn now. */
-const drawnConfig = (node: NodeAttributes) => ({ ...node.config, ...node.coordinates });
+/**
+ * A component's config, at where it is drawn now. A pipeline's box spans its
+ * components where they are drawn now too, as the canvas redraws it during a
+ * drag, before the text is parsed again (or while it can't be).
+ */
+const drawnConfig = (graph: WardleyGraph, node: NodeAttributes): ComponentConfig => {
+  const config = { ...node.config, ...node.coordinates };
+  if (!config.pipeline) return config;
+  const inside = graph.filterNodes((_name, child) => child.config.inPipeline === config.name);
+  const pipeline = inside.map((name) => graph.getNodeAttribute(name, "coordinates").x);
+  return { ...config, pipeline };
+};
 
 /** Where a component's marker is drawn: a pipeline's components sit lower than their row. */
 const markerAt = (node: NodeAttributes): [number, number] => {
-  const config = drawnConfig(node);
-  return [config.x, layoutComponent(config).y];
+  const { x, y } = node.coordinates;
+  return [x, layoutComponent({ ...node.config, x, y }).y];
 };
 
 /**
@@ -20,7 +30,7 @@ export const sceneFromGraph = (
   size: { width: number; height: number },
 ): ExportScene => {
   const components = graph
-    .mapNodes((_name, node) => drawnConfig(node))
+    .mapNodes((_name, node) => drawnConfig(graph, node))
     .sort((a, b) => layoutComponent(a).zIndex - layoutComponent(b).zIndex);
   const links = graph.mapEdges(
     (_edge, _link, _a, _b, a, b) =>

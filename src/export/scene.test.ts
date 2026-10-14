@@ -61,3 +61,18 @@ it("places components where they are drawn now, as after a drag", () => {
   graph.getNodeAttributes("Cup").coordinates = { x: 520, y: 90 };
   expect(sceneFromGraph(graph, size).components[0]).toMatchObject({ x: 520, y: 90 });
 });
+
+it("boxes a pipeline around its components where they are drawn now", () => {
+  const graph = graphOf(
+    [
+      { name: "Tea", x: 300, y: 200, pipeline: [250, 350] },
+      { name: "Loose Leaf", x: 250, y: 200, inPipeline: "Tea" },
+      { name: "Bags", x: 350, y: 200, inPipeline: "Tea" },
+    ],
+    [],
+  );
+  // Dragged on the canvas, before the text is parsed again (or while it can't be).
+  graph.getNodeAttributes("Bags").coordinates = { x: 420, y: 200 };
+  const tea = sceneFromGraph(graph, size).components.find((c) => c.name === "Tea");
+  expect(tea?.pipeline).toEqual([250, 420]);
+});
