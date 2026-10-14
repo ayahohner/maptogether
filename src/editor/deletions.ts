@@ -30,9 +30,12 @@ const patterns = ({ components, edges }: Deletion) =>
 
 const count = (text: string, char: RegExp) => text.match(char)?.length ?? 0;
 
-/** Braces a line leaves open, ignoring any comment. */
+/** Quoted text and comments, read left to right as the lexer reads them. */
+const NOT_CODE = /"[^"]*"|'[^']*'|\/\/.*/g;
+
+/** Braces a line leaves open, ignoring any in quotes or a comment. */
 const opens = (line: string) => {
-  const code = line.replace(/\/\/.*/, "");
+  const code = line.replace(NOT_CODE, "");
   return count(code, /\{/g) - count(code, /\}/g);
 };
 
