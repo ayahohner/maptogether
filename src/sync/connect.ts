@@ -119,6 +119,7 @@ function trimSlash(url: string) {
 }
 
 async function hashRoom(mapId: string): Promise<string> {
+  // "wmaps" is the app's name from before MapTogether; another prefix would move every map to an empty room.
   const bytes = new TextEncoder().encode(`wmaps:${mapId}`);
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
   return Array.from(digest.slice(0, 16), (b) => b.toString(16).padStart(2, "0")).join("");

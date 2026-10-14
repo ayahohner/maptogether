@@ -14,7 +14,7 @@ import {
 import { CollaborationBadge } from "./CollaborationBadge";
 import { openHelp } from "../state/Ui";
 
-const ISSUES_URL = "https://github.com/ayahohner/wmaps/issues";
+const ISSUES_URL = "https://github.com/ayahohner/maptogether/issues";
 
 export interface TopBarProps {
   onAbout: () => void;

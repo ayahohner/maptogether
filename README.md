@@ -7,7 +7,7 @@ see your team's edits and cursors live.
 [![Wardley Maps](https://img.shields.io/badge/strategy-Wardley%20Maps-ee6352?style=flat-square)](https://learnwardleymapping.com/)
 [![Multiplayer: Yjs + WebRTC](https://img.shields.io/badge/multiplayer-Yjs%20%2B%20WebRTC-30bced?style=flat-square)](CONTRIBUTING.md#multiplayer)
 [![Relay on Cloudflare Durable Objects](https://img.shields.io/badge/relay-Durable%20Objects-F38020?style=flat-square&logo=cloudflare&logoColor=white)](relay/README.md)
-[![Deploy Cloudflare relay](https://img.shields.io/github/actions/workflow/status/ayahohner/wmaps/deploy-relay.yml?branch=main&label=relay%20deploy&style=flat-square)](https://github.com/ayahohner/wmaps/actions/workflows/deploy-relay.yml)
+[![Deploy Cloudflare relay](https://img.shields.io/github/actions/workflow/status/ayahohner/maptogether/deploy-relay.yml?branch=main&label=relay%20deploy&style=flat-square)](https://github.com/ayahohner/maptogether/actions/workflows/deploy-relay.yml)
 
 ![Three people mapping a tea shop together in MapTogether, each with a named cursor on the canvas](docs/multiplayer-screenshot.png)
 
@@ -93,7 +93,7 @@ The text syntax is small:
 ## Status
 
 MapTogether is in **alpha**. Expect rough edges, and please
-[open an issue](https://github.com/ayahohner/wmaps/issues) when you hit one.
+[open an issue](https://github.com/ayahohner/maptogether/issues) when you hit one.
 
 ## Contributing
 
