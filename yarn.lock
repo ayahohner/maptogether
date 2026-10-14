@@ -3361,6 +3361,57 @@ __metadata:
   languageName: node
   linkType: hard
 
+"maptogether@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "maptogether@workspace:."
+  dependencies:
+    "@babel/parser": "npm:^8.0.6"
+    "@biomejs/biome": "npm:2.5.15"
+    "@cloudflare/workers-types": "npm:^5.20261006.1"
+    "@codemirror/commands": "npm:^6.11.1"
+    "@codemirror/lint": "npm:^6.9.7"
+    "@codemirror/search": "npm:^6.7.2"
+    "@codemirror/state": "npm:^6.7.6"
+    "@codemirror/view": "npm:^6.43.13"
+    "@fontsource-variable/jetbrains-mono": "npm:^5.3.0"
+    "@headlessui/react": "npm:^2.2.10"
+    "@heroicons/react": "npm:^2.2.0"
+    "@replit/codemirror-vscode-keymap": "npm:^6.0.2"
+    "@tailwindcss/postcss": "npm:^4.3.3"
+    "@types/lodash": "npm:^4.17.25"
+    "@types/node": "npm:^24"
+    "@types/react": "npm:^19.3.0"
+    "@types/react-dom": "npm:^19.3.0"
+    "@vitejs/plugin-react": "npm:^6.1.1"
+    "@vitest/coverage-v8": "npm:^5.0.2"
+    "@vitest/ui": "npm:^5.0.2"
+    autoprefixer: "npm:^10.6.1"
+    chevrotain: "npm:^13.2.0"
+    codemirror: "npm:^6.0.2"
+    graphology: "npm:^0.26.0"
+    graphology-types: "npm:^0.24.8"
+    happy-dom: "npm:^20.14.5"
+    knip: "npm:6.38.0"
+    lib0: "npm:^0.2.119"
+    lint-staged: "npm:17.6.0"
+    lodash: "npm:^4.18.1"
+    pixi.js: "npm:^8.21.0"
+    postcss: "npm:^8.5.28"
+    react: "npm:^19.3.0"
+    react-dom: "npm:^19.3.0"
+    tailwindcss: "npm:^4.3.3"
+    typescript: "npm:^7.0.2"
+    valtio: "npm:^2.3.2"
+    vite: "npm:^8.3.1"
+    vitest: "npm:^5.0.2"
+    werift: "npm:0.24.4"
+    wrangler: "npm:^4.147.0"
+    y-codemirror.next: "npm:^0.3.6"
+    y-protocols: "npm:^1.0.7"
+    yjs: "npm:^13.6.33"
+  languageName: unknown
+  linkType: soft
+
 "mediabunny@npm:^1.45.2":
   version: 1.61.3
   resolution: "mediabunny@npm:1.61.3"
@@ -4487,57 +4538,6 @@ __metadata:
   checksum: 10c0/fabe344f91387d1d41df230af962ef18bf703dd4178006d55cd6412caacd187b54440002d4d53a982d4f7f0455567dcffb6d3884533c8b2268928eca3ebd8a19
   languageName: node
   linkType: hard
-
-"wardley-mapping@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "wardley-mapping@workspace:."
-  dependencies:
-    "@babel/parser": "npm:^8.0.6"
-    "@biomejs/biome": "npm:2.5.15"
-    "@cloudflare/workers-types": "npm:^5.20261006.1"
-    "@codemirror/commands": "npm:^6.11.1"
-    "@codemirror/lint": "npm:^6.9.7"
-    "@codemirror/search": "npm:^6.7.2"
-    "@codemirror/state": "npm:^6.7.6"
-    "@codemirror/view": "npm:^6.43.13"
-    "@fontsource-variable/jetbrains-mono": "npm:^5.3.0"
-    "@headlessui/react": "npm:^2.2.10"
-    "@heroicons/react": "npm:^2.2.0"
-    "@replit/codemirror-vscode-keymap": "npm:^6.0.2"
-    "@tailwindcss/postcss": "npm:^4.3.3"
-    "@types/lodash": "npm:^4.17.25"
-    "@types/node": "npm:^24"
-    "@types/react": "npm:^19.3.0"
-    "@types/react-dom": "npm:^19.3.0"
-    "@vitejs/plugin-react": "npm:^6.1.1"
-    "@vitest/coverage-v8": "npm:^5.0.2"
-    "@vitest/ui": "npm:^5.0.2"
-    autoprefixer: "npm:^10.6.1"
-    chevrotain: "npm:^13.2.0"
-    codemirror: "npm:^6.0.2"
-    graphology: "npm:^0.26.0"
-    graphology-types: "npm:^0.24.8"
-    happy-dom: "npm:^20.14.5"
-    knip: "npm:6.38.0"
-    lib0: "npm:^0.2.119"
-    lint-staged: "npm:17.6.0"
-    lodash: "npm:^4.18.1"
-    pixi.js: "npm:^8.21.0"
-    postcss: "npm:^8.5.28"
-    react: "npm:^19.3.0"
-    react-dom: "npm:^19.3.0"
-    tailwindcss: "npm:^4.3.3"
-    typescript: "npm:^7.0.2"
-    valtio: "npm:^2.3.2"
-    vite: "npm:^8.3.1"
-    vitest: "npm:^5.0.2"
-    werift: "npm:0.24.4"
-    wrangler: "npm:^4.147.0"
-    y-codemirror.next: "npm:^0.3.6"
-    y-protocols: "npm:^1.0.7"
-    yjs: "npm:^13.6.33"
-  languageName: unknown
-  linkType: soft
 
 "werift@npm:0.24.4":
   version: 0.24.4
