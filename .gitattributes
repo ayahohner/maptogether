@@ -1,0 +1,2 @@
+# MapTogether scripts. GitHub would otherwise detect .mt as Wolfram Language.
+*.mt linguist-language=Text

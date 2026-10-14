@@ -1,4 +1,4 @@
-import teaShop from "../../examples/tea-shop.twm?raw";
+import teaShop from "../../examples/tea-shop.mt?raw";
 import { DEMO_QUERY } from "../app/room";
 
 export const demoMapText = teaShop;

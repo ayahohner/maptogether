@@ -57,7 +57,7 @@ a picture one person emails around.
 
 ## Try the sample map
 
-Paste [`examples/tea-shop.twm`](examples/tea-shop.twm) into the editor of a new
+Paste [`examples/tea-shop.mt`](examples/tea-shop.mt) into the editor of a new
 map to get the tea shop above, the classic first Wardley Map. A trimmed-down
 version looks like this:
 
@@ -89,6 +89,8 @@ The text syntax is small:
   inside the braces, each at its own evolution. Children sit on the pipeline's
   row, so their visibility is ignored, and they move with it when you drag it.
 - `// comments` are ignored.
+
+Map text saved as a file uses the `.mt` extension (MapTogether script).
 
 ## Status
 
