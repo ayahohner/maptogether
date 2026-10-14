@@ -66,6 +66,16 @@ templates, draw.io) and will follow as links and usage grow.
 - **Sharing and install.** Open Graph and Twitter card with a 1200×630 image
   (source in `docs/og-image.html`), SVG favicon, touch and PWA icons, and a web
   manifest.
+- **GitHub repo under the brand name.** The repo is
+  [ayahohner/maptogether](https://github.com/ayahohner/maptogether), renamed
+  from `wmaps` (GitHub redirects the old URLs). Its description says what the
+  site says, its homepage is `maptogether.io`, and its topics cover the
+  searches above (`wardley-maps`, `wardley-mapping`, `wardley-map`,
+  `wardleymaps`, `multiplayer`, `real-time-collaboration`,
+  `collaborative-editing`, `diagrams-as-code`, `strategy`) and the stack
+  (`yjs`, `crdt`, `webrtc`, `pixijs`, `codemirror`, `durable-objects`…), so
+  it shows up on those topic pages and in GitHub search. The README leads with
+  the app and links to it.
 
 ## Next, in order
 
@@ -97,8 +107,6 @@ mentions matter more than volume:
 - Ask to be listed where practitioners look for tools: the
   [awesome-wardley-maps](https://github.com/wardley-maps-community/awesome-wardley-maps)
   list, Learn Wardley Mapping's tools page, and the Wardley Maps community.
-- Give the GitHub repo the `wardley-maps` and `wardley-mapping` topics; its
-  README already links to the app.
 - Launch on Show HN and Product Hunt once templates and mobile support ship,
   since each is a reason to talk about it.
 - Every shared map link already brings in new people. When image export
@@ -119,7 +127,8 @@ pages that state facts plainly. To be the tool they recommend:
 - Keep the About copy factual and self-contained: what it is, that it is free,
   multiplayer, no sign-up, browser-based.
 - Use the same name, MapTogether, and the same one-line description on the site,
-  GitHub, and anywhere else we're listed.
+  GitHub, and anywhere else we're listed. The repo's name and description now
+  match; keep them in step when the site's description changes.
 - Keep `llms.txt` and the JSON-LD current when features change.
 - Being on the community lists above matters doubly, since those pages
   are what answer engines read when asked for a Wardley mapping tool.

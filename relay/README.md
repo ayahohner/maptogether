@@ -3,6 +3,9 @@
 Cloudflare Worker for multiplayer maps. Deployed at
 `https://wmaps-relay.innerlattice.workers.dev`.
 
+The Worker keeps its name from before the repo became `maptogether`: saved maps
+live in its Durable Objects, and a Worker under a new name would start empty.
+
 Edits and cursors travel peer to peer: Yjs over WebRTC data channels
 (`src/sync/` in the app). The relay does the two things peers can't:
 
@@ -58,7 +61,7 @@ One-time authentication setup:
    in `wrangler.jsonc`, following the
    [Cloudflare GitHub Actions guide](https://developers.cloudflare.com/workers/ci-cd/external-cicd/github-actions/).
 2. Add it as the repository Actions secret `CLOUDFLARE_API_TOKEN` in
-   [GitHub settings](https://github.com/ayahohner/wmaps/settings/secrets/actions).
+   [GitHub settings](https://github.com/ayahohner/maptogether/settings/secrets/actions).
    Local `wrangler login` credentials are not available to GitHub runners.
 3. Run **Deploy Cloudflare relay** on `main` and confirm the deployment and live
    verification steps pass.

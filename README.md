@@ -7,7 +7,7 @@ see your team's edits and cursors live.
 [![Wardley Maps](https://img.shields.io/badge/strategy-Wardley%20Maps-ee6352?style=flat-square)](https://learnwardleymapping.com/)
 [![Multiplayer: Yjs + WebRTC](https://img.shields.io/badge/multiplayer-Yjs%20%2B%20WebRTC-30bced?style=flat-square)](CONTRIBUTING.md#multiplayer)
 [![Relay on Cloudflare Durable Objects](https://img.shields.io/badge/relay-Durable%20Objects-F38020?style=flat-square&logo=cloudflare&logoColor=white)](relay/README.md)
-[![Deploy Cloudflare relay](https://img.shields.io/github/actions/workflow/status/ayahohner/wmaps/deploy-relay.yml?branch=main&label=relay%20deploy&style=flat-square)](https://github.com/ayahohner/wmaps/actions/workflows/deploy-relay.yml)
+[![Deploy Cloudflare relay](https://img.shields.io/github/actions/workflow/status/ayahohner/maptogether/deploy-relay.yml?branch=main&label=relay%20deploy&style=flat-square)](https://github.com/ayahohner/maptogether/actions/workflows/deploy-relay.yml)
 
 ![Three people mapping a tea shop together in MapTogether, each with a named cursor on the canvas](docs/multiplayer-screenshot.png)
 
@@ -53,7 +53,7 @@ a picture one person emails around.
 | Pan | Scroll, drag with Space held, or pick the pan tool (H) | Drag with one finger |
 | Zoom | Ctrl/Cmd + scroll, or the zoom buttons | Pinch |
 | Delete | Select, then press Delete or Backspace | Select, then tap the bin in the toolbar |
-| Start a new map | Click **New** | Tap **New** |
+| Start a new map | Click **New map** | Tap **+** |
 
 ## Try the sample map
 
@@ -87,13 +87,20 @@ The text syntax is small:
 - `needer.needed` draws a dependency between two components.
 - `name [v, e] { ... }` makes a pipeline: put one child component per line
   inside the braces, each at its own evolution. Children sit on the pipeline's
-  row, so their visibility is ignored.
+  row, so their visibility is ignored, and they move with it when you drag it.
 - `// comments` are ignored.
 
 ## Status
 
 MapTogether is in **alpha**. Expect rough edges, and please
-[open an issue](https://github.com/ayahohner/wmaps/issues) when you hit one.
+[open an issue](https://github.com/ayahohner/maptogether/issues) when you hit one.
+
+## How it's built
+
+MapTogether is TypeScript and React, with the map drawn by PixiJS (WebGL) and
+the text edited in CodeMirror. A map is a Yjs document (a CRDT), so edits merge
+without conflicts. They travel between browsers over WebRTC, and a Cloudflare
+Worker with Durable Objects connects peers and saves each map.
 
 ## Contributing
 

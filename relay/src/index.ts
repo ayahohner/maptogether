@@ -8,7 +8,7 @@ import type { SignalPeer } from "./signaling";
 import type { StoreConn } from "./store";
 
 /**
- * wmaps relay.
+ * MapTogether relay.
  *
  *   GET /ice         ICE servers (STUN + short-lived TURN) for RTCPeerConnection
  *   GET /sync/:room  WebSocket into the map's Durable Object: JSON text frames
