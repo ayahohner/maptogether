@@ -92,7 +92,7 @@ beforeEach(() => {
 const ROOM = "0123456789abcdef0123456789abcdef";
 const env = (fetch = vi.fn(async () => new FakeResponse(null, { status: 101 }))) => ({
   ALLOWED_ORIGINS: "https://maptogether.io",
-  MAP_ROOM: { idFromName: (name: string) => name, get: () => ({ fetch }) },
+  ROOM: { idFromName: (name: string) => name, get: () => ({ fetch }) },
 });
 const request = (path: string, headers: Record<string, string> = {}) =>
   new Request(`https://relay.test${path}`, { headers });
@@ -131,14 +131,14 @@ describe("worker /ice", async () => {
   });
 });
 
-describe("MapRoom", async () => {
-  const { MapRoom } = await import("./index");
+describe("Room", async () => {
+  const { Room } = await import("./index");
 
   it("loads the saved doc, accepts sockets, relays and saves edits", async () => {
     const seed = new Y.Doc();
     seed.getText("t").insert(0, "saved ");
     const state = fakeState(Y.encodeStateAsUpdate(seed));
-    const room = new MapRoom(state.ctx as any, env() as any);
+    const room = new Room(state.ctx as any, env() as any);
     await Promise.resolve();
 
     const res = (await room.fetch()) as unknown as FakeResponse;
@@ -170,7 +170,7 @@ describe("MapRoom", async () => {
 
   it("saves when the last socket closes, and refuses a full room", async () => {
     const state = fakeState();
-    const room = new MapRoom(state.ctx as any, env() as any);
+    const room = new Room(state.ctx as any, env() as any);
     await room.fetch();
     const [a] = state.sockets;
     await room.webSocketMessage(a as any, updateFrame("x"));
@@ -184,7 +184,7 @@ describe("MapRoom", async () => {
 
   it("acknowledges only after storage commits and reports write failures", async () => {
     const state = fakeState();
-    const room = new MapRoom(state.ctx as any, env() as any);
+    const room = new Room(state.ctx as any, env() as any);
     await room.fetch();
     const socket = state.sockets[0];
     await room.webSocketMessage(socket as any, updateFrame("checkpoint"));
@@ -211,7 +211,7 @@ describe("MapRoom", async () => {
 
   it("writes each change once and confirms later checkpoints without rewriting", async () => {
     const state = fakeState();
-    const room = new MapRoom(state.ctx as any, env() as any);
+    const room = new Room(state.ctx as any, env() as any);
     let puts = 0;
     const put = state.ctx.storage.put;
     state.ctx.storage.put = async (key, value) => {
@@ -238,7 +238,7 @@ describe("MapRoom", async () => {
 
   it("ignores malformed checkpoint requests without writing or acknowledging", async () => {
     const state = fakeState();
-    const room = new MapRoom(state.ctx as any, env() as any);
+    const room = new Room(state.ctx as any, env() as any);
     await room.fetch();
     const socket = state.sockets[0];
     const before = socket.sent.length;
@@ -251,7 +251,7 @@ describe("MapRoom", async () => {
 
   it("never confirms a rejected oversized upload", async () => {
     const state = fakeState();
-    const room = new MapRoom(state.ctx as any, env() as any);
+    const room = new Room(state.ctx as any, env() as any);
     await room.fetch();
     const socket = state.sockets[0];
     await room.webSocketMessage(socket as any, new ArrayBuffer(2 * 1024 * 1024));
@@ -262,7 +262,7 @@ describe("MapRoom", async () => {
 
   it("skips saving a doc over the storage limit", async () => {
     const state = fakeState();
-    const room = new MapRoom(state.ctx as any, env() as any);
+    const room = new Room(state.ctx as any, env() as any);
     const errors = vi.spyOn(console, "error").mockImplementation(() => {});
     await room.fetch();
     const big = "x".repeat(1024 * 1024 - 64);

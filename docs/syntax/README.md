@@ -5,16 +5,16 @@ designed. They are not the current syntax: the help panel's Code editor topic
 (`src/help/topics.ts`) and [`examples/`](../../examples) show what the app
 draws today.
 
-- [`drafts.twm`](drafts.twm): the planned syntax for components (definitions,
+- [`drafts.mt`](drafts.mt): the planned syntax for components (definitions,
   futures `^`, types, labels), links (labels, types such as constraints),
   notes, and a map header. Its second half is earlier experiments.
-- [`lots-of-components.twm`](lots-of-components.twm): a map with about 100
+- [`lots-of-components.mt`](lots-of-components.mt): a map with about 100
   components and the draft header, for trying the editor and map with a large
   map.
 
 ## Map header
 
-`drafts.twm` starts with the header planned for setting the map's title and
+`drafts.mt` starts with the header planned for setting the map's title and
 other details:
 
 ```

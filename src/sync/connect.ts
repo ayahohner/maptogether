@@ -6,7 +6,7 @@ import { PeerSync } from "./PeerSync";
 import { SaveStatus, type SyncStatus } from "./SaveStatus";
 import { RelaySocket } from "./RelaySocket";
 
-const DEFAULT_RELAY_URL = "https://wmaps-relay.innerlattice.workers.dev";
+const DEFAULT_RELAY_URL = "https://maptogether-relay.innerlattice.workers.dev";
 const STUN: RTCIceServer = { urls: ["stun:stun.cloudflare.com:3478"] };
 
 export interface SyncOptions {
@@ -119,8 +119,7 @@ function trimSlash(url: string) {
 }
 
 async function hashRoom(mapId: string): Promise<string> {
-  // "wmaps" is the app's name from before MapTogether; another prefix would move every map to an empty room.
-  const bytes = new TextEncoder().encode(`wmaps:${mapId}`);
+  const bytes = new TextEncoder().encode(`mt:${mapId}`);
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
   return Array.from(digest.slice(0, 16), (b) => b.toString(16).padStart(2, "0")).join("");
 }
