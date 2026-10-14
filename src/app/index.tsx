@@ -22,6 +22,9 @@ import { TopBar } from "../menu";
 import { HelpLauncher } from "../help/HelpLauncher";
 import { openAbout } from "../onboarding/about";
 import { initializeOnboarding } from "../onboarding";
+import { canvasMeasure, type ExportFormat, exportMap } from "../export/exportMap";
+import { sceneFromGraph } from "../export/scene";
+import { graph } from "../state/Graph";
 
 import { setEditorText, stopSelecting } from "../state/State";
 
@@ -101,9 +104,22 @@ const initializeChrome = () => {
     localStorage,
   );
   createRoot(document.getElementById("topBar")!).render(
-    <TopBar onAbout={openAbout} onDemo={openDemo} onShare={mapLink.create} />,
+    <TopBar
+      onAbout={openAbout}
+      onDemo={openDemo}
+      onShare={mapLink.create}
+      onExport={exportPicture}
+    />,
   );
   createRoot(document.getElementById("overlays")!).render(<HelpLauncher />);
 };
+
+/** Downloads the map as it is drawn now, whatever the pan and zoom. */
+const exportPicture = (format: ExportFormat) =>
+  exportMap(format, {
+    scene: sceneFromGraph(graph, MapSingleton.screen),
+    measure: canvasMeasure(document.createElement("canvas").getContext("2d")!),
+    name: room.id ? `wardley-map-${room.id}` : "wardley-map",
+  }).catch(console.error);
 
 run("map");

@@ -9,7 +9,7 @@ Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurab
 
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
-const props = { onAbout: vi.fn(), onDemo: vi.fn(), onShare: vi.fn() };
+const props = { onAbout: vi.fn(), onDemo: vi.fn(), onShare: vi.fn(), onExport: vi.fn() };
 
 beforeEach(async () => {
   (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -67,14 +67,17 @@ it("doesn't confirm a link the browser refused to copy", async () => {
   expect(logged).toHaveBeenCalled();
 });
 
-it("lists About, help, the demo map, feedback and the version in the overflow menu", async () => {
+it("lists About, help, the demo map, export, feedback and the version in the overflow menu", async () => {
   const labels = (await openMenu()).map((el) => el.textContent);
   expect(labels).toEqual([
     " About MapTogether",
     " Help and shortcuts",
     " Open the demo map",
+    " PNG image",
+    " SVG vector image",
     " Send feedback",
   ]);
+  expect(document.body.textContent).toContain("Export");
   expect(document.body.textContent).toContain(`Version ${__APP_VERSION__}`);
 });
 
@@ -85,4 +88,8 @@ it("runs each menu action", async () => {
   expect(props.onDemo).toHaveBeenCalledOnce();
   await clickItem("Help");
   expect(ui.help.open).toBe(true);
+  await clickItem("PNG");
+  expect(props.onExport).toHaveBeenLastCalledWith("png");
+  await clickItem("SVG");
+  expect(props.onExport).toHaveBeenLastCalledWith("svg");
 });
