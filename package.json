@@ -52,7 +52,7 @@
     "node": ">=24"
   },
   "keywords": [],
-  "name": "wardley-mapping",
+  "name": "maptogether",
   "packageManager": "yarn@4.18.0",
   "private": true,
   "scripts": {
@@ -67,11 +67,11 @@
     "quality": "node scripts/quality-gate.mjs",
     "version:check": "node scripts/version-check.mjs",
     "postinstall": "git config core.hooksPath .githooks 2>/dev/null || true",
-    "test:live": "LIVE_RELAY=${LIVE_RELAY:-https://wmaps-relay.innerlattice.workers.dev} vitest run src/sync/relay.live.test.ts",
+    "test:live": "LIVE_RELAY=${LIVE_RELAY:-https://maptogether-relay.innerlattice.workers.dev} vitest run src/sync/relay.live.test.ts",
     "lint": "biome check .",
     "format": "biome check --write ."
   },
-  "version": "3.4.0",
+  "version": "4.1.0",
   "type": "module",
   "lint-staged": {
     "*.{js,mjs,ts,tsx,css,json,jsonc}": "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true"

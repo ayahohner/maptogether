@@ -1,13 +1,13 @@
-# wmaps-relay
+# maptogether-relay
 
 Cloudflare Worker for multiplayer maps. Deployed at
-`https://wmaps-relay.innerlattice.workers.dev`.
+`https://maptogether-relay.innerlattice.workers.dev`.
 
 Edits and cursors travel peer to peer: Yjs over WebRTC data channels
 (`src/sync/` in the app). The relay does the two things peers can't:
 
 - **Signaling.** `GET /sync/:room` opens a WebSocket into that map's Durable
-  Object (`MapRoom`). JSON text frames are signaling: the room gives each
+  Object (`Room`). JSON text frames are signaling: the room gives each
   socket a peer id, tells newcomers who is there (newcomers send the offers),
   and forwards SDP and ICE candidates (`src/signaling.ts`).
 - **Saving and loading.** Binary frames on the same socket are the Yjs sync
@@ -58,7 +58,7 @@ One-time authentication setup:
    in `wrangler.jsonc`, following the
    [Cloudflare GitHub Actions guide](https://developers.cloudflare.com/workers/ci-cd/external-cicd/github-actions/).
 2. Add it as the repository Actions secret `CLOUDFLARE_API_TOKEN` in
-   [GitHub settings](https://github.com/ayahohner/wmaps/settings/secrets/actions).
+   [GitHub settings](https://github.com/ayahohner/maptogether/settings/secrets/actions).
    Local `wrangler login` credentials are not available to GitHub runners.
 3. Run **Deploy Cloudflare relay** on `main` and confirm the deployment and live
    verification steps pass.
@@ -71,14 +71,14 @@ Cloudflare and do not need to be copied into GitHub.
 
 Every relay deploy first goes to an isolated
 [Worker Preview](https://developers.cloudflare.com/workers/previews/) with its own
-`MapRoom` Durable Object namespace, so preview maps never read or write
+`Room` Durable Object namespace, so preview maps never read or write
 production maps. CI runs the live sync test against it before going further:
 
 - **`main`** deploys the `main` Preview, tests it, then deploys production. A
   bad migration or protocol change fails in the Preview first.
 - **Other branches** that touch the relay deploy a Preview named after the
   branch (`claude/foo` becomes `claude-foo`) at
-  `https://<name>-wmaps-relay.innerlattice.workers.dev`, linked in the run
+  `https://<name>-maptogether-relay.innerlattice.workers.dev`, linked in the run
   summary. No pull request needed.
 
 Previews don't expire on their own.

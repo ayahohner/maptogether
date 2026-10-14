@@ -20,5 +20,5 @@
 ## Links
 
 - App: https://maptogether.io/
-- Source and issues: https://github.com/ayahohner/wmaps
+- Source and issues: https://github.com/ayahohner/maptogether
 - About Wardley mapping: https://learnwardleymapping.com/

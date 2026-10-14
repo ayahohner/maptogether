@@ -54,7 +54,7 @@ See [relay/README.md](relay/README.md) for the protocol, limits, and deployment.
 
 | Env var | Default | Purpose |
 | --- | --- | --- |
-| `VITE_SYNC_RELAY_URL` | `https://wmaps-relay.innerlattice.workers.dev` | Signaling and storage relay |
+| `VITE_SYNC_RELAY_URL` | `https://maptogether-relay.innerlattice.workers.dev` | Signaling and storage relay |
 | `VITE_RENDER_INDICATOR` | unset | `true` draws a render counter in the canvas corner |
 
 To try multiplayer without the deployed relay, run `yarn dev:local`: it starts
@@ -112,7 +112,7 @@ commit.
 
 ## README screenshot
 
-`docs/multiplayer-screenshot.png` shows [`examples/tea-shop.twm`](examples/tea-shop.twm)
+`docs/multiplayer-screenshot.png` shows [`examples/tea-shop.mt`](examples/tea-shop.mt)
 open in four headless Chromium sessions against a local relay: one takes the
 screenshot while three others hover the canvas. If the UI changes noticeably,
 retake it the same way at a 1440×860 viewport.

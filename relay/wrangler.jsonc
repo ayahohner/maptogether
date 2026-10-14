@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/wrangler/config-schema.json",
-  "name": "wmaps-relay",
+  "name": "maptogether-relay",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-01",
   "account_id": "ea273b96fe59655aa4b5ce77dccec99c",
@@ -18,21 +18,26 @@
     "ALLOWED_ORIGINS": "https://maptogether.io,https://www.maptogether.io,https://maptogether.netlify.app,https://*--maptogether.netlify.app,http://localhost:5173"
   },
   "durable_objects": {
-    "bindings": [{ "name": "MAP_ROOM", "class_name": "MapRoom" }]
+    "bindings": [{ "name": "ROOM", "class_name": "Room" }]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["SignalRoom"] },
-    { "tag": "v2", "deleted_classes": ["SignalRoom"], "new_sqlite_classes": ["MapRoom"] }
+    { "tag": "v2", "deleted_classes": ["SignalRoom"], "new_sqlite_classes": ["MapRoom"] },
+    // v3 dropped every map saved before the move to MapTogether. Cloudflare only
+    // deletes a class once nothing binds it, so it was applied by a Worker with no
+    // Durable Objects; the class can't be recreated under the same name.
+    { "tag": "v3", "deleted_classes": ["MapRoom"] },
+    { "tag": "v4", "new_sqlite_classes": ["Room"] }
   ],
   // Worker Previews (`wrangler preview`): an isolated copy per branch or PR,
-  // with its own MapRoom namespace, so preview maps never touch production.
+  // with its own Room namespace, so preview maps never touch production.
   // Vars and env bindings are not inherited from the top level.
   "previews": {
     "vars": {
       "ALLOWED_ORIGINS": "https://maptogether.io,https://www.maptogether.io,https://maptogether.netlify.app,https://*--maptogether.netlify.app,http://localhost:5173"
     },
     "durable_objects": {
-      "bindings": [{ "name": "MAP_ROOM", "class_name": "MapRoom" }]
+      "bindings": [{ "name": "ROOM", "class_name": "Room" }]
     },
     // Previews see little traffic: trace all of it.
     "observability": {

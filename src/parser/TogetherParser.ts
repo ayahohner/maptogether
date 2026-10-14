@@ -414,6 +414,16 @@ export const tryParse = (text: string): ParseResult => {
   return { cst, problems: parserInstance.errors.map(problemAt) };
 };
 
+/** Braces a line leaves open, as the lexer reads it: not those in a name, quotes or a comment. */
+export const bracesOpened = (line: string) => {
+  let open = 0;
+  for (const { tokenType } of TogetherLexer.tokenize(line).tokens) {
+    if (tokenType === BraceOpen) open++;
+    else if (tokenType === BraceClose) open--;
+  }
+  return open;
+};
+
 /** `string` as a literal regex pattern. "-" is only special inside [ ], so it is left as is. */
 function escapeRegex(string: string) {
   return string.replace(/[/\\^$*+?.()|[\]{}]/g, "\\$&");

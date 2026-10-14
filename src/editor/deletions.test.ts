@@ -48,6 +48,15 @@ describe("deletionRanges", () => {
     );
   });
 
+  it("ignores braces and comment marks in quotes, and braces in comments", () => {
+    // The apostrophes are part of a name and a comment, not a quote.
+    expect(remove("Bob's { // Bob's stages\n  C\n}\nB", { components: ["Bob's"] })).toBe("B");
+    expect(remove('A (note="{")\nB [1, 2]', { components: ["A"] })).toBe("B [1, 2]");
+    expect(remove("A (note='}') {\n  C\n}\nB", { components: ["A"] })).toBe("B");
+    expect(remove('A (note="//") {\n  C\n}\nB', { components: ["A"] })).toBe("B");
+    expect(remove("A // {\nB", { components: ["A"] })).toBe("B");
+  });
+
   it("deletes a link written either way round, with attributes or a comment", () => {
     expect(remove(map, { edges: ["Kettle->Cup of Tea"] })).not.toContain("Cup of Tea.Kettle");
     expect(remove("A [1, 2]\nA.(weight=2)B\nB [3, 4]", { edges: ["A->B"] })).toBe(
