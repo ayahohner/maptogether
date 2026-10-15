@@ -5,7 +5,7 @@ implemented.
 
 This proposes one syntax that covers what's usually drawn on a Wardley map,
 plus map settings, extensions and nesting. It keeps what works in today's
-syntax (`Kettle [33, 50]`, braces for pipelines, `label=` offsets) and replaces
+syntax (`Kettle [33, 50]`, braces for pipelines, `label=`) and replaces
 the parts of the [2022 drafts](drafts.mt) that grew one rule at a time.
 
 ## The short version
@@ -23,8 +23,8 @@ is:
 | --- | --- | --- |
 | a name | component | `Kettle [33, 50, inertia]` |
 | `name -- name` | link | `Kettle -- Power` |
-| `"text"` | note | `"Hot water is obvious" [48, 85]` |
-| `@word` | directive (settings, definitions) | `@map [title="Tea Shop"]` |
+| `'text'` | note | `'Hot water is obvious' [48, 85]` |
+| `@word` | directive (settings, definitions) | `@map [title='Tea Shop']` |
 
 Both `[arguments]` and `{ children }` are optional. Arguments work like a
 Python function call: positional arguments first, then keyword arguments, all
@@ -35,7 +35,7 @@ A whole map:
 
 ```
 // Tea shop
-@map [title="Tea Shop", style=wardley]
+@map [title='Tea Shop', style=wardley]
 
 Business [95, 46, user]
 Public [95, 72, user]
@@ -48,20 +48,20 @@ Tea [55, 73] {
 }
 Hot Water [41, 88]
 Water [22, 91]
-Kettle [33, 50, evolve=80, label=(-40, 10)]
+Kettle [33, 50, evolve=80, label=('Kettle', -40, 10)]
 Power [10, 86, market]
 
-Business -- Cup of Tea [flow, label="£1.20"]
+Business -- Cup of Tea [flow, label='£1.20']
 Public -- Cup of Tea
 Cup of Tea -- Cup
 Cup of Tea -- Tea
 Cup of Tea -- Hot Water
 Cup of Tea -- Staff
 Hot Water -- Water
-Hot Water == Kettle
+Hot Water -- Kettle [constraint]
 Kettle -- Power
 
-"Hot water is obvious" [48, 85]
+'Hot water is obvious' [48, 85]
 ```
 
 ## Design principles
@@ -69,9 +69,11 @@ Kettle -- Power
 1. **One shape for everything.** Every statement parses to the same record:
    `{head, positional, keywords, children}`. The parser doesn't need to know
    what `market` or `@map` mean; a later pass looks them up. New features add
-   to that table, not to the grammar. [KDL](https://kdl.dev) is the closest
-   prior art (`node 1 2 key="value" { child }`); we bracket the arguments
-   because our names contain spaces.
+   to that table, not to the grammar. It's a graph definition language, like
+   Graphviz's DOT and Mermaid, specialised to one kind of graph.
+   [KDL](https://kdl.dev) is the closest prior art for the statement shape
+   (`node 1 2 key="value" { child }`); we bracket the arguments because our
+   names contain spaces.
 2. **The text is co-edited by the canvas.** Dragging, renaming and linking
    rewrite the text (`src/editor/edits.ts`), several people edit at once over
    Yjs, and a broken line is blanked so the rest of the map still draws
@@ -97,7 +99,7 @@ fits the same grammar, so it can be added later without breaking maps.
 | First version | Later |
 | --- | --- |
 | Components: position, `user`, `market`, `ecosystem`, `form`, `sourcing`, `inertia`, `evolve`, `label` | Submaps |
-| Links: `--`, `==`, `flow`, `label` | Areas, and pioneers / settlers / town planners |
+| Links: `--`, `constraint`, `flow`, `label` | Areas, and pioneers / settlers / town planners |
 | Pipelines | Numbered annotations |
 | Notes | Accelerators and deaccelerators |
 | `@map` settings | `@type` for new component types |
@@ -108,7 +110,7 @@ fits the same grammar, so it can be added later without breaking maps.
 ```
 Kettle [33, 50]
 Kettle [33, 50, inertia]
-Kettle [33, 50, sourcing=build, inertia, label=(-40, 10)]
+Kettle [33, 50, sourcing=build, inertia, label=('Kettle', -40, 10)]
 ```
 
 As in Python:
@@ -124,9 +126,12 @@ As in HTML:
 
 - A keyword without a value is `true`: `inertia` means `inertia=true`.
 
-Values are numbers (`34.5`, `-10`), strings (`"£1.20"`, `"#ff0"`), tuples
-(`(-40, 10)`), and words (`build`, `wardley`). A word is only ever a value
-after `=`. Written bare, it's always a key.
+Values are numbers (`34.5`, `-10`), strings (`'£1.20'`, `'#ff0'`), tuples
+(`('Kettle', -40, 10)`), and words (`build`, `wardley`). A word is only ever a
+value after `=`. Written bare, it's always a key.
+
+Strings use single quotes, which need no shift key. Double quotes work too,
+for text with an apostrophe in it (`"Tea shop's till"`), and so does `\'`.
 
 To keep a missing comma from blanking the line, the parser can treat commas as
 whitespace, so `[33 50 inertia]` still draws. The formatter puts the commas
@@ -140,7 +145,7 @@ statement   = head [ arguments ] [ block ] statement-end ;
 statement-end = newline | ";" | EOF ;
 
 head        = link | directive | note | name ;
-link        = name ( "--" | "==" ) name ;
+link        = name "--" name ;
 directive   = "@" word [ name ] ;
 note        = string ;
 
@@ -154,15 +159,15 @@ block       = "{" { newline | statement } "}" ;
 
 name        = plain-name [ ":" qualifier ] | "`" { any char except "`" } "`" ;
 qualifier   = { letter | digit } ;                        (* "regulator", "2" *)
-plain-name  = name-char { name-char | " " name-char } ;   (* no "--", "==", "//" or ":" inside *)
+plain-name  = name-char { name-char | " " name-char } ;   (* no "--", "//" or ":" inside *)
 key         = word ;                                      (* lowercase letters only *)
 comment     = "//" { any char } ;
 ```
 
-- **Names need no quotes.** A name ends at `[`, `{`, `--`, `==`, `//`, `;` or
+- **Names need no quotes.** A name ends at `[`, `{`, `--`, `//`, `;` or
   the end of the line, and surrounding spaces are trimmed. If a name contains
   one of those, wrap it in backticks: `` `C#--IL` [40, 60] ``. Backticks escape
-  names; double quotes are always prose, so `"Kettle"` is a note.
+  names; quotes are always prose, so `'Kettle'` is a note.
 - **Newlines end statements**, except inside `[ ]` and `( )`. `;` separates
   statements on one line.
 
@@ -178,7 +183,7 @@ comment     = "//" { any char } ;
 | `sourcing` | `build`, `buy`, `outsource` | method notation, drawn as a shaded circle |
 | `inertia` | flag | the black bar |
 | `evolve` | evolution number | the future position: red circle and red dashed arrow |
-| `label` | `(x, y)` | where the label sits relative to the component, in pixels |
+| `label` | `'text'` or `('text', x, y)` | the text drawn, and where it sits relative to the component in pixels |
 
 Plus `description` and `url` (strings) for hover text and links out, if they
 make the cut.
@@ -235,46 +240,53 @@ lint error that points at the first, and the first one wins.
 
 The 2022 draft's notes say "synonyms": two names for one thing. That's a
 different feature from the qualifier, which is one name for two things. If
-synonyms were also meant, it would be something like `Tea [55, 73,
-alias="Chai"]`, so links to either name find the same component. That's
-listed as an open question.
+synonyms were also meant, it would be something like
+`Tea [55, 73, alias='Chai']`, so links to either name find the same component.
+That's listed as an open question.
 
 ### Labels
 
-`label=(x, y)` moves the label, as today. It's the key people will use most,
-so it gets the short name. The text comes from the name (without its
-qualifier), and the label is placed automatically when there's no `label=`.
+`label` sets the text drawn and, optionally, where it sits:
 
-**Should `label` also take text, as a string or a `("text", x, y)` tuple?**
-It would give display text that differs from the name (line breaks, or a long
-name with a short key) under the same short key. The costs:
+```
+Gov regulator [60, 40, label='Government']
+Kettle [33, 50, label=('Kettle', -40, 10)]
+```
 
-- **The value's meaning depends on its shape.** `label="Gov"`,
-  `label=(-40, 10)` and `label=("Gov", -40, 10)` all mean different things.
-  The linter, the formatter, autocomplete and the help all have to explain
-  three forms of one key.
-- **The canvas edits get bigger.** Dragging a label whose value is `"Gov"`
-  has to turn it into `("Gov", -40, 10)`, which rewrites the text as well as
-  the numbers.
-- **Concurrent edits collide.** If one person retypes the text while another
-  drags the label, both rewrite the same value. Yjs merges them character by
-  character inside it, which can leave something like `("Gove", -4-30, 10)`.
-  As separate values, the two edits touch different text.
-- **Unnamed tuple fields.** In `("Gov", -40, 10)`, nothing says whether the
-  numbers are an offset or a position.
-- **Two sources of text.** With the name and `label` both able to set the
-  text, readers have to check both.
+- `label='text'` changes the text. The label is placed automatically.
+- `label=('text', x, y)` also moves it, by `x, y` pixels from the component.
+- With no `label`, the text is the name without its qualifier, placed
+  automatically.
 
-Recommendation: `label` is only the offset. The qualifier covers the main
-reason to want different text. If display text is needed later, it gets its
-own key (`text="…"`), and `label=(x, y)` stays as it is.
+Dragging a label writes the tuple form, copying the text in:
+`label=('Kettle', -40, 10)`. Strings are single-quoted so none of this needs
+the shift key.
+
+What this costs, and why it's acceptable:
+
+- **One key, two shapes.** The linter and autocomplete have to know both
+  forms, but there are only two and the first element is always the text.
+- **Dragging rewrites the text too.** The first drag turns `'Gov'` into
+  `('Gov', -40, 10)`. After that, drags only change the numbers.
+- **Concurrent edits share a value.** If one person retypes the text while
+  another drags the label, both edit inside the same tuple. Yjs merges by
+  character, and the two edits touch different characters, so the result is
+  usually right. The canvas should rewrite only the numbers, never the whole
+  value, to keep it that way.
+- **Two places text can come from.** The name, or `label`. The rule is
+  simple: `label` wins.
+
+`label` and the qualifier now overlap: `Government:regulator` and
+`Gov regulator [60, 40, label='Government']` draw the same thing. The
+qualifier is shorter and keeps links readable; `label` handles everything
+else, like line breaks. Whether to keep both is an open question.
 
 ## Links
 
 ```
 Cup of Tea -- Hot Water
-Hot Water == Kettle
-Business -- Cup of Tea [flow, label="£1.20"]
+Hot Water -- Kettle [constraint]
+Business -- Cup of Tea [flow, label='£1.20']
 ```
 
 The needer is on the left and the needed on the right, as today. Arguments
@@ -294,35 +306,70 @@ the time. The options:
 | `/` | 1, no shift | slashes in names: `TCP/IP`, `24/7`; next to `//` comments |
 | `>` | 1, shift | shift; reads as "greater than" |
 
-`--` is quick to type, rarely appears in names, and looks like a line. It's
-also Graphviz's and Mermaid's undirected link. The direction comes from the
-order, as it does with `.` today.
+The choice is `--`. It's quick to type, rarely appears in names, and looks
+like a line. It's also Graphviz's and Mermaid's undirected link. The direction
+comes from the order, as it does with `.` today.
 
-Mermaid-style, variants of the operator can carry the type of link, so the
-two most common types need no arguments:
-
-| Operator | Link |
-| --- | --- |
-| `A -- B` | dependency: thin line |
-| `A == B` | constraint: thick line |
-
-Doubling the character keeps both easy to type, and `==` looks thick. The
-downside is that `==` reads as "equals" to programmers. Further operators
-(`..` for a dotted line, for example) can be added if a type of link needs one.
+For now `--` is the only operator, and the type of link is an argument. Other
+operators for other types, Mermaid-style, are undecided. If they come,
+candidates are `==` for a constraint (it looks thick, but reads as "equals" to
+programmers) and `~~` for a flow (it looks like movement, but needs shift).
 
 ### Link attributes
 
 | Key | Value | Meaning |
 | --- | --- | --- |
+| `constraint` | flag | thick line: a limit or bottleneck |
 | `flow` | flag | Wardley's blue flow line: value, money or risk moving between them |
-| `label` | string | text along the line |
-
-Here `label` is text, not an offset: links have no label to drag. If that
-inconsistency bothers people, link text could be `text=` instead (see Labels).
+| `label` | `'text'` | text along the line |
 
 No chains (`A -- B -- C`) and no fan-out (`A -- B, C`). Deleting one link on
 the canvas would mean rewriting a line that holds several, possibly while
 someone else is typing in it.
+
+### Keeping links near their components
+
+Like Mermaid and Graphviz files, a map lists components and links as separate
+statements, so a component's links can end up anywhere in the file. A Wardley
+map has more structure than a general graph: it's close to a lattice, with
+users (there can be several) at the top and each need below the things that
+need it. The text could follow that shape. Two ways:
+
+**A convention the tools keep** (no new syntax). The canvas inserts a new link
+directly under its needer's line, and the formatter can order the file top
+down: each component, then its links, sorted by visibility, users first. The
+file then reads like the map.
+
+```
+Cup of Tea [80, 62]
+Cup of Tea -- Cup
+Cup of Tea -- Tea
+Cup of Tea -- Hot Water
+
+Hot Water [41, 88]
+Hot Water -- Water
+Hot Water -- Kettle [constraint]
+```
+
+**Links that continue a component** (new syntax). A line starting with `--`
+belongs to the component above it, so the needer isn't repeated:
+
+```
+Cup of Tea [80, 62]
+  -- Cup
+  -- Tea
+  -- Hot Water [constraint]
+```
+
+It's still one link per line, it's less typing, and renaming touches fewer
+lines. But the meaning depends on line order: insert a component between
+`Cup of Tea` and its links, or move a line, and the links silently change
+needer. With several people editing at once, that can happen without anyone
+noticing. Indentation could pin it down, but braces were chosen over
+indentation for the same reason.
+
+Recommendation: the convention now. The continuation form is an open
+question.
 
 ## Pipelines
 
@@ -346,7 +393,7 @@ and end of its own (OnlineWardleyMaps' `pipeline Tea [0.15, 0.9]`).
 A quoted string as the head is a note: prose, not a thing on the map.
 
 ```
-"Hot water is obvious" [48, 85]
+'Hot water is obvious' [48, 85]
 ```
 
 Notes are dragged like components. The 2022 draft used `#` for notes, which
@@ -358,11 +405,11 @@ Settings are keywords on the map itself, given with `@map`:
 
 ```
 @map [
-  title="Tea Shop",
+  title='Tea Shop',
   style=wardley,                                    // wardley, plain, handwritten or dark
-  evolution=("Genesis", "Custom built", "Product", "Commodity"),
+  evolution=('Genesis', 'Custom built', 'Product', 'Commodity'),
   stages=(17.4, 40, 70),                            // where the stage boundaries fall
-  visibility=("Visible", "Invisible"),
+  visibility=('Visible', 'Invisible'),
   form=practice,                                    // stage names for practices
 ]
 ```
@@ -385,7 +432,7 @@ Ordering [70, 55, submap] {
   Card Reader [40, 85, sourcing=buy]
   Till -- Card Reader
 }
-Payments [60, 70, submap, url="https://maptogether.io/r/abc123"]
+Payments [60, 70, submap, url='https://maptogether.io/r/abc123']
 ```
 
 **Areas.** A boundary drawn around some components: an area of interest, a
@@ -405,7 +452,7 @@ which also lets a component be in more than one area:
 numbered in order with its text in a legend:
 
 ```
-"Standardised power lets kettles evolve" [on=(Kettle, Power)]
+'Standardised power lets kettles evolve' [on=(Kettle, Power)]
 ```
 
 **Accelerators and deaccelerators.** `force=accelerate` or
@@ -441,12 +488,12 @@ named, and what the canvas does when you drag a future position.
 | Today | v2 | Why |
 | --- | --- | --- |
 | `Kettle [33, 50]` | unchanged | |
-| `Kettle [33, 50] (label=-40,10)` | `Kettle [33, 50, label=(-40, 10)]` | one argument list |
+| `Kettle [33, 50] (label=-40,10)` | `Kettle [33, 50, label=('Kettle', -40, 10)]` | one argument list |
 | `needer.needed` | `needer -- needed` | dots appear in names |
-| `a.(t=constraint)b` | `a == b` | |
+| `a.(t=constraint)b` | `a -- b [constraint]` | |
 | `Tea [55, 73] { Loose Leaf [55, 56] }` | unchanged | |
-| `/mapstyle(title="…")` | `@map [title="…"]` | one directive sigil |
-| `# note [40, 50]` | `"note" [40, 50]` | `#` reads as a heading |
+| `/mapstyle(title="…")` | `@map [title='…']` | one directive sigil |
+| `# note [40, 50]` | `'note' [40, 50]` | `#` reads as a heading |
 | `government:2` | `Government:regulator` (`:2` still works) | |
 | `name^` | `evolve=`, or `@future` later | |
 
@@ -464,14 +511,14 @@ Coordinates are × 100:
 | `anchor Business [0.95, 0.46]` | `Business [95, 46, user]` |
 | `market Power [0.1, 0.86]` | `Power [10, 86, market]` |
 | `component Kettle [0.33, 0.5] inertia` | `Kettle [33, 50, inertia]` |
-| `component Kettle [..] label [-40, 10]` | `Kettle [.., label=(-40, 10)]` |
+| `component Kettle [..] label [-40, 10]` | `Kettle [.., label=('Kettle', -40, 10)]` |
 | `evolve Kettle 0.8` | `evolve=80` on Kettle |
 | `build Kettle`, `(buy)` | `sourcing=build`, `sourcing=buy` on Kettle |
 | `pipeline Tea [0.15, 0.9]` | braces on Tea |
 | `A->B` | `A -- B` |
-| `A+>B`, `A+'£1'>B` | `A -- B [flow]`, `A -- B [flow, label="£1"]` |
-| `A->B; text` | `A -- B [label="text"]` |
-| `note text [0.4, 0.5]` | `"text" [40, 50]` |
+| `A+>B`, `A+'£1'>B` | `A -- B [flow]`, `A -- B [flow, label='£1']` |
+| `A->B; text` | `A -- B [label='text']` |
+| `note text [0.4, 0.5]` | `'text' [40, 50]` |
 | `title`, `style`, `evolution A->B->C->D` | `@map [title=…, style=…, evolution=(…)]` |
 | `size [1024, 768]` | dropped: the canvas has no fixed size |
 
@@ -488,9 +535,9 @@ and the main tools:
 | Build, buy, outsource | `sourcing` |
 | Inertia | `inertia` |
 | Future position, point of change | `evolve` |
-| Dependency, constraint, flow | `--`, `==`, `flow` |
+| Dependency, constraint, flow | `--`, `constraint`, `flow` |
 | Pipeline | braces |
-| Notes | `"text"` |
+| Notes | `'text'` |
 | Evolution stage names and widths, axis labels, style, title | `@map` |
 | Submap, area, pioneers / settlers / town planners | later: `submap`, `@area` |
 | Numbered annotations, accelerators | later: `on=`, `force=` |
@@ -512,24 +559,27 @@ and the main tools:
 - **A keyword per statement** (`component Kettle …`, as in
   OnlineWardleyMaps). Explicit, but most lines are components and links, so
   it's noise, and it makes the canvas's edits longer.
-- **One operator, with the link type as an argument**
-  (`A -- B [constraint]`). Simpler grammar, but constraints are common enough
-  to deserve an operator.
+- **An operator per type of link** (`==`, `~~`), as in Mermaid. Faster for
+  common types, but each one is a symbol to learn, and some need shift. One
+  operator with arguments for now; see the open questions.
 - **YAML or JSON.** Precise, but unpleasant to write by hand, and writing by
   hand is the point.
 
 ## Open questions
 
-1. **The link operator.** `--` and `==`, or something else from the table?
+1. **Operators for types of link.** `==` for constraints and `~~` for flows,
+   or keep everything in arguments?
 2. **Strict commas?** Tolerating missing commas keeps lines drawing, but means
    two spellings of the same thing exist in the wild until the formatter runs.
 3. **Synonyms.** Did `:2` also mean two names for one thing? If so, `alias=`.
-4. **Link text.** `label="…"` on links but `label=(x, y)` on components, or
-   `text="…"` on links?
+4. **Qualifier and label.** `Government:regulator` and
+   `label='Government'` overlap. Keep both, or only `label`?
 5. **Should braces on a component always mean a pipeline?** It's the one place
    something is inferred. `submap` would override it.
 6. **Name matching.** Case-sensitive as today? Case-insensitive with a lint
    warning would catch `kettle -- power` typos.
+7. **Continuation links.** Should a line starting with `--` belong to the
+   component above it? See "Keeping links near their components".
 
 ## Sources
 
