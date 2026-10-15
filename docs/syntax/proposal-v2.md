@@ -1,12 +1,12 @@
 # Proposal: MapTogether syntax v2
 
-Status: draft for discussion, October 2026. Nothing here is implemented.
+Status: second draft for discussion, October 2026. Nothing here is
+implemented.
 
-This proposes one syntax that covers everything usually drawn on a Wardley
-map, plus map settings, extensions and nesting. It keeps what works in today's
-syntax (`Kettle [33, 50]`, braces for pipelines) and replaces the parts of the
-[2022 drafts](drafts.mt) that grew one rule at a time (`.(…)` link
-attributes, `:2` definition IDs, `/mapstyle(…)`, `#` notes, the `^` suffix).
+This proposes one syntax that covers what's usually drawn on a Wardley map,
+plus map settings, extensions and nesting. It keeps what works in today's
+syntax (`Kettle [33, 50]`, braces for pipelines, `label=` offsets) and replaces
+the parts of the [2022 drafts](drafts.mt) that grew one rule at a time.
 
 ## The short version
 
@@ -21,495 +21,515 @@ is:
 
 | Head | Kind | Example |
 | --- | --- | --- |
-| a name | component | `Kettle [33, 50 build]` |
-| `name -> name` | link | `Kettle -> Power [constraint]` |
+| a name | component | `Kettle [33, 50, inertia]` |
+| `name -- name` | link | `Kettle -- Power` |
 | `"text"` | note | `"Hot water is obvious" [48, 85]` |
 | `@word` | directive (settings, definitions) | `@map [title="Tea Shop"]` |
 
-Both `[arguments]` and `{ children }` are optional. Arguments work like HTML
-attributes: positional numbers first, then bare words (`market`) and
-`key=value` pairs in any order. Commas are whitespace, as in Clojure, so `[33, 50]` and
-`[33 50]` are the same and today's maps keep parsing.
+Both `[arguments]` and `{ children }` are optional. Arguments work like a
+Python function call: positional arguments first, then keyword arguments, all
+separated by commas. The one thing taken from HTML is that a keyword written
+without a value means `=true`, so `inertia` is `inertia=true`.
 
 A whole map:
 
 ```
 // Tea shop
-@map [
-  title="Tea Shop"
-  style=wardley
-]
+@map [title="Tea Shop", style=wardley]
 
-Business [95, 46 user]
-Public [95, 72 user]
+Business [95, 46, user]
+Public [95, 72, user]
 Cup of Tea [80, 62]
-Cup [69, 86 buy]
-Staff [62, 28 build inertia]
+Cup [69, 86, sourcing=buy]
+Staff [62, 28, sourcing=build, inertia]
 Tea [55, 73] {
-  Loose Leaf [56]
-  Tea Bags [90 outsource]
+  Loose Leaf [55, 56]
+  Tea Bags [55, 90, sourcing=outsource]
 }
 Hot Water [41, 88]
 Water [22, 91]
-Kettle [33, 50 evolve=80 label-offset=(-40, 10)]
-Power [10, 86 market accelerate]
+Kettle [33, 50, evolve=80, label=(-40, 10)]
+Power [10, 86, market]
 
-Business -> Cup of Tea [flow label="£1.20"]
-Public -> Cup of Tea
-Cup of Tea -> Cup
-Cup of Tea -> Tea
-Cup of Tea -> Hot Water
-Cup of Tea -> Staff
-Hot Water -> Water
-Hot Water -> Kettle [constraint]
-Kettle -> Power
+Business -- Cup of Tea [flow, label="£1.20"]
+Public -- Cup of Tea
+Cup of Tea -- Cup
+Cup of Tea -- Tea
+Cup of Tea -- Hot Water
+Cup of Tea -- Staff
+Hot Water -- Water
+Hot Water == Kettle
+Kettle -- Power
 
-Front of house [area settlers] {
-  Staff
-  Cup
-}
-
-"Standardised power lets kettles evolve" [on=(Kettle, Power)]
 "Hot water is obvious" [48, 85]
 ```
 
 ## Design principles
 
-These decide the open questions below, so they come first.
-
 1. **One shape for everything.** Every statement parses to the same record:
-   `{head, positional, attributes, children}`. The parser doesn't need to know
-   what `market` or `@map` mean; a later pass does, from a vocabulary table.
-   New features become new vocabulary, not new grammar, which is how the
-   syntax stays extensible without breaking. [KDL](https://kdl.dev) is the
-   closest prior art: `node 1 2 key="value" { child }`. We bracket the
-   arguments because our names contain spaces and KDL's don't.
-2. **The text is co-edited by the canvas.** Dragging, renaming and linking all
-   rewrite the text (`src/editor/edits.ts`), several people edit it at once
-   over Yjs, and a broken line is blanked so the rest of the map still draws
+   `{head, positional, keywords, children}`. The parser doesn't need to know
+   what `market` or `@map` mean; a later pass looks them up. New features add
+   to that table, not to the grammar. [KDL](https://kdl.dev) is the closest
+   prior art (`node 1 2 key="value" { child }`); we bracket the arguments
+   because our names contain spaces.
+2. **The text is co-edited by the canvas.** Dragging, renaming and linking
+   rewrite the text (`src/editor/edits.ts`), several people edit at once over
+   Yjs, and a broken line is blanked so the rest of the map still draws
    (`src/parser/lenient.ts`). So: one fact per line, the position always in
-   the same place (the leading numbers), no constructs where one canvas edit
-   would rewrite a line someone else is typing in, and errors that stay on
-   their own line.
-3. **Separate what a thing is from how it is drawn.** `market` is what a
-   component *is*; `color="#f80"` is how it's drawn. `build` is a sourcing
-   decision, not a kind of component. Identity (the name) is separate from
-   display text (`label=`).
-4. **One obvious way to write each thing.** Each feature gets one canonical
-   form, with one bare-word shorthand that a formatter can expand or collapse.
-   No aliases (`anchor` *and* `user`, `buy` *and* `use`).
-5. **Readable by people who don't program.** Mappers aren't programmers. Names
-   need no quotes, the common case needs no keys, and there are no
-   abbreviations (`label-offset`, not `l`).
+   the same place, and errors that stay on their own line.
+3. **Information lives with what it describes.** A component's properties go
+   on the component's line, a relationship's on the relationship's line.
+   Nothing about a link is written on a component, or the reverse.
+4. **A small namespace.** Keys are single short words, with no dashes, and
+   there are as few as possible. A bare word is always a key, never a value,
+   so values can't spill into the key namespace.
+5. **One obvious way to write each thing.** No aliases (`anchor` *and*
+   `user`), no shorthand that means the same as a longer form.
+6. **Fast to type, readable by people who don't program.** Names need no
+   quotes, common things need no shift key, and nothing is abbreviated past
+   recognition.
+
+## Scope
+
+The first version should be small enough to build and teach. Everything else
+fits the same grammar, so it can be added later without breaking maps.
+
+| First version | Later |
+| --- | --- |
+| Components: position, `user`, `market`, `ecosystem`, `form`, `sourcing`, `inertia`, `evolve`, `label` | Submaps |
+| Links: `--`, `==`, `flow`, `label` | Areas, and pioneers / settlers / town planners |
+| Pipelines | Numbered annotations |
+| Notes | Accelerators and deaccelerators |
+| `@map` settings | `@type` for new component types |
+| | Futures and scenarios |
+
+## Arguments
+
+```
+Kettle [33, 50]
+Kettle [33, 50, inertia]
+Kettle [33, 50, sourcing=build, inertia, label=(-40, 10)]
+```
+
+As in Python:
+
+- Positional arguments come first. For a component they're the position,
+  `visibility, evolution`.
+- Keyword arguments follow, in any order.
+- Commas separate arguments, and a trailing comma is allowed. Newlines are
+  allowed anywhere inside the brackets, so long argument lists can be one per
+  line.
+
+As in HTML:
+
+- A keyword without a value is `true`: `inertia` means `inertia=true`.
+
+Values are numbers (`34.5`, `-10`), strings (`"£1.20"`, `"#ff0"`), tuples
+(`(-40, 10)`), and words (`build`, `wardley`). A word is only ever a value
+after `=`. Written bare, it's always a key.
+
+To keep a missing comma from blanking the line, the parser can treat commas as
+whitespace, so `[33 50 inertia]` still draws. The formatter puts the commas
+back, and the linter can point them out.
 
 ## Grammar
 
 ```ebnf
-document   = { statement-end | statement } ;
-statement  = head [ arguments ] [ block ] statement-end ;
+document    = { statement-end | statement } ;
+statement   = head [ arguments ] [ block ] statement-end ;
 statement-end = newline | ";" | EOF ;
 
-head       = link | directive | note | name ;
-link       = name "->" name ;
-directive  = "@" word [ name ] ;
-note       = string ;
+head        = link | directive | note | name ;
+link        = name ( "--" | "==" ) name ;
+directive   = "@" word [ name ] ;
+note        = string ;
 
-arguments  = "[" { positional } { flag | property } "]" ;   (* newlines allowed inside *)
-positional = number | tuple ;
-flag       = word ;
-property   = key "=" value ;
-value      = number | string | tuple | word ;
-tuple      = "(" { value } ")" ;
-block      = "{" { newline | statement } "}" ;
+arguments   = "[" [ argument { "," argument } [ "," ] ] "]" ;   (* newlines allowed inside *)
+argument    = positional | keyword ;      (* every positional before every keyword *)
+positional  = number | string | tuple ;
+keyword     = key [ "=" value ] ;          (* no value means true *)
+value       = number | string | tuple | word ;
+tuple       = "(" [ value { "," value } [ "," ] ] ")" ;
+block       = "{" { newline | statement } "}" ;
 
-name       = plain-name | "`" { any char except "`" } "`" ;
-plain-name = name-char { name-char | " " name-char } ;     (* no "->" or "//" inside *)
-key        = word ;                                        (* letters, digits, "-", ":" *)
-comment    = "//" { any char } ;                           (* anywhere a newline could go *)
+name        = plain-name [ ":" qualifier ] | "`" { any char except "`" } "`" ;
+qualifier   = { letter | digit } ;                        (* "regulator", "2" *)
+plain-name  = name-char { name-char | " " name-char } ;   (* no "--", "==", "//" or ":" inside *)
+key         = word ;                                      (* lowercase letters only *)
+comment     = "//" { any char } ;
 ```
 
-Notes on the grammar:
-
-- **Commas are whitespace** inside `[ ]` and `( )`, so `(43, 49)` and `(43 49)`
-  are the same tuple. This avoids having commas between positional arguments
-  but spaces between attributes.
-- **Positional arguments come first.** That keeps the position in a fixed
-  place for the canvas to rewrite, and makes `[33, 50 inertia]` read in one
-  direction.
-- **Names need no quotes.** A name ends at `[`, `{`, `->`, `//`, `;` or the end
-  of the line, and surrounding spaces are trimmed. In the rare case that a
-  name contains one of those, wrap it in backticks: `` `C#->IL` [40, 60] ``.
-  Backticks escape names (as in Kotlin and Swift); double quotes are always
-  prose. So `"Kettle"` is a note that says "Kettle", not a component.
+- **Names need no quotes.** A name ends at `[`, `{`, `--`, `==`, `//`, `;` or
+  the end of the line, and surrounding spaces are trimmed. If a name contains
+  one of those, wrap it in backticks: `` `C#--IL` [40, 60] ``. Backticks escape
+  names; double quotes are always prose, so `"Kettle"` is a note.
 - **Newlines end statements**, except inside `[ ]` and `( )`. `;` separates
-  statements on one line: `Tea [55, 73] { Loose Leaf [56]; Tea Bags [90] }`.
-- **Values** are numbers (`34.5`, `-10`), strings (`"apple"`, `"#ff0"`),
-  tuples (`(23.4, 34.3, 100)`) and words (`build`, `true`). Colours and URLs
-  are strings. A bare word on its own is a flag (see below).
+  statements on one line.
 
 ## Components
 
-```
-Kettle [33, 50]                       // visibility 33, evolution 50
-Kettle [33, 50 build inertia]
-Kettle [33, 50 sourcing=build inertia=true]   // the same, written out
-Kettle                                // no position yet: laid out automatically
-```
+### Attributes
 
-Positions stay `[visibility, evolution]` from 0 to 100. That order is
-backwards from (x, y), but OnlineWardleyMaps, Mermaid and today's maps all use
-it, and changing it would quietly break every map anyone pastes in.
-
-A component with no position is placed automatically (visibility from its
-depth in the value chain, evolution at the middle of the axis). This helps
-quick sketches and maps generated by LLMs. Dragging it on the canvas writes a
-position in.
-
-### Bare words resolve through a vocabulary
-
-A bare word like `market` is shorthand for one attribute's value. The parser
-reads it as a flag; a lookup table then decides which attribute it belongs to:
-
-| Word | Means | Notes |
+| Key | Value | Meaning |
 | --- | --- | --- |
-| `user` | `type=user` | the anchor at the top of the chain |
-| `market` | `type=market` | Wardley's circle of three circles |
-| `ecosystem` | `type=ecosystem` | concentric circles |
-| `practice`, `data`, `knowledge` | `kind=…` | the default kind is `activity` |
-| `build`, `buy`, `outsource` | `sourcing=…` | drawn as a shaded circle |
-| `inertia` | `inertia=true` | `inertia=70` puts the bar at evolution 70 |
-| `accelerate`, `decelerate` | `force=…` | the thick hollow arrow |
-| `pipeline`, `submap` | `nesting=…` | how the children are drawn; see Nesting |
-| `area` | `type=area` | a boundary drawn around its children |
-| `pioneers`, `settlers`, `townplanners` | `attitude=…` | on an `area` |
-| `constraint`, `flow` | link `type=…` | see Links |
+| *(positional)* | `visibility, evolution` | 0 to 100 each |
+| `user`, `market`, `ecosystem` | flag | the type; plain component if none |
+| `form` | `activity` (default), `practice`, `data`, `knowledge` | Wardley's four things that evolve |
+| `sourcing` | `build`, `buy`, `outsource` | method notation, drawn as a shaded circle |
+| `inertia` | flag | the black bar |
+| `evolve` | evolution number | the future position: red circle and red dashed arrow |
+| `label` | `(x, y)` | where the label sits relative to the component, in pixels |
 
-This handles your point about build/buy/outsource: they're values of
-`sourcing`, not component types, but you can still write `Cup [69, 86 buy]`
-because `buy` belongs to only one attribute. It's how CSS shorthands work
-(`border: 1px solid red` works out which value is which from the value).
+Plus `description` and `url` (strings) for hover text and links out, if they
+make the cut.
 
-The rules:
+**Position.** `[visibility, evolution]`, 0 to 100. That order is backwards
+from (x, y), but OnlineWardleyMaps, Mermaid and today's maps all use it, and
+changing it would quietly break every map anyone pastes in. A component with
+no brackets gets an automatic position (visibility from its depth in the value
+chain); dragging it writes one in.
 
-- A word must belong to exactly one attribute. Core words are reserved, so an
-  extension can't define a second `build`.
-- Two values for the same attribute (`[build buy]`) are a lint error. The last
-  one wins so the map still draws.
-- An unknown word is kept as `word=true` and flagged as a lint warning, not an
-  error, so maps written for a newer version still open.
-- The formatter can expand `buy` to `sourcing=buy`, or collapse it back.
+**Types are flags.** A component has at most one type, so `user`, `market`
+and `ecosystem` are flags where only one may be set. `[user, market]` is a lint
+error, and the last one wins so the map still draws. Flags read well
+(`Power [10, 86, market]`), and they're keys, so they fit the rule that a bare
+word is always a key. A later `@type` directive adds new types the same way.
 
-### Component attributes
+**Form, not kind.** `form` is short, and it says what it means: the form of
+capital that's evolving. A map is usually all activities, so most components
+won't set it. On the map it only changes the stage names on hover (practices
+go Novel → Emerging → Good → Best), unless `@map [form=practice]` sets it for
+the whole map.
 
-| Attribute | Value | Meaning |
-| --- | --- | --- |
-| position | `[vis, evo]` | first two positional numbers |
-| `type` | `component` (default), `user`, `market`, `ecosystem`, `area`, or a `@type` | what it is; sets the symbol |
-| `kind` | `activity` (default), `practice`, `data`, `knowledge` | Wardley's four things that evolve; changes the stage names shown on hover |
-| `sourcing` | `build`, `buy`, `outsource` | method notation |
-| `inertia` | `true` or an evolution number | the black bar |
-| `evolve` | evolution number, or `(vis, evo)` | the future position: red circle and red dashed arrow |
-| `force` | `accelerate`, `decelerate` | Wardley's accelerator and deaccelerator arrows |
-| `label` | string | display text, if it should differ from the name |
-| `label-offset` | `(x, y)` | where the label sits; written by dragging the label |
-| `description` | string | shown on hover and in exports |
-| `url` | string | links out; on a `submap`, the map to open |
-| `color` | string | presentation only |
+**Sourcing is a keyword argument.** `sourcing=build`, not `build`. `build` on
+its own would be a new key meaning `build=true`, which is exactly the namespace
+spill principle 4 rules out.
 
-### Identity and labels
+### Names and identity
 
-The name is the component's identity. Links refer to it, and it must be unique
-in the document. Today's `government:2` definition IDs go away: if two
-components should read the same, give them different names and the same label:
+A component's name does two jobs: it's the **text drawn on the map**, and it's
+the **key links use to find the component**. Usually that's fine. It goes
+wrong when one word means two things on the same map: "government" the user
+at the top, and "government" the regulator lower down. Two components can't
+have the same key, so they can't both be called `Government`.
+
+That's what the 2022 draft's `government:2` was for, and it's worth keeping.
+The part after a `:` is a **qualifier**: it's part of the key, but it isn't
+drawn.
 
 ```
-Gov (national) [90, 60 label="Government"]
-Gov (local) [70, 55 label="Government"]
+Government:user [95, 50, user]
+Government:regulator [60, 40]
+
+Government:user -- Society
+Society -- Government:regulator
 ```
 
-Writing the same name twice merges the two statements, the way Graphviz does.
-Only one of them may give a position. That's what lets an area list members
-that are positioned elsewhere (see Nesting).
+Both are drawn as "Government", and links say exactly which one they mean.
+Allowing a word after the colon, not just a number, makes the links readable
+(`Government:regulator` rather than `Government:2`). A name with a colon in its
+text, like `Ratio 3:1`, needs backticks.
+
+Each name is declared once. A second component line with the same name is a
+lint error that points at the first, and the first one wins.
+
+The 2022 draft's notes say "synonyms": two names for one thing. That's a
+different feature from the qualifier, which is one name for two things. If
+synonyms were also meant, it would be something like `Tea [55, 73,
+alias="Chai"]`, so links to either name find the same component. That's
+listed as an open question.
+
+### Labels
+
+`label=(x, y)` moves the label, as today. It's the key people will use most,
+so it gets the short name. The text comes from the name (without its
+qualifier), and the label is placed automatically when there's no `label=`.
+
+**Should `label` also take text, as a string or a `("text", x, y)` tuple?**
+It would give display text that differs from the name (line breaks, or a long
+name with a short key) under the same short key. The costs:
+
+- **The value's meaning depends on its shape.** `label="Gov"`,
+  `label=(-40, 10)` and `label=("Gov", -40, 10)` all mean different things.
+  The linter, the formatter, autocomplete and the help all have to explain
+  three forms of one key.
+- **The canvas edits get bigger.** Dragging a label whose value is `"Gov"`
+  has to turn it into `("Gov", -40, 10)`, which rewrites the text as well as
+  the numbers.
+- **Concurrent edits collide.** If one person retypes the text while another
+  drags the label, both rewrite the same value. Yjs merges them character by
+  character inside it, which can leave something like `("Gove", -4-30, 10)`.
+  As separate values, the two edits touch different text.
+- **Unnamed tuple fields.** In `("Gov", -40, 10)`, nothing says whether the
+  numbers are an offset or a position.
+- **Two sources of text.** With the name and `label` both able to set the
+  text, readers have to check both.
+
+Recommendation: `label` is only the offset. The qualifier covers the main
+reason to want different text. If display text is needed later, it gets its
+own key (`text="…"`), and `label=(x, y)` stays as it is.
 
 ## Links
 
 ```
-Cup of Tea -> Hot Water
-Hot Water -> Kettle [constraint]
-Business -> Cup of Tea [flow label="£1.20"]
-Kettle -> Power [label="needs 3kW"]
+Cup of Tea -- Hot Water
+Hot Water == Kettle
+Business -- Cup of Tea [flow, label="£1.20"]
 ```
 
-`needer -> needed`, the same direction as today's `needer.needed`. The arrow
-replaces the dot because:
+The needer is on the left and the needed on the right, as today. Arguments
+on a link describe the link, and only the link.
 
-- `.` is common in names: `Node.js`, `v2.1`, `St. Ives`.
-- `->` shows direction, and it is what OnlineWardleyMaps and Mermaid use, so
-  maps pasted from either are already mostly right.
+### The operator
 
-There is one arrow. The kind of link is an attribute, rather than a family of
-operators like OnlineWardleyMaps' `+>`, `+<`, `+<>` and `+'label'>`:
+`->` shows the direction, and it's what OnlineWardleyMaps and Mermaid use.
+But `>` needs shift and a reach to the top row, on a statement people type all
+the time. The options:
 
-| Attribute | Value | Draws |
+| Operator | Keys (US layout) | Problem |
 | --- | --- | --- |
-| `type` | `dependency` (default), `constraint`, `flow` | thin line, thick line, blue flow |
-| `direction` | `forward` (default), `back`, `both` | for a flow: value moves from needed to needer by default |
-| `influence` | `positive`, `negative` | Kino Wardley's `+v>` and `-v>` |
-| `future` | flag | red "line of the future" |
+| `.` (today) | 1, no shift | dots in names: `Node.js`, `v2.1`, `St. Ives` |
+| `->` | 2, shift | shift for `>` |
+| `--` | 2, same key, no shift | no arrowhead, but neither has `.` |
+| `/` | 1, no shift | slashes in names: `TCP/IP`, `24/7`; next to `//` comments |
+| `>` | 1, shift | shift; reads as "greater than" |
+
+`--` is quick to type, rarely appears in names, and looks like a line. It's
+also Graphviz's and Mermaid's undirected link. The direction comes from the
+order, as it does with `.` today.
+
+Mermaid-style, variants of the operator can carry the type of link, so the
+two most common types need no arguments:
+
+| Operator | Link |
+| --- | --- |
+| `A -- B` | dependency: thin line |
+| `A == B` | constraint: thick line |
+
+Doubling the character keeps both easy to type, and `==` looks thick. The
+downside is that `==` reads as "equals" to programmers. Further operators
+(`..` for a dotted line, for example) can be added if a type of link needs one.
+
+### Link attributes
+
+| Key | Value | Meaning |
+| --- | --- | --- |
+| `flow` | flag | Wardley's blue flow line: value, money or risk moving between them |
 | `label` | string | text along the line |
 
-No chains (`A -> B -> C`) and no fan-out (`A -> B, C`). They save typing, but
-then deleting one link on the canvas means rewriting a line that holds several
-links, possibly while someone else is editing it. One link per line keeps
-every canvas edit to a single line.
+Here `label` is text, not an offset: links have no label to drag. If that
+inconsistency bothers people, link text could be `text=` instead (see Labels).
 
-## Notes and annotations
+No chains (`A -- B -- C`) and no fan-out (`A -- B, C`). Deleting one link on
+the canvas would mean rewriting a line that holds several, possibly while
+someone else is typing in it.
+
+## Pipelines
+
+Braces on a component make it a pipeline, as today:
+
+```
+Tea [55, 73] {
+  Loose Leaf [55, 56]
+  Tea Bags [55, 90, sourcing=outsource]
+}
+```
+
+Children keep both numbers, so a component moves in or out of a pipeline by
+moving its line, with nothing to retype. Inside a pipeline the visibility
+follows the pipeline's, and when you drag a child the canvas writes the
+pipeline's visibility back. The box spans the children, so it needs no start
+and end of its own (OnlineWardleyMaps' `pipeline Tea [0.15, 0.9]`).
+
+## Notes
 
 A quoted string as the head is a note: prose, not a thing on the map.
 
 ```
-"Hot water is obvious" [48, 85]                          // a note at a point
-"Standardised power lets kettles evolve" [on=(Kettle, Power)]   // numbered annotation
+"Hot water is obvious" [48, 85]
 ```
 
-- With a position, it's a free note, dragged like a component.
-- With `on=` (component names, or `(vis, evo)` tuples), it's a numbered
-  annotation. The numbers are given in document order and the text goes in the
-  legend. `marker=3` fixes a number.
+Notes are dragged like components. The 2022 draft used `#` for notes, which
+most people now read as a heading or a comment. `//` stays the only comment.
 
-The 2022 draft used `#` for notes. That reads as a heading or a comment to
-most people now, so it's freed up. `//` stays the only comment.
+## Map settings
 
-## Nesting
-
-Braces mean "contains". How the children are drawn depends on the parent's
-`nesting` or `type`, never on what the children happen to be.
-
-**Pipeline** (the default for a positioned component, as today):
+Settings are keywords on the map itself, given with `@map`:
 
 ```
-Tea [55, 73] {
-  Loose Leaf [56]
-  Tea Bags [90]
-}
+@map [
+  title="Tea Shop",
+  style=wardley,                                    // wardley, plain, handwritten or dark
+  evolution=("Genesis", "Custom built", "Product", "Commodity"),
+  stages=(17.4, 40, 70),                            // where the stage boundaries fall
+  visibility=("Visible", "Invisible"),
+  form=practice,                                    // stage names for practices
+]
 ```
 
-Children sit on the pipeline's row, so they take only an evolution: one
-number. The pipeline's box spans its children, so it needs no start and end of
-its own (OnlineWardleyMaps' `pipeline Tea [0.15, 0.9]`). A two-number position
-inside a pipeline is a lint warning, and its visibility is ignored, which keeps
-today's maps drawing.
+One statement, but with a setting per line, two people changing different
+settings don't collide. `form=` picks Wardley's stage names for the whole map,
+and `evolution=` overrides them. `@map` belongs at the top; if there are two,
+the linter says so.
 
-**Submap**: a component that stands for a whole map. Its children use the
-submap's own coordinates and are shown when you open it:
+## Later
+
+All of these fit the grammar above, with no new syntax.
+
+**Submaps.** A component that stands for a whole map, opened by clicking. Its
+children use the submap's own coordinates:
 
 ```
-Ordering [70, 55 submap] {
+Ordering [70, 55, submap] {
   Till [80, 70]
-  Card Reader [40, 85 buy]
-  Till -> Card Reader
+  Card Reader [40, 85, sourcing=buy]
+  Till -- Card Reader
 }
-Payments [60, 70 submap url="https://maptogether.io/r/abc123"]
+Payments [60, 70, submap, url="https://maptogether.io/r/abc123"]
 ```
 
-**Area**: a boundary drawn around its members, with no position of its own.
-Use it for areas of interest, teams, and pioneers, settlers and town planners:
+**Areas.** A boundary drawn around some components: an area of interest, a
+team, or Wardley's pioneers, settlers and town planners. An area isn't a
+component: it has no position of its own and nothing links to it. So it's a
+directive, and its children are references to components declared elsewhere,
+which also lets a component be in more than one area:
 
 ```
-Front of house [area settlers color="#9cf"] {
+@area Front of house [attitude=settlers] {
   Staff
   Cup
 }
 ```
 
-Members can be declared inside, or listed by name if they're declared
-elsewhere (names merge; see Identity). So a component can be in more than one
-area, which nesting alone couldn't allow.
-
-All names share one namespace, including names inside submaps, so links can
-cross boundaries: `Cup of Tea -> Till`.
-
-## Map settings
-
-Settings are attributes on the map itself, with the `@map` directive:
+**Numbered annotations.** A note attached to components instead of a point,
+numbered in order with its text in a legend:
 
 ```
-@map [
-  title="Tea Shop"
-  perspective="the shop owner"
-  created="2026-10-14"
-  style=wardley                                    // wardley | plain | handwritten | dark
-  evolution=("Genesis", "Custom built", "Product", "Commodity")
-  stages=(17.4, 40, 70)                            // where the stage boundaries fall
-  visibility=("Visible", "Invisible")
-  kind=practice                                    // stage names for practices
-]
+"Standardised power lets kettles evolve" [on=(Kettle, Power)]
 ```
 
-This is one statement over several lines, so it's still one place to look. But
-each setting is on its own line, so two people changing different settings
-don't collide. `kind=` here picks Wardley's stage names for the whole map
-(Novel → Emerging → Good → Best for practices), and `evolution=` overrides
-them.
+**Accelerators and deaccelerators.** `force=accelerate` or
+`force=decelerate` on the component they act on.
 
-`@map` should go at the top, but doesn't have to. If there are two, they merge
-like components do.
-
-## Extensions
-
-Three layers, from cheapest to most powerful.
-
-**1. Unknown attributes are kept.** `Kettle [33, 50 risk=3 owner="Ops"]`
-parses, survives canvas edits and the formatter, appears in exports, and is
-shown on hover. The renderer ignores what it doesn't know. Extensions can
-namespace their keys: `doctrine:principle="Use a common language"`.
-
-**2. `@type` defines new kinds of component**, using the same shape:
+**New component types.** `@type` adds a type flag, with a built-in type to
+fall back on:
 
 ```
-@type regulator [base=component shape=hexagon color="#a33"]
-@type platform [base=ecosystem]
+@type regulator [base=component, shape=hexagon]
 
-FCA [70, 40 regulator]
-AWS [20, 80 platform]
+FCA [70, 40, regulator]
 ```
 
-`regulator` becomes a value of `type`, so the bare word works. `base=` says
-how to draw it if nothing more specific is known, and which rules apply (a
-`platform` is still an ecosystem to anything that checks for one).
-
-**3. `@use` pulls in a shared vocabulary or template** (later):
-
-```
-@use "maptogether.io/v/doctrine"
-```
-
-Not every map needs a package system. Adding it later is possible because
-it's just another directive.
-
-### Futures and scenarios (later)
-
-`evolve=80` covers the common case: one component moving right. Wardley maps
-also show *lines of the future*, new components and changed dependencies. One
-way to do that, with nothing new in the grammar, is a directive whose children
-overlay the map:
+**Futures and scenarios.** `evolve=` covers one component moving right.
+Wardley maps also show lines of the future and new components. One way to do
+that is a directive whose children overlay the map: the same name is a future
+position, a new name a future component, and a link a line of the future.
 
 ```
 @future {
-  Kettle [33, 80]              // same name: drawn as Kettle's future position
-  Smart Kettle [45, 30]        // new name: a future component, in red
-  Smart Kettle -> Power        // a line of the future
+  Kettle [33, 80]
+  Smart Kettle [45, 30]
+  Smart Kettle -- Power
 }
 ```
 
-Named scenarios (`@future "Cloud first" { … }`) that the viewer can switch
-between would fall out of the same idea. This is the part I'm least sure of,
-so it's listed as an open question.
+This needs more work: how it interacts with `evolve=`, whether scenarios are
+named, and what the canvas does when you drag a future position.
 
 ## What changes from today
 
 | Today | v2 | Why |
 | --- | --- | --- |
 | `Kettle [33, 50]` | unchanged | |
-| `Kettle [33, 50] (label=-40,10)` | `Kettle [33, 50 label-offset=(-40, 10)]` | one bracket for everything about a component |
-| `needer.needed` | `needer -> needed` | dots appear in names; arrow shows direction |
-| `a.(t=constraint)b` | `a -> b [constraint]` | attributes go after, as on components |
-| `Tea [55, 73] { Loose Leaf [55, 56] }` | `Tea [55, 73] { Loose Leaf [56] }` | old form still draws, with a warning |
+| `Kettle [33, 50] (label=-40,10)` | `Kettle [33, 50, label=(-40, 10)]` | one argument list |
+| `needer.needed` | `needer -- needed` | dots appear in names |
+| `a.(t=constraint)b` | `a == b` | |
+| `Tea [55, 73] { Loose Leaf [55, 56] }` | unchanged | |
 | `/mapstyle(title="…")` | `@map [title="…"]` | one directive sigil |
 | `# note [40, 50]` | `"note" [40, 50]` | `#` reads as a heading |
-| `government:2` | a distinct name plus `label=` | identity separate from display text |
-| `name^` | `evolve=` or `@future { }` | |
+| `government:2` | `Government:regulator` (`:2` still works) | |
+| `name^` | `evolve=`, or `@future` later | |
 
-Since the current parser reads the old syntax, the upgrade can be automatic:
-detect a v1 map (any `a.b` link or `(…)` attribute block), rewrite it once,
-and keep the old text in the room's history. A first-line `@map [syntax=2]`
-could make it explicit, but it shouldn't be needed.
+The current parser reads the old syntax, so the upgrade can be automatic:
+detect a v1 map (an `a.b` link or a `(…)` argument block), rewrite it once,
+and keep the old text in the room's history.
 
 ### Importing OnlineWardleyMaps
 
-Almost everything maps across directly (coordinates × 100):
+Coordinates are × 100:
 
 | OnlineWardleyMaps | v2 |
 | --- | --- |
 | `component Kettle [0.33, 0.5]` | `Kettle [33, 50]` |
-| `anchor Business [0.95, 0.46]` | `Business [95, 46 user]` |
-| `market Power [0.1, 0.86]` | `Power [10, 86 market]` |
-| `component Kettle [0.33, 0.5] inertia` | `Kettle [33, 50 inertia]` |
+| `anchor Business [0.95, 0.46]` | `Business [95, 46, user]` |
+| `market Power [0.1, 0.86]` | `Power [10, 86, market]` |
+| `component Kettle [0.33, 0.5] inertia` | `Kettle [33, 50, inertia]` |
+| `component Kettle [..] label [-40, 10]` | `Kettle [.., label=(-40, 10)]` |
 | `evolve Kettle 0.8` | `evolve=80` on Kettle |
-| `build Kettle`, `(buy)` | `build`, `buy` on Kettle |
+| `build Kettle`, `(buy)` | `sourcing=build`, `sourcing=buy` on Kettle |
 | `pipeline Tea [0.15, 0.9]` | braces on Tea |
-| `A->B`, `A+>B`, `A+'£1'>B` | `A -> B`, `[flow]`, `[flow label="£1"]` |
-| `A->B; text` | `A -> B [label="text"]` |
+| `A->B` | `A -- B` |
+| `A+>B`, `A+'£1'>B` | `A -- B [flow]`, `A -- B [flow, label="£1"]` |
+| `A->B; text` | `A -- B [label="text"]` |
 | `note text [0.4, 0.5]` | `"text" [40, 50]` |
-| `annotation 1 [[.4,.5],[.3,.6]] text` | `"text" [on=((40, 50), (30, 60)) marker=1]` |
-| `pioneers [0.59, 0.43, 0.49, 0.63]` | an `area pioneers` with members (a fixed rectangle via `bounds=` if no members) |
-| `accelerator name [0.2, 0.6]` | `force=accelerate` on the component it acts on |
-| `submap X [..] url(u)` + `url u [..]` | `X [.. submap url="…"]` |
-| `title`, `style`, `evolution A->B->C->D` | `@map [title=… style=… evolution=(…)]` |
+| `title`, `style`, `evolution A->B->C->D` | `@map [title=…, style=…, evolution=(…)]` |
 | `size [1024, 768]` | dropped: the canvas has no fixed size |
 
 ## Coverage
 
 Everything in Wardley's [notation guide](https://www.wardleymaps.com/notation)
-and the main tools, and where it lives:
+and the main tools:
 
 | Element | v2 |
 | --- | --- |
-| Component, anchor/user | name; `user` |
-| Activity, practice, data, knowledge | `kind` |
-| Market, ecosystem | `type` |
-| Dependency, constraint, flow, influence | link `type`, `influence` |
-| Line of the future, future position, point of change | `future`, `evolve`, `@future` |
-| Inertia | `inertia` |
-| Accelerator, deaccelerator | `force` |
-| Pipeline (open, folded) | braces; folding is UI state, not syntax |
-| Submap | `submap` |
-| Area of interest, team | `area` |
-| Pioneers, settlers, town planners | `area` + `attitude` |
+| Component; user (anchor) | name; `user` |
+| Activity, practice, data, knowledge | `form` |
+| Market, ecosystem | `market`, `ecosystem` |
 | Build, buy, outsource | `sourcing` |
-| Notes, numbered annotations | `"text"` |
-| Evolution stage names and widths, axis labels | `@map` |
-| Style, title, metadata | `@map` |
-| Custom symbols, metadata, plugins | unknown attributes, `@type`, `@use` |
+| Inertia | `inertia` |
+| Future position, point of change | `evolve` |
+| Dependency, constraint, flow | `--`, `==`, `flow` |
+| Pipeline | braces |
+| Notes | `"text"` |
+| Evolution stage names and widths, axis labels, style, title | `@map` |
+| Submap, area, pioneers / settlers / town planners | later: `submap`, `@area` |
+| Numbered annotations, accelerators | later: `on=`, `force=` |
+| Line of the future | later: `@future` |
+| Custom symbols | later: `@type` |
 
 ## Alternatives considered
 
-- **Keep `[position]` and `(attributes)` separate**, as today. The position
-  would have its own brackets for the canvas to rewrite, but a component would
-  have two argument lists that look alike. With positionals first, the merged
-  form is just as easy to rewrite.
-- **Indentation instead of braces** (tried in the 2022 drafts). Concurrent
-  edits and pasting break indentation silently, and a missing brace is easier
-  to report than a wrong indent.
-- **A keyword per statement** (`component Kettle …`, as in OnlineWardleyMaps).
-  Explicit, but most lines in a map are components and links, so the keyword
-  is noise, and it makes the canvas's edits longer.
-- **Separate operators per link type** (`+>`, `-c>`, `+v>`). Short, but each
-  is one more thing to memorise, and they can't take extension attributes.
-  Attributes cover more with less.
-- **YAML or JSON.** Precise, but unpleasant to write by hand, and the main
-  reason to have a syntax at all is writing by hand.
+- **Separate `[position]` and `(attributes)`**, as today. The position would
+  have its own brackets for the canvas to rewrite, but each component would
+  have two argument lists that look alike. With positional arguments first,
+  one list is just as easy to rewrite.
+- **Bare values as shorthand** (`[33, 50, build]` meaning `sourcing=build`).
+  Shorter, but every value of every key becomes a word you can't use as a key,
+  and readers have to know which key `build` belongs to.
+- **Indentation instead of braces.** Concurrent edits and pasting break
+  indentation silently, and a missing brace is easier to report than a wrong
+  indent.
+- **A keyword per statement** (`component Kettle …`, as in
+  OnlineWardleyMaps). Explicit, but most lines are components and links, so
+  it's noise, and it makes the canvas's edits longer.
+- **One operator, with the link type as an argument**
+  (`A -- B [constraint]`). Simpler grammar, but constraints are common enough
+  to deserve an operator.
+- **YAML or JSON.** Precise, but unpleasant to write by hand, and writing by
+  hand is the point.
 
 ## Open questions
 
-1. **`kind` vs `type`.** Two attributes with similar names. They are separate
-   ideas (a practice can be a market), but `kind` could be called `capital`
-   or `evolves-as` to make that clear. Since people will mostly write the bare
-   word, the key matters less than usual.
-2. **Should a component with braces always be a pipeline?** It's the one place
-   something is inferred. Requiring `[pipeline]` would be more explicit, but
-   every existing pipeline would need it.
-3. **Futures.** Is `evolve=` plus `@future { }` the right split, or should
-   there be one mechanism only?
-4. **Name matching.** Case-sensitive, as today and in OnlineWardleyMaps? A
-   case-insensitive match with a lint warning would catch `kettle -> power`
-   typos.
-5. **Renaming.** Names are identity, so a rename rewrites every line that
-   mentions it. That's what happens now and it works, but two people renaming
-   and linking at once can race. Stable hidden IDs would avoid that at the
-   cost of readable text; `label=` softens the need.
-6. **Positions inside submaps.** Own coordinate space (as proposed), or the
-   parent's?
+1. **The link operator.** `--` and `==`, or something else from the table?
+2. **Strict commas?** Tolerating missing commas keeps lines drawing, but means
+   two spellings of the same thing exist in the wild until the formatter runs.
+3. **Synonyms.** Did `:2` also mean two names for one thing? If so, `alias=`.
+4. **Link text.** `label="…"` on links but `label=(x, y)` on components, or
+   `text="…"` on links?
+5. **Should braces on a component always mean a pipeline?** It's the one place
+   something is inferred. `submap` would override it.
+6. **Name matching.** Case-sensitive as today? Case-insensitive with a lint
+   warning would catch `kettle -- power` typos.
 
 ## Sources
 
