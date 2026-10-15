@@ -59,3 +59,34 @@ it("doesn't submit on the Enter that ends input-method composition", () => {
   expect(onSubmit).not.toHaveBeenCalled();
   expect(fields()).toBe(1);
 });
+
+it("submits the name without spaces around it", () => {
+  const input = FloatingTextInput(mount, 0, 0, onSubmit);
+  input.value = "  Teapot ";
+  press(input, "Enter");
+  expect(onSubmit).toHaveBeenCalledExactlyOnceWith("Teapot");
+});
+
+it("marks a name it can't take as you type, and stays open on Enter", () => {
+  const problem = (name: string) => (name.includes(".") ? "No dots" : undefined);
+  const input = FloatingTextInput(mount, 0, 0, onSubmit, "", problem);
+  input.value = "Node.js";
+  input.dispatchEvent(new Event("input"));
+  expect(input.getAttribute("aria-invalid")).toBe("true");
+  expect(input.title).toBe("No dots");
+  press(input, "Enter");
+  expect(onSubmit).not.toHaveBeenCalled();
+  expect(fields()).toBe(1);
+  input.value = "Node";
+  input.dispatchEvent(new Event("input"));
+  expect(input.getAttribute("aria-invalid")).toBe("false");
+  expect(input.title).toBe("");
+});
+
+it("drops a name it can't take when it loses focus", () => {
+  const input = FloatingTextInput(mount, 0, 0, onSubmit, "", () => "No");
+  input.value = "Node.js";
+  input.blur();
+  expect(onSubmit).not.toHaveBeenCalled();
+  expect(fields()).toBe(0);
+});

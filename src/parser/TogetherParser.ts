@@ -420,6 +420,17 @@ export const tryParse = (text: string): ParseResult => {
   return { cst, problems: parserInstance.errors.map(problemAt) };
 };
 
+/** Whether `name` can be written as a component's name, as it is. */
+export const isComponentName = (name: string) => {
+  const { tokens, errors } = TogetherLexer.tokenize(name);
+  return (
+    errors.length === 0 &&
+    tokens.length === 1 &&
+    tokens[0].tokenType === Identifier &&
+    tokens[0].image === name
+  );
+};
+
 /** Braces a line leaves open, as the lexer reads it: not those in a name, quotes or a comment. */
 export const bracesOpened = (line: string) => {
   let open = 0;

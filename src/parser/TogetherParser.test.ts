@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { matchComponentRegex, matchEdgeRegex } from "./TogetherParser";
+import { isComponentName, matchComponentRegex, matchEdgeRegex } from "./TogetherParser";
 
 const match = (pattern: string, line: string) => new RegExp(pattern).exec(line);
 
@@ -62,5 +62,17 @@ describe("matchEdgeRegex", () => {
 
   it("doesn't match the component's own declaration", () => {
     expect(match(matchEdgeRegex("Kettle"), "Kettle [33, 50]")).toBeNull();
+  });
+});
+
+describe("isComponentName", () => {
+  it("takes names in any script, with spaces and symbols between words", () => {
+    for (const name of ["Tea", "Tea Bags", "2nd hand", "R&D", "Café", "東京"])
+      expect(isComponentName(name)).toBe(true);
+  });
+
+  it("refuses names the syntax would read otherwise", () => {
+    for (const name of ["", "Node.js", "C#", "Web/API", "a, b", "Tea (hot)", "42", " Tea", "Tea "])
+      expect(isComponentName(name)).toBe(false);
   });
 });
