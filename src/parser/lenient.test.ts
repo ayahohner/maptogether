@@ -16,6 +16,12 @@ describe("parseLeniently", () => {
     expect(components("Kettle [33, 50]\nPower [10, 86]")).toEqual(["Kettle", "Power"]);
   });
 
+  it("parses names in any script", () => {
+    const text = "Café [33, 50]\nDonnées clients [10, 86]\n東京 [22, 91]\nМосква [5, 5]";
+    expect(parseLeniently(text).problems).toEqual([]);
+    expect(components(text)).toEqual(["Café", "Données clients", "東京", "Москва"]);
+  });
+
   it("sets aside a line that doesn't parse and keeps the rest", () => {
     const text = "Kettle [33, 50]\nPower [10,\nWater [22, 91]";
     expect(components(text)).toEqual(["Kettle", "Water"]);
@@ -29,7 +35,7 @@ describe("parseLeniently", () => {
   });
 
   it("sets aside lines that can't be tokenized", () => {
-    const text = "Kettle [33, 50]\nCafé [10, 86]";
+    const text = "Kettle [33, 50]\nTea ☕ [10, 86]";
     expect(components(text)).toEqual(["Kettle"]);
     expect(problemLines(text)).toEqual([2]);
   });

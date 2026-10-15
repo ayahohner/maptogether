@@ -51,6 +51,12 @@ FRAGMENT("BraceClose", "\\}");
 FRAGMENT("BracketOpen", "\\[");
 FRAGMENT("BracketClose", "\\]");
 FRAGMENT("IdentifierSymbols", `'"~\`!@$%&\\*\\-_+\\|\\\\;\\?`);
+// Letters and digits in any script: Latin-1 on (but not the punctuation,
+// symbols and spaces from U+2000), excluding surrogates and the byte order mark.
+FRAGMENT(
+  "IdentifierLetters",
+  "a-zA-Z0-9\\u00C0-\\u1FFF\\u2C00-\\uD7FF\\uF900-\\uFEFE\\uFF00-\\uFFEF",
+);
 
 const StringLiteral = createComposableToken({
   name: "StringLiteral",
@@ -146,7 +152,7 @@ const Identifier = createToken({
   name: "Identifier",
   // Words of letters, digits and IdentifierSymbols, separated by spaces.
   pattern: new RegExp(
-    `[a-zA-Z0-9${C("IdentifierSymbols")}]+([ ]+[a-zA-Z0-9${C("IdentifierSymbols")}]+)*`,
+    `[${C("IdentifierLetters")}${C("IdentifierSymbols")}]+([ ]+[${C("IdentifierLetters")}${C("IdentifierSymbols")}]+)*`,
   ),
 });
 
