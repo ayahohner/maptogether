@@ -51,6 +51,18 @@ it("embeds the typeface as a data URL, fetching it only once", async () => {
   expect(fetchFont).toHaveBeenCalledOnce();
 });
 
+it("fetches the typeface again after a failed fetch", async () => {
+  // A fresh module, without the typeface an earlier test cached.
+  vi.resetModules();
+  const { embeddedFont } = await import("./exportMap");
+  const offline = vi.fn(async () => {
+    throw new TypeError("Failed to fetch");
+  });
+  await expect(embeddedFont(offline)).rejects.toThrow("Failed to fetch");
+  const online = vi.fn(async () => new Response(new Blob(["font"], { type: "font/woff2" })));
+  await expect(embeddedFont(online)).resolves.toMatch(/^@font-face/);
+});
+
 it("downloads a blob under a file name and frees its URL afterwards", async () => {
   vi.useFakeTimers();
   const blob = new Blob(["x"]);
