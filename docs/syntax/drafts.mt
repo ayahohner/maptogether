@@ -125,7 +125,7 @@ taxation.law
 // /lex
 // # COMPONENTIDENTIFIER [digits|characters|nonspecialpunctuation]...
 // # DIGITS '0', '1', '2', '3', '4', '5', '6', '7', '8', '9';
-// # CHARACTERS [a-zA-Z]
+// # CHARACTERS [a-zA-Z], and letters in any script
 // # NONSPECIAL_PUNCTUATION: '`', '~', '!', '@', '$', '%', '&', '*', '-', '_', '+', '\', '|', ';', '<', '>'
 // # SPECIAL_PUNCTUATION: EDGE_JOIN, SINGLE_QUOTE, DOUBLE_QUOTE, FUTURE_SPECIFIER, DEFINITION_SPECIFIER, OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,OPEN_BRACKET, CLOSE_BRACKET , NOTE, COMMAND, ASSIGN
 

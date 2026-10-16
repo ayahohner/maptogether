@@ -33,6 +33,12 @@
   outline: none;
 }
 
+.componentInput[aria-invalid="true"] {
+  box-shadow:
+    0 0 0 2px var(--color-danger),
+    var(--shadow-float);
+}
+
 /* iOS zooms the page to focus fields set below 16px. */
 @media (pointer: coarse) {
   .componentInput {

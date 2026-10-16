@@ -24,7 +24,7 @@ vi.mock("../editor/Editor", () => editor);
 vi.mock("../state/Graph", () => ({ graph }));
 vi.mock("../state/State", () => store);
 
-import { canvasActions, mapCoordinates, type MapView } from "./canvasActions";
+import { canvasActions, mapCoordinates, nameProblem, type MapView } from "./canvasActions";
 import { setTool, tools } from "../state/Tools";
 import { resetView, viewport } from "./viewport";
 
@@ -129,6 +129,21 @@ it("renames a component, unless the name is taken", () => {
   actions.edit("Urn", { x: 5, y: 5 });
   submit("Kettle");
   expect(editor.renameComponent).toHaveBeenCalledOnce();
+});
+
+it("won't name a component what the text can't hold", () => {
+  canvasActions(map).edit(undefined, { x: 100, y: 50 });
+  submit("Node.js");
+  expect(editor.appendText).not.toHaveBeenCalled();
+  expect(field().getAttribute("aria-invalid")).toBe("true");
+});
+
+it("says why a name won't do", () => {
+  expect(nameProblem("Teapot")).toBeUndefined();
+  expect(nameProblem("Café")).toBeUndefined();
+  expect(nameProblem("Kettle")).toBe("Kettle is already on the map");
+  expect(nameProblem("Kettle", "Kettle")).toBeUndefined();
+  expect(nameProblem("C#")).toMatch(/can't use #/);
 });
 
 it("places a component with the component tool, then goes back to select", () => {
