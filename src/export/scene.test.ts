@@ -76,3 +76,16 @@ it("boxes a pipeline around its components where they are drawn now", () => {
   const tea = sceneFromGraph(graph, size).components.find((c) => c.name === "Tea");
   expect(tea?.pipeline).toEqual([250, 420]);
 });
+
+it("leaves a pipeline nested in another without a box, as the canvas draws it", () => {
+  const graph = graphOf(
+    [
+      { name: "Tea", x: 300, y: 200, pipeline: [250] },
+      { name: "Leaf", x: 250, y: 200, inPipeline: "Tea", pipeline: [] },
+      { name: "Stem", x: 260, y: 200, inPipeline: "Leaf" },
+    ],
+    [],
+  );
+  const leaf = sceneFromGraph(graph, size).components.find((c) => c.name === "Leaf");
+  expect(leaf?.pipeline).toEqual([]);
+});

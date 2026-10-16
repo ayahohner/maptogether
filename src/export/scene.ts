@@ -9,7 +9,7 @@ import type { ExportScene } from "./mapSvg";
  */
 const drawnConfig = (graph: WardleyGraph, node: NodeAttributes): ComponentConfig => {
   const config = { ...node.config, ...node.coordinates };
-  if (!config.pipeline) return config;
+  if (!config.pipeline?.length) return config;
   const inside = graph.filterNodes((_name, child) => child.config.inPipeline === config.name);
   const pipeline = inside.map((name) => graph.getNodeAttribute(name, "coordinates").x);
   return { ...config, pipeline };
