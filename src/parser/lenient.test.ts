@@ -17,9 +17,10 @@ describe("parseLeniently", () => {
   });
 
   it("parses names in any script", () => {
-    const text = "Café [33, 50]\nDonnées clients [10, 86]\n東京 [22, 91]\nМосква [5, 5]";
+    const text =
+      "Café [33, 50]\nDonnées clients [10, 86]\n東京 [22, 91]\nМосква [5, 5]\n𐐀𠀀 [1, 1]";
     expect(parseLeniently(text).problems).toEqual([]);
-    expect(components(text)).toEqual(["Café", "Données clients", "東京", "Москва"]);
+    expect(components(text)).toEqual(["Café", "Données clients", "東京", "Москва", "𐐀𠀀"]);
   });
 
   it("sets aside a line that doesn't parse and keeps the rest", () => {

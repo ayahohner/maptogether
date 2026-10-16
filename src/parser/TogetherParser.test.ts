@@ -67,7 +67,7 @@ describe("matchEdgeRegex", () => {
 
 describe("isComponentName", () => {
   it("takes names in any script, with spaces and symbols between words", () => {
-    for (const name of ["Tea", "Tea Bags", "2nd hand", "R&D", "Café", "東京"])
+    for (const name of ["Tea", "Tea Bags", "2nd hand", "R&D", "Café", "東京", "𠀀 root"])
       expect(isComponentName(name)).toBe(true);
   });
 
