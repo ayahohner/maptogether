@@ -9,7 +9,13 @@ Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurab
 
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
-const props = { onAbout: vi.fn(), onDemo: vi.fn(), onShare: vi.fn(), onExport: vi.fn() };
+const props = {
+  onAbout: vi.fn(),
+  onDemo: vi.fn(),
+  onShare: vi.fn(),
+  onExport: vi.fn(),
+  onImport: vi.fn(),
+};
 
 beforeEach(async () => {
   (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -73,6 +79,7 @@ it("lists About, help, the demo map, export, feedback and the version in the ove
     " About MapTogether",
     " Help and shortcuts",
     " Open the demo map",
+    " Import from OnlineWardleyMaps…",
     " PNG image",
     " SVG vector image",
     " Send feedback",
@@ -92,4 +99,33 @@ it("runs each menu action", async () => {
   expect(props.onExport).toHaveBeenLastCalledWith("png");
   await clickItem("SVG");
   expect(props.onExport).toHaveBeenLastCalledWith("svg");
+});
+
+const importDialog = () => document.querySelector<HTMLFormElement>("form")!;
+
+it("imports a map pasted into the import dialog", async () => {
+  await clickItem("Import");
+  const form = importDialog();
+  const textarea = form.querySelector("textarea")!;
+  const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+  expect(submit.disabled).toBe(true);
+  await act(async () => {
+    const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!;
+    setValue.call(textarea, "component Tea [0.6, 0.8]");
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  expect(submit.disabled).toBe(false);
+  await act(async () => submit.click());
+  expect(props.onImport).toHaveBeenCalledWith("component Tea [0.6, 0.8]");
+  expect(document.querySelector("form")).toBeNull();
+});
+
+it("closes the import dialog without importing", async () => {
+  await clickItem("Import");
+  const cancel = [...importDialog().querySelectorAll("button")].find(
+    (b) => b.textContent === "Cancel",
+  )!;
+  await act(async () => cancel.click());
+  expect(props.onImport).not.toHaveBeenCalled();
+  expect(document.querySelector("form")).toBeNull();
 });

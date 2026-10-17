@@ -3,6 +3,9 @@ import { nanoid } from "./utilities/NanoId";
 /** `/?demo` opens a new map filled with the demo map. */
 export const DEMO_QUERY = "demo";
 
+/** `/?import` opens a new map filled with an imported map (see importMap.ts). */
+export const IMPORT_QUERY = "import";
+
 export interface Room {
   /** The map id: the URL path. Unset until a new map is created. */
   id?: string;
@@ -10,6 +13,8 @@ export interface Room {
   isNew: boolean;
   /** True when a new map should start from the demo map. */
   wantsDemo: boolean;
+  /** True when a new map should start from an imported map. */
+  wantsImport: boolean;
 }
 
 /**
@@ -19,8 +24,9 @@ export interface Room {
  */
 export function resolveRoom(location: Pick<Location, "pathname" | "search">): Room {
   const existing = location.pathname.replace("/", "");
-  if (existing) return { id: existing, isNew: false, wantsDemo: false };
-  return { isNew: true, wantsDemo: new URLSearchParams(location.search).has(DEMO_QUERY) };
+  if (existing) return { id: existing, isNew: false, wantsDemo: false, wantsImport: false };
+  const query = new URLSearchParams(location.search);
+  return { isNew: true, wantsDemo: query.has(DEMO_QUERY), wantsImport: query.has(IMPORT_QUERY) };
 }
 
 export interface LifecycleHooks {

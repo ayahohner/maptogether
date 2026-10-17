@@ -19,6 +19,10 @@ export function initializeOnboarding(
 ) {
   const openDemo = () => openDemoMap({ isNew: room.isNew, ...map });
   if (room.wantsDemo) map.replace(demoMapText);
-  initializeAbout(dialog, { storage, isNewMap: room.isNew && !room.wantsDemo, onDemo: openDemo });
+  initializeAbout(dialog, {
+    storage,
+    isNewMap: room.isNew && !room.wantsDemo && !room.wantsImport,
+    onDemo: openDemo,
+  });
   return openDemo;
 }

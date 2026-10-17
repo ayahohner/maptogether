@@ -22,7 +22,12 @@ beforeEach(() => {
 
 it("fills a `/?demo` map with the demo and treats it as shared", () => {
   const about = dialog();
-  initializeOnboarding({ id: "a", isNew: true, wantsDemo: true }, map, about, storage());
+  initializeOnboarding(
+    { id: "a", isNew: true, wantsDemo: true, wantsImport: false },
+    map,
+    about,
+    storage(),
+  );
   expect(map.replace).toHaveBeenCalledWith(demoMapText);
   expect(about.dataset.map).toBe("shared");
 });
@@ -30,7 +35,7 @@ it("fills a `/?demo` map with the demo and treats it as shared", () => {
 it("returns an action that loads the demo into a new, empty map", () => {
   const about = dialog();
   const openDemo = initializeOnboarding(
-    { id: "a", isNew: true, wantsDemo: false },
+    { id: "a", isNew: true, wantsDemo: false, wantsImport: false },
     map,
     about,
     storage(),

@@ -9,6 +9,7 @@ import {
   MenuSeparator,
 } from "@headlessui/react";
 import {
+  ArrowDownTrayIcon,
   ChatBubbleLeftEllipsisIcon,
   CheckIcon,
   CodeBracketSquareIcon,
@@ -22,6 +23,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 import { CollaborationBadge } from "./CollaborationBadge";
+import { ImportDialog } from "./ImportDialog";
 import type { ExportFormat } from "../export/exportMap";
 import { openHelp } from "../state/Ui";
 
@@ -34,9 +36,12 @@ export interface TopBarProps {
   onShare: () => void;
   /** Downloads the map as a picture. */
   onExport: (format: ExportFormat) => void;
+  /** Opens a map pasted from OnlineWardleyMaps as a new map. */
+  onImport: (owm: string) => void;
 }
 
-export function TopBar({ onAbout, onDemo, onShare, onExport }: TopBarProps) {
+export function TopBar({ onAbout, onDemo, onShare, onExport, onImport }: TopBarProps) {
+  const [importing, setImporting] = useState(false);
   return (
     <nav className="flex h-full items-center gap-2 px-3 sm:px-4" aria-label="Map">
       <Brand />
@@ -47,8 +52,14 @@ export function TopBar({ onAbout, onDemo, onShare, onExport }: TopBarProps) {
           <span className="max-sm:hidden">New map</span>
         </a>
         <ShareButton onShare={onShare} />
-        <OverflowMenu onAbout={onAbout} onDemo={onDemo} onExport={onExport} />
+        <OverflowMenu
+          onAbout={onAbout}
+          onDemo={onDemo}
+          onExport={onExport}
+          onImport={() => setImporting(true)}
+        />
       </div>
+      <ImportDialog open={importing} onClose={() => setImporting(false)} onImport={onImport} />
     </nav>
   );
 }
@@ -89,7 +100,12 @@ function ShareButton({ onShare }: Pick<TopBarProps, "onShare">) {
   );
 }
 
-function OverflowMenu({ onAbout, onDemo, onExport }: Omit<TopBarProps, "onShare">) {
+interface OverflowMenuProps extends Omit<TopBarProps, "onShare" | "onImport"> {
+  /** Asks for the map to import. */
+  onImport: () => void;
+}
+
+function OverflowMenu({ onAbout, onDemo, onExport, onImport }: OverflowMenuProps) {
   return (
     <Menu>
       <MenuButton className="icon-btn" aria-label="More">
@@ -107,6 +123,11 @@ function OverflowMenu({ onAbout, onDemo, onExport }: Omit<TopBarProps, "onShare"
           onClick={() => openHelp()}
         />
         <MenuAction icon={MapIcon} label="Open the demo map" onClick={onDemo} />
+        <MenuAction
+          icon={ArrowDownTrayIcon}
+          label="Import from OnlineWardleyMaps…"
+          onClick={onImport}
+        />
         <MenuSeparator className="my-1.5 h-px bg-line" />
         <ExportSection onExport={onExport} />
         <MenuSeparator className="my-1.5 h-px bg-line" />

@@ -30,6 +30,7 @@ import { mapSettings } from "../state/Settings";
 import { setEditorText, stopSelecting } from "../state/State";
 
 import { initializePanelResizer } from "./components/PanelResizer";
+import { openImportedMap, takeImportedMap } from "./importMap";
 import { fileName, initializeMapSettings } from "./mapSettings";
 import { bindEditShortcuts, bindToolShortcuts } from "./shortcuts";
 import { keepMapOutOfSearch } from "./seo";
@@ -94,6 +95,9 @@ const run = async (elementId: string) => {
 
 /** Top bar, help, and the About dialog, which first-time visitors see as a welcome. */
 const initializeChrome = () => {
+  // Unlike the demo, an imported map is the visitor's own, so it creates the map.
+  const imported = takeImportedMap(room, localStorage);
+  if (imported) replaceText(imported);
   const openDemo = initializeOnboarding(
     room,
     {
@@ -112,10 +116,19 @@ const initializeChrome = () => {
       onDemo={openDemo}
       onShare={mapLink.create}
       onExport={exportPicture}
+      onImport={importMap}
     />,
   );
   createRoot(document.getElementById("overlays")!).render(<HelpLauncher />);
 };
+
+/** Opens a map pasted from OnlineWardleyMaps as a new map. */
+const importMap = (owm: string) =>
+  openImportedMap(
+    owm,
+    { isNew: room.isNew, text: () => editorView.state.doc.toString(), replace: replaceText },
+    localStorage,
+  );
 
 /** Downloads the map as it is drawn now, whatever the pan and zoom. */
 const exportPicture = (format: ExportFormat) =>
