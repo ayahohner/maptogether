@@ -12,6 +12,9 @@ draws today.
   covering every Wardley map element, settings, extensions and nesting.
 - [`implementation-plan.md`](implementation-plan.md): what the code does
   today against the proposal, and the order to build it in.
+- [`examples/ev-smart-charging.mt`](../../examples/ev-smart-charging.mt): a
+  realistic map (a British smart EV charging tariff, 2026) that uses every
+  part of the v2 syntax, including the later features, for testing against.
 - [`lots-of-components.mt`](lots-of-components.mt): a map with about 100
   components and the draft header, for trying the editor and map with a large
   map.
