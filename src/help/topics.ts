@@ -100,7 +100,8 @@ export const syntaxHelp: SyntaxExample[] = [
   {
     title: "Dependency",
     code: "Cup of Tea -- Kettle",
-    explanation: "needer -- needed draws a line from a component to one it depends on.",
+    explanation:
+      'needer -- needed draws a line from a component to one it depends on. Add [constraint] for a thick line, [flow] for value moving along it, or [label="pays"].',
   },
   {
     title: "Type",
@@ -130,7 +131,19 @@ export const syntaxHelp: SyntaxExample[] = [
     title: "Pipeline",
     code: "Tea [55, 73] {\n  Loose Leaf [55, 56]\n  Tea Bags [55, 90]\n}",
     explanation:
-      "Braces after a component make a pipeline: one need met at several stages of evolution. Children sit on the pipeline's row, so only their evolution counts.",
+      "Braces after a component make a pipeline: one need met at several stages of evolution. Children sit on the pipeline's row, so only their evolution counts. pipeline=(from, to) widens its box to span those evolutions.",
+  },
+  {
+    title: "Note",
+    code: '"Hot water is obvious" [48, 85]',
+    explanation:
+      "Text in quotes is a note: prose on the map, not a component. Drag it like one, and double-click it to rewrite it.",
+  },
+  {
+    title: "Map settings",
+    code: '@map [\n  title="Tea Shop",\n  style=plain,\n  evolution=("Novel", "Emerging", "Good", "Best"),\n]',
+    explanation:
+      '@map, at the top, sets the title (the tab and the export are named after it), style=wardley or plain, the stage names (evolution=), where the stages begin (stages=(17.4, 40, 70)), and visibility=("Visible", "Invisible"). evolution=hidden or visibility=hidden hides an axis\'s labels.',
   },
   {
     title: "Comment",

@@ -1,4 +1,5 @@
 import { expect, it } from "vitest";
+import { DEFAULT_SETTINGS } from "../model/model";
 import { type ExportScene, type Measure, mapSvg } from "./mapSvg";
 
 /** Every character 8 px wide; boxes 20 px high, 15 above the baseline. */
@@ -9,6 +10,7 @@ const scene = (overrides: Partial<ExportScene> = {}): ExportScene => ({
   height: 300,
   components: [],
   links: [],
+  settings: DEFAULT_SETTINGS,
   ...overrides,
 });
 
@@ -118,5 +120,30 @@ it("embeds the typeface only when given one", () => {
   expect(mapSvg(scene(), measure).svg).not.toContain("<style>");
   expect(mapSvg(scene(), measure, "@font-face{}").svg).toContain(
     "<defs><style>@font-face{}</style></defs>",
+  );
+});
+
+it("labels the axes as @map says, in its style", () => {
+  const settings = {
+    ...DEFAULT_SETTINGS,
+    style: "plain" as const,
+    evolution: ["Novel", "", "Good", "Best"],
+    stages: [25, 50, 75] as [number, number, number],
+    visibility: ["Visible", "Invisible"],
+  };
+  const { svg } = mapSvg(
+    scene({ settings, components: [{ name: "Kettle", x: 0, y: 0, evolve: { x: 100 } }] }),
+    measure,
+  );
+  expect(svg).toContain(">Novel</text>");
+  expect(svg).not.toContain("Genesis");
+  expect(svg).toContain('<line x1="100.5"');
+  expect(svg).toContain(">Visible</text>");
+  expect(svg).toContain(">Invisible</text>");
+  // Plain is black on white: the future is drawn in ink.
+  expect(svg).not.toContain("#dc2626");
+  expect(svg).not.toContain("#f7f7f8");
+  expect(mapSvg(scene({ settings: { ...settings, visibility: [] } }), measure).svg).not.toContain(
+    "Visible",
   );
 });

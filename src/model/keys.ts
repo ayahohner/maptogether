@@ -188,3 +188,64 @@ export const readLinkKeys = (args: Args | undefined, lints: KeyLint[]) =>
 export const readNoteKeys = (args: Args | undefined, lints: KeyLint[]) => {
   readKeys(args, {}, "A note", lints);
 };
+
+/** The styles the map can be drawn in; `colour`, `handwritten` and `dark` come later. */
+export const STYLES = ["wardley", "plain"] as const;
+export type Style = (typeof STYLES)[number];
+
+/** `hidden`, or a tuple of `count` strings (empty strings allowed). */
+const labels = (count: number, example: string): Reader => ({
+  read: (value) => {
+    if (value?.kind === "symbol") return value.value === "hidden" ? [] : undefined;
+    if (value?.kind !== "tuple" || value.args.keywords.length) return undefined;
+    const names = value.args.positional;
+    if (names.length !== count || names.some((v) => v.kind !== "string")) return undefined;
+    return names.map((v) => (v.kind === "string" ? v.value : ""));
+  },
+  takes: `hidden, or ${count} names in brackets, such as ${example}`,
+});
+
+/** Three stage boundaries, each past the last, from 0 to 100. */
+const stages: Reader = {
+  read: (value) => {
+    const at = numbers(value, 3);
+    const rising = at?.every((n, i) => n > (i ? at[i - 1] : 0) && n < 100);
+    return rising ? at : undefined;
+  },
+  takes: "three rising numbers between 0 and 100, such as (17.4, 40, 70)",
+};
+
+const MAP_KEYS: Record<string, Reader> = {
+  title: text,
+  style: oneOf(STYLES),
+  evolution: labels(4, '("Genesis", "Custom", "Product", "Commodity")'),
+  stages,
+  visibility: labels(2, '("Visible", "Invisible")'),
+  // Read later (proposal-v2.md, "Later"); taken now so maps that use them aren't linted.
+  legend: range,
+};
+
+export interface MapKeys {
+  title?: string;
+  style?: Style;
+  /** Stage names; none when hidden. */
+  evolution?: string[];
+  stages?: [number, number, number];
+  /** The visibility axis's two ends, top first; none when hidden. */
+  visibility?: string[];
+}
+
+export const readMapKeys = (args: Args | undefined, lints: KeyLint[]) =>
+  readKeys(args, MAP_KEYS, "@map", lints) as MapKeys;
+
+const TYPE_KEYS: Record<string, Reader> = {
+  base: oneOf(["component", "user", "market", "ecosystem"]),
+  // Read later (proposal-v2.md, "Types, styles and design tokens").
+  shape: symbol,
+  tone: symbol,
+};
+
+/** Lints an `@type`'s keys; which type it's based on is read before (see declaredTypes). */
+export const readTypeKeys = (args: Args | undefined, lints: KeyLint[]) => {
+  readKeys(args, TYPE_KEYS, "@type", lints);
+};

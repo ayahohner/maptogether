@@ -88,7 +88,8 @@ The text syntax is small:
   evolution from genesis (0) across to commodity (100). Without them a
   component starts at `[10, 10]`. Names can hold spaces and punctuation; put a
   name in backticks if it holds `--`, `//`, brackets, braces, quotes or `;`.
-- `needer -- needed` draws a dependency between two components.
+- `needer -- needed` draws a dependency between two components. Add
+  `[constraint]`, `[flow]` or `[label="pays"]` to say more about it.
 - Keys after the position describe a component: `type=user` (or `market`,
   `ecosystem`), `sourcing=build` (or `buy`, `outsource`), `inertia`,
   `evolve=80` for where it's heading, and `label="text"`. Drag a label to
@@ -96,6 +97,11 @@ The text syntax is small:
 - `name [v, e] { ... }` makes a pipeline: put one child component per line
   inside the braces, each at its own evolution. Children sit on the pipeline's
   row, so their visibility is ignored, and they move with it when you drag it.
+  `pipeline=(from, to)` widens the box, with or without children.
+- `"text" [v, e]` is a note: prose on the map that you can drag.
+- `@map [title="Tea Shop", style=plain]` at the top sets the title, style
+  (`wardley` or `plain`), stage names (`evolution=`), boundaries (`stages=`)
+  and the visibility axis's labels (`visibility=`).
 - `// comments` are ignored.
 
 Map text saved as a file uses the `.mt` extension (MapTogether script).

@@ -1,90 +1,89 @@
+import { useSnapshot } from "valtio";
+
+import { mapSettings } from "../state/Settings";
+
 /**
- * Evolution stages and the names they go by for each kind of component
- * (Wardley's characteristics table).
+ * What each evolution stage is called for each kind of component (Wardley's
+ * characteristics table).
  */
-export const evolutionStages = [
-  {
-    name: "Genesis",
-    alternatives: [
-      ["Activities", "Genesis"],
-      ["Practices", "Novel"],
-      ["Data", "Unmodelled"],
-      ["Knowledge", "Concept"],
-    ],
-  },
-  {
-    name: "Custom",
-    alternatives: [
-      ["Activities", "Custom-Built"],
-      ["Practices", "Emerging"],
-      ["Data", "Divergent"],
-      ["Knowledge", "Hypothesis"],
-    ],
-  },
-  {
-    name: "Product",
-    alternatives: [
-      ["Activities", "Product (+rental)"],
-      ["Practices", "Good"],
-      ["Data", "Convergent"],
-      ["Knowledge", "Theory"],
-    ],
-  },
-  {
-    name: "Commodity",
-    alternatives: [
-      ["Activities", "Commodity (+utility)"],
-      ["Practices", "Best"],
-      ["Data", "Modelled"],
-      ["Knowledge", "Accepted"],
-    ],
-  },
+const stageAlternatives = [
+  [
+    ["Activities", "Genesis"],
+    ["Practices", "Novel"],
+    ["Data", "Unmodelled"],
+    ["Knowledge", "Concept"],
+  ],
+  [
+    ["Activities", "Custom-Built"],
+    ["Practices", "Emerging"],
+    ["Data", "Divergent"],
+    ["Knowledge", "Hypothesis"],
+  ],
+  [
+    ["Activities", "Product (+rental)"],
+    ["Practices", "Good"],
+    ["Data", "Convergent"],
+    ["Knowledge", "Theory"],
+  ],
+  [
+    ["Activities", "Commodity (+utility)"],
+    ["Practices", "Best"],
+    ["Data", "Modelled"],
+    ["Knowledge", "Accepted"],
+  ],
 ] as const;
 
-/** Evolution percentages where each stage after Genesis begins. */
-export const stageBoundaries = [17.4, 40, 70] as const;
-
-export const stageEdges = [0, ...stageBoundaries, 100];
+/** Where each stage begins and the last ends, in evolution (0–100), from the stage boundaries. */
+export const stageEdges = (stages: readonly number[]) => [0, ...stages, 100];
 
 /**
  * Dashed stage boundaries, drawn beneath the (transparent) map canvas so
  * components and their labels paint over them.
  */
 export function StageDividers() {
-  return stageBoundaries.map((boundary) => (
+  const { stages } = useSnapshot(mapSettings);
+  return stages.map((boundary) => (
     <span key={boundary} className="axis-x-divider" style={{ left: `${boundary}%` }} />
   ));
 }
 
-/** Evolution (x) and visibility (y) axes drawn over the map canvas. */
+/**
+ * Evolution (x) and visibility (y) axes drawn over the map canvas, labelled
+ * as `@map` says. Each stage also shows its names for each kind of component.
+ */
 export function MapAxes() {
+  const { evolution, stages, visibility } = useSnapshot(mapSettings);
+  const edges = stageEdges(stages);
+  const [top, bottom] = visibility;
   return (
     <>
       <div className="axis-y">
-        <span className="axis-y-label">Visibility</span>
+        {top && <span className="axis-y-label">{top}</span>}
+        {bottom && <span className="axis-y-label end">{bottom}</span>}
       </div>
       <div className="axis-x">
-        {evolutionStages.map((stage, i) => (
+        {evolution.map((name, i) => (
           <span
-            key={stage.name}
+            // biome-ignore lint/suspicious/noArrayIndexKey: stages are positional; names may repeat or be blank.
+            key={i}
             className={`axis-x-stage${i === 0 ? " first" : ""}${
-              i === evolutionStages.length - 1 ? " last" : ""
+              i === evolution.length - 1 ? " last" : ""
             }`}
             style={{
-              left: `${stageEdges[i]}%`,
-              width: `${stageEdges[i + 1] - stageEdges[i]}%`,
+              left: `${edges[i]}%`,
+              width: `${edges[i + 1] - edges[i]}%`,
             }}
           >
             {/* biome-ignore lint/a11y/noNoninteractiveTabindex: focus shows the stage's other names, for keyboard users. */}
             <span className="axis-x-label" tabIndex={0}>
-              {stage.name}
+              {name}
               <span className="axis-x-popover" role="tooltip">
                 <table>
                   <tbody>
-                    {stage.alternatives.map(([type, name]) => (
+                    {stageAlternatives[i].map(([type, other]) => (
                       <tr key={type}>
                         <th>{type}</th>
-                        <td>{name}</td>
+                        <td>{other}</td>
                       </tr>
                     ))}
                   </tbody>

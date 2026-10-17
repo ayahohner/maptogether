@@ -1,4 +1,5 @@
 import { graph, type NodeAttributes, redrawLinks } from "../state/Graph";
+import { setMapSettings } from "../state/Settings";
 import { parseMap } from "../parser/parse";
 import {
   buildModel,
@@ -12,6 +13,7 @@ import { Component } from "./components/Component";
 import { Line } from "./components/Line";
 import { type ComponentConfig, layoutComponent } from "./components/componentLayout";
 import type { LinkStyle } from "./components/symbols";
+import { setStyle } from "./tokens";
 
 /** Past this many problems the text is mostly not a map, so the last drawing stays. */
 const MAX_PROBLEMS = 50;
@@ -75,6 +77,9 @@ export const drawMap = (text: string) => {
 
 const drawModel = (model: MapModel) => {
   try {
+    setMapSettings(model.settings);
+    // Everything is drawn in the style's colours, so a new style draws everything anew.
+    if (setStyle(model.settings.style)) for (const name of graph.nodes()) removeComponent(name);
     reconcile(toConfigs(model), model.links);
     MapSingleton.renderIndicator.reset();
   } catch (e) {

@@ -5,6 +5,8 @@
  * Meaning never rests on hue alone: the future is dashed as well as red, and
  * sourcing differs in lightness.
  */
+import type { Style } from "../model/keys";
+
 export const MAP_TOKENS = {
   /** Lines, outlines and labels. */
   ink: "#000000",
@@ -30,5 +32,23 @@ export const MAP_TOKENS = {
 
 export type Role = keyof typeof MAP_TOKENS;
 
-/** A token's colour as Pixi takes it. */
-export const pixiColor = (role: Role) => Number.parseInt(MAP_TOKENS[role].slice(1), 16);
+/**
+ * Each style's value for every role. `plain` is black on white, for print:
+ * the future keeps its dashes and flow its label, so nothing rests on colour.
+ */
+export const STYLE_TOKENS: Record<Style, Record<Role, string>> = {
+  wardley: MAP_TOKENS,
+  plain: { ...MAP_TOKENS, canvas: MAP_TOKENS.paper, future: MAP_TOKENS.ink, flow: MAP_TOKENS.ink },
+};
+
+let style: Style = "wardley";
+
+/** Sets the style the canvas draws in; returns whether it changed, so the map is drawn anew. */
+export const setStyle = (next: Style) => {
+  const changed = next !== style;
+  style = next;
+  return changed;
+};
+
+/** A token's colour in the canvas's style, as Pixi takes it. */
+export const pixiColor = (role: Role) => Number.parseInt(STYLE_TOKENS[style][role].slice(1), 16);

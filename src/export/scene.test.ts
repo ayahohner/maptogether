@@ -2,6 +2,7 @@ import Graph from "graphology";
 import { expect, it } from "vitest";
 import type { ComponentConfig } from "../map/components/componentLayout";
 import { PLAIN_LINK } from "../map/components/symbols";
+import { DEFAULT_SETTINGS } from "../model/model";
 import type { WardleyGraph } from "../state/Graph";
 import { sceneFromGraph } from "./scene";
 
@@ -32,7 +33,7 @@ it("puts pipelines' components in front, as the canvas stacks them", () => {
     ],
     [],
   );
-  const scene = sceneFromGraph(graph, size);
+  const scene = sceneFromGraph(graph, size, DEFAULT_SETTINGS);
   expect(scene.width).toBe(800);
   expect(scene.height).toBe(600);
   expect(scene.components.map((c) => c.name)).toEqual(["Tea", "Kettle", "Loose Leaf"]);
@@ -50,7 +51,7 @@ it("draws each link between its components' markers", () => {
       ["Cup", "Loose Leaf"],
     ],
   );
-  expect(sceneFromGraph(graph, size).links).toEqual([
+  expect(sceneFromGraph(graph, size, DEFAULT_SETTINGS).links).toEqual([
     { ends: [500, 100, 300, 200], style: PLAIN_LINK },
     // A pipeline's component sits 12 px below the row.
     { ends: [500, 100, 250, 212], style: PLAIN_LINK },
@@ -60,7 +61,10 @@ it("draws each link between its components' markers", () => {
 it("places components where they are drawn now, as after a drag", () => {
   const graph = graphOf([{ name: "Cup", x: 500, y: 100 }], []);
   graph.getNodeAttributes("Cup").coordinates = { x: 520, y: 90 };
-  expect(sceneFromGraph(graph, size).components[0]).toMatchObject({ x: 520, y: 90 });
+  expect(sceneFromGraph(graph, size, DEFAULT_SETTINGS).components[0]).toMatchObject({
+    x: 520,
+    y: 90,
+  });
 });
 
 it("boxes a pipeline around its components where they are drawn now", () => {
@@ -74,7 +78,9 @@ it("boxes a pipeline around its components where they are drawn now", () => {
   );
   // Dragged on the canvas, before the text is parsed again (or while it can't be).
   graph.getNodeAttributes("Bags").coordinates = { x: 420, y: 200 };
-  const tea = sceneFromGraph(graph, size).components.find((c) => c.name === "Tea");
+  const tea = sceneFromGraph(graph, size, DEFAULT_SETTINGS).components.find(
+    (c) => c.name === "Tea",
+  );
   expect(tea?.pipeline).toEqual([250, 420]);
 });
 
@@ -87,6 +93,8 @@ it("leaves a pipeline nested in another without a box, as the canvas draws it", 
     ],
     [],
   );
-  const leaf = sceneFromGraph(graph, size).components.find((c) => c.name === "Leaf");
+  const leaf = sceneFromGraph(graph, size, DEFAULT_SETTINGS).components.find(
+    (c) => c.name === "Leaf",
+  );
   expect(leaf?.pipeline).toEqual([]);
 });

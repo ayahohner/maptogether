@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { parse } from "../parser/parse";
-import { buildModel } from "./model";
+import { buildModel, DEFAULT_SETTINGS } from "./model";
 
 const build = (text: string) => buildModel(parse(text));
 const lintMessages = (text: string) =>
@@ -149,6 +149,44 @@ describe("buildModel", () => {
       { key: '"note 2"', text: "Cold", visibility: 10, evolution: 10 },
     ]);
     expect(lints.map((l) => l.message)).toEqual(["A note doesn't take x, so it's ignored."]);
+  });
+
+  it("reads the first @map's settings over the defaults", () => {
+    const { model, lints } = build(
+      '@map [title="Tea", style=plain, evolution=("A", "B", "", "D"), stages=(10, 50, 80), visibility=hidden]\n@map [title="Other"]',
+    );
+    expect(model.settings).toEqual({
+      title: "Tea",
+      style: "plain",
+      evolution: ["A", "B", "", "D"],
+      stages: [10, 50, 80],
+      visibility: [],
+    });
+    expect(lints.map((l) => l.message)).toEqual([
+      "There's already an @map, so this one is ignored.",
+    ]);
+    expect(build("A").model.settings).toEqual(DEFAULT_SETTINGS);
+  });
+
+  it.each([
+    ["@map [style=dark]", "style takes wardley or plain, so this is ignored."],
+    [
+      "@map [stages=(50, 40, 70)]",
+      "stages takes three rising numbers between 0 and 100, such as (17.4, 40, 70), so this is ignored.",
+    ],
+    [
+      '@map [evolution=("A", "B")]',
+      'evolution takes hidden, or 4 names in brackets, such as ("Genesis", "Custom", "Product", "Commodity"), so this is ignored.',
+    ],
+    ["@map [colour]", "@map doesn't take colour, so it's ignored."],
+    ['@map ["Tea"]', "@map takes only keys, such as title."],
+    [
+      "@type robot [base=submap]",
+      "base takes component, user, market or ecosystem, so this is ignored.",
+    ],
+    ["@area Front", "The map doesn't know @area, so it's ignored: use @map or @type."],
+  ])("lints %s", (text, message) => {
+    expect(lintMessages(text)).toEqual([["warning", message]]);
   });
 
   it("warns about a link written twice, either way round", () => {

@@ -11,8 +11,11 @@ import {
   type KeyLint,
   readComponentKeys,
   readLinkKeys,
+  readMapKeys,
   readNoteKeys,
+  readTypeKeys,
   type Sourcing,
+  type Style,
 } from "./keys";
 
 /** Where a component written without a position is drawn. */
@@ -64,12 +67,32 @@ export interface NoteModel {
   evolution: number;
 }
 
+/** What `@map` sets: how the map as a whole is drawn. */
+export interface MapSettings {
+  title?: string;
+  style: Style;
+  /** The evolution stages' names, left to right; none when hidden. */
+  evolution: string[];
+  /** Where the second, third and fourth stages begin (evolution). */
+  stages: [number, number, number];
+  /** The visibility axis's name, or its ends, top first; none when hidden. */
+  visibility: string[];
+}
+
+export const DEFAULT_SETTINGS: MapSettings = {
+  style: "wardley",
+  evolution: ["Genesis", "Custom", "Product", "Commodity"],
+  stages: [17.4, 40, 70],
+  visibility: ["Visibility"],
+};
+
 export interface MapModel {
   /** Each component where it's first written. */
   components: Map<string, ComponentModel>;
   /** In the order written, links to undeclared components included. */
   links: LinkModel[];
   notes: NoteModel[];
+  settings: MapSettings;
 }
 
 export interface Lint extends Span {
@@ -89,17 +112,20 @@ interface Builder {
   types: Map<string, MapSymbol>;
   /** Each pair of components linked so far, either way round. */
   linked: Set<string>;
+  /** Whether an `@map` has been read. */
+  mapRead?: boolean;
 }
 
 export function buildModel({ statements }: Pick<ParseResult, "statements">) {
   const builder: Builder = {
-    model: { components: new Map(), links: [], notes: [] },
+    model: { components: new Map(), links: [], notes: [], settings: DEFAULT_SETTINGS },
     lints: [],
     types: declaredTypes(statements),
     linked: new Set(),
   };
   for (const statement of statements) {
     if (statement.head.kind === "component") addComponent(builder, statement);
+    if (statement.head.kind === "directive") addDirective(builder, statement);
   }
   for (const statement of statements) {
     if (statement.head.kind === "link") addLink(builder, statement);
@@ -260,6 +286,28 @@ function position(lints: Lint[], { args }: Statement) {
   }
   ignored(lints, positional.slice(2), POSITION);
   return { visibility: visibility.value, evolution: evolution.value };
+}
+
+function addDirective(builder: Builder, statement: Statement) {
+  if (statement.head.kind !== "directive") return;
+  const { word } = statement.head;
+  const { lints } = builder;
+  if (word.text === "map") return addSettings(builder, statement);
+  if (word.text === "type") return keysOf(lints, (found) => readTypeKeys(statement.args, found));
+  warning(lints, word, `The map doesn't know @${word.text}, so it's ignored: use @map or @type.`);
+}
+
+/** The first `@map`'s settings, over the defaults; a second `@map` is ignored. */
+function addSettings(builder: Builder, statement: Statement) {
+  const { lints } = builder;
+  if (builder.mapRead) {
+    warning(lints, statement, "There's already an @map, so this one is ignored.");
+    return;
+  }
+  builder.mapRead = true;
+  const keys = keysOf(lints, (found) => readMapKeys(statement.args, found));
+  ignored(lints, statement.args?.positional ?? [], "@map takes only keys, such as title.");
+  builder.model.settings = { ...DEFAULT_SETTINGS, ...keys };
 }
 
 function addNote({ model, lints }: Builder, statement: Statement, index: number) {

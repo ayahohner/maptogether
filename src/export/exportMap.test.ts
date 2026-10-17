@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { canvasMeasure, download, embeddedFont, exportMap, svgToPng } from "./exportMap";
 import type { Measure } from "./mapSvg";
+import { DEFAULT_SETTINGS } from "../model/model";
 
 const measure: Measure = (text) => ({ width: text.length * 8, ascent: 15, descent: 5 });
-const scene = { width: 400, height: 300, components: [], links: [] };
+const scene = { width: 400, height: 300, components: [], links: [], settings: DEFAULT_SETTINGS };
 
 /** What each download saved: its file name and contents. */
 let saved: { name: string; blob: Blob }[];

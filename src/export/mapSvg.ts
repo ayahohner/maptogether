@@ -7,8 +7,9 @@ import {
   type Shape,
   type TextShape,
 } from "../map/components/symbols";
-import { evolutionStages, stageBoundaries, stageEdges } from "../map/MapAxes";
-import { MAP_TOKENS } from "../map/tokens";
+import { stageEdges } from "../map/MapAxes";
+import { type Role, STYLE_TOKENS } from "../map/tokens";
+import type { MapSettings } from "../model/model";
 
 export interface TextMetrics {
   width: number;
@@ -29,6 +30,8 @@ export interface ExportScene {
   components: ComponentConfig[];
   /** Each link's ends, `[ax, ay, bx, by]`, and how it's drawn. */
   links: { ends: [number, number, number, number]; style: LinkStyle }[];
+  /** The map's `@map` settings: its style, stages and axis labels. */
+  settings: MapSettings;
 }
 
 export interface MapSvg {
@@ -38,10 +41,14 @@ export interface MapSvg {
   height: number;
 }
 
-/** The canvas's colours (see design.css, map.css and tokens.ts). */
+/**
+ * The roles' colours in the style being drawn. mapSvg sets them before it
+ * draws anything, and draws in one go, so a picture never mixes styles.
+ */
+let tokens: Record<Role, string> = STYLE_TOKENS.wardley;
+
+/** The canvas's colours that aren't map roles (see design.css and map.css). */
 const COLORS = {
-  canvas: MAP_TOKENS.canvas,
-  ink: MAP_TOKENS.ink,
   axis: "#a1a1aa",
   axisText: "#71717a",
   divider: "#c4c4c8",
@@ -145,8 +152,8 @@ const contentBounds = (scene: ExportScene, measure: Measure) => {
 };
 
 /** Dashed stage boundaries, drawn up from just below the x-axis so each ends on a dash. */
-const stageDividers = ({ width, height }: ExportScene) =>
-  stageBoundaries
+const stageDividers = ({ width, height, settings }: ExportScene) =>
+  settings.stages
     .map((boundary) => {
       const x = n((boundary / 100) * width + 0.5);
       return `<line x1="${x}" y1="${n(height - 15.5)}" x2="${x}" y2="0" stroke="${COLORS.divider}" stroke-dasharray="4 4"/>`;
@@ -154,20 +161,23 @@ const stageDividers = ({ width, height }: ExportScene) =>
     .join("");
 
 /** The visibility (y) and evolution (x) axes with their arrowheads and labels, as map.css draws them. */
-const axes = ({ width, height }: ExportScene) => {
+const axes = ({ width, height, settings }: ExportScene) => {
   const axisY = n(height - 19.5);
   const stroke = `fill="none" stroke="${COLORS.axis}"`;
-  const stages = evolutionStages
-    .map((stage, i) => {
-      const x = n((stageEdges[i] / 100) * width + (i === 0 ? 14 : 6));
-      return `<text x="${x}" y="${n(height - 6)}">${stage.name}</text>`;
+  const edges = stageEdges(settings.stages);
+  const stages = settings.evolution
+    .map((name, i) => {
+      const x = n((edges[i] / 100) * width + (i === 0 ? 14 : 6));
+      return `<text x="${x}" y="${n(height - 6)}">${escapeXml(name)}</text>`;
     })
     .join("");
+  const [top, bottom] = settings.visibility.map(escapeXml);
   return [
     `<path d="M8.5 4V${n(height - 20)}M4.5 8.5L8.5 4.5L12.5 8.5" ${stroke}/>`,
     `<path d="M8 ${axisY}H${n(width - 2)}M${n(width - 6.5)} ${n(axisY - 4)}L${n(width - 2.5)} ${axisY}L${n(width - 6.5)} ${n(axisY + 4)}" ${stroke}/>`,
     `<g fill="${COLORS.axisText}" font-size="${AXIS_SIZE}">`,
-    `<text transform="translate(22 16) rotate(-90)" text-anchor="end">Visibility</text>`,
+    top ? `<text transform="translate(22 16) rotate(-90)" text-anchor="end">${top}</text>` : "",
+    bottom ? `<text transform="translate(22 ${n(height - 24)}) rotate(-90)">${bottom}</text>` : "",
     stages,
     "</g>",
   ].join("");
@@ -178,7 +188,7 @@ const link = ({ ends, style }: ExportScene["links"][number], measure: Measure) =
   const { line, text } = linkShapes(ends, style);
   if (!text) return svgShape(line);
   const { width, ascent, descent } = measure(text.text, LABEL_SIZE);
-  const backing = `<rect x="${n(text.x)}" y="${n(text.y)}" width="${n(width)}" height="${n(ascent + descent)}" fill="${COLORS.canvas}"/>`;
+  const backing = `<rect x="${n(text.x)}" y="${n(text.y)}" width="${n(width)}" height="${n(ascent + descent)}" fill="${tokens.canvas}"/>`;
   return svgShape(line) + backing + svgText(text, measure);
 };
 
@@ -200,17 +210,17 @@ const label = (config: ComponentConfig, measure: Measure) => {
   const rotation = n((at.rotation * 180) / Math.PI);
   return [
     `<g transform="translate(${n(at.x)} ${n(at.y)})${rotation ? ` rotate(${rotation})` : ""}">`,
-    `<rect width="${n(width)}" height="${n(ascent + descent)}" fill="${COLORS.canvas}"/>`,
+    `<rect width="${n(width)}" height="${n(ascent + descent)}" fill="${tokens.canvas}"/>`,
     `<text y="${n(ascent)}" font-size="${LABEL_SIZE}">${escapeXml(labelText(config))}</text>`,
     "</g>",
   ].join("");
 };
 
 const paint = (shape: Shape) => {
-  const fill = "fill" in shape && shape.fill ? MAP_TOKENS[shape.fill] : "none";
+  const fill = "fill" in shape && shape.fill ? tokens[shape.fill] : "none";
   const stroke =
     "stroke" in shape && shape.stroke
-      ? ` stroke="${MAP_TOKENS[shape.stroke.role]}" stroke-width="${shape.stroke.width}"`
+      ? ` stroke="${tokens[shape.stroke.role]}" stroke-width="${shape.stroke.width}"`
       : "";
   return `fill="${fill}"${stroke}`;
 };
@@ -237,7 +247,7 @@ const svgShape = (shape: Shape) => {
 };
 
 const svgText = ({ x, y, text, fill }: TextShape, measure: Measure) =>
-  `<text x="${n(x)}" y="${n(y + measure(text, LABEL_SIZE).ascent)}" font-size="${LABEL_SIZE}" fill="${MAP_TOKENS[fill]}">${escapeXml(text)}</text>`;
+  `<text x="${n(x)}" y="${n(y + measure(text, LABEL_SIZE).ascent)}" font-size="${LABEL_SIZE}" fill="${tokens[fill]}">${escapeXml(text)}</text>`;
 
 /**
  * A component: its symbol, label and decorations, and for a pipeline the box
@@ -245,7 +255,7 @@ const svgText = ({ x, y, text, fill }: TextShape, measure: Measure) =>
  */
 const component = (config: ComponentConfig, measure: Measure) => {
   const { y, pipe } = layoutComponent(config);
-  const outline = `stroke="${COLORS.ink}" stroke-width="1"`;
+  const outline = `stroke="${tokens.ink}" stroke-width="1"`;
   const box = pipe
     ? `<rect x="${n(pipe.offset + 0.5)}" y="2.5" width="${n(pipe.width - 1)}" height="19" fill="#ffffff" fill-opacity="0.1" ${outline}/>`
     : "";
@@ -291,6 +301,7 @@ const logotype = (right: number, baseline: number, measure: Measure) => {
  * embedded so the labels keep their typeface wherever the file is opened.
  */
 export function mapSvg(scene: ExportScene, measure: Measure, fontCss = ""): MapSvg {
+  tokens = STYLE_TOKENS[scene.settings.style];
   const bounds = contentBounds(scene, measure);
   const [x, y] = [n(bounds.minX - MARGIN), n(bounds.minY - MARGIN)];
   const baseline = bounds.maxY + LOGOTYPE_DROP;
@@ -299,10 +310,10 @@ export function mapSvg(scene: ExportScene, measure: Measure, fontCss = ""): MapS
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${x} ${y} ${width} ${height}" font-family="${FONT_FAMILY}">`,
     fontCss ? `<defs><style>${fontCss}</style></defs>` : "",
-    `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="${COLORS.canvas}"/>`,
+    `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="${tokens.canvas}"/>`,
     stageDividers(scene),
     `<g>${scene.links.map((l) => link(l, measure)).join("")}</g>`,
-    `<g fill="${COLORS.ink}">${scene.components.map((c) => component(c, measure)).join("")}</g>`,
+    `<g fill="${tokens.ink}">${scene.components.map((c) => component(c, measure)).join("")}</g>`,
     axes(scene),
     logotype(bounds.maxX, baseline, measure),
     "</svg>",

@@ -1,5 +1,6 @@
 import { type ComponentConfig, layoutComponent } from "../map/components/componentLayout";
 import type { NodeAttributes, WardleyGraph } from "../state/Graph";
+import type { MapSettings } from "../model/model";
 import type { ExportScene } from "./mapSvg";
 
 /**
@@ -28,6 +29,7 @@ const markerAt = (node: NodeAttributes): [number, number] => {
 export const sceneFromGraph = (
   graph: WardleyGraph,
   size: { width: number; height: number },
+  settings: MapSettings,
 ): ExportScene => {
   const components = graph
     .mapNodes((_name, node) => drawnConfig(graph, node))
@@ -36,5 +38,5 @@ export const sceneFromGraph = (
     ends: [...markerAt(a), ...markerAt(b)],
     style: link.style,
   }));
-  return { width: size.width, height: size.height, components, links };
+  return { width: size.width, height: size.height, components, links, settings };
 };

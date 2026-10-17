@@ -36,6 +36,7 @@ vi.mock("./components/Line", () => ({
 }));
 
 import { graph } from "../state/Graph";
+import { mapSettings } from "../state/Settings";
 import { Component } from "./components/Component";
 import { Line } from "./components/Line";
 import { drawMap } from "./drawMap";
@@ -232,6 +233,17 @@ it("draws notes as text, keyed by their place among the notes", () => {
     note: true,
   });
   expect(graph.hasNode('"note 1"')).toBe(true);
+});
+
+it("sets the map's settings, and draws everything anew in a new style", () => {
+  drawMap('@map [title="Tea"]\nKettle');
+  expect(mapSettings.title).toBe("Tea");
+  const kettle = component("Kettle");
+  drawMap("@map [style=plain]\nKettle");
+  expect(kettle.removeFromParent).toHaveBeenCalled();
+  expect(component("Kettle")).not.toBe(kettle);
+  expect(mapSettings).toMatchObject({ title: undefined, style: "plain" });
+  drawMap("Kettle");
 });
 
 it("draws a pipeline's bounds in pixels", () => {

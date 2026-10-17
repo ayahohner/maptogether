@@ -25,10 +25,12 @@ import { initializeOnboarding } from "../onboarding";
 import { canvasMeasure, type ExportFormat, exportMap } from "../export/exportMap";
 import { sceneFromGraph } from "../export/scene";
 import { graph } from "../state/Graph";
+import { mapSettings } from "../state/Settings";
 
 import { setEditorText, stopSelecting } from "../state/State";
 
 import { initializePanelResizer } from "./components/PanelResizer";
+import { fileName, initializeMapSettings } from "./mapSettings";
 import { bindEditShortcuts, bindToolShortcuts } from "./shortcuts";
 import { keepMapOutOfSearch } from "./seo";
 
@@ -66,6 +68,7 @@ const run = async (elementId: string) => {
   setEditorText(editorView.state.doc.toString());
 
   document.getElementById(elementId)?.appendChild(MapSingleton.canvas);
+  initializeMapSettings(document.getElementById(elementId)!);
 
   const dividers = document.createElement("div");
   dividers.className = "map-axes";
@@ -117,9 +120,9 @@ const initializeChrome = () => {
 /** Downloads the map as it is drawn now, whatever the pan and zoom. */
 const exportPicture = (format: ExportFormat) =>
   exportMap(format, {
-    scene: sceneFromGraph(graph, MapSingleton.screen),
+    scene: sceneFromGraph(graph, MapSingleton.screen, structuredClone(mapSettings)),
     measure: canvasMeasure(document.createElement("canvas").getContext("2d")!),
-    name: room.id ? `wardley-map-${room.id}` : "wardley-map",
+    name: fileName(mapSettings.title, room.id ? `wardley-map-${room.id}` : "wardley-map"),
   }).catch(console.error);
 
 run("map");
