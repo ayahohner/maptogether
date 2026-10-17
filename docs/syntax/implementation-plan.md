@@ -49,7 +49,7 @@ pipelines, `->`). Only `cst.test.ts` uses it.
 | `constraint`, `flow`, `label` on links | none | `EdgeAttributes`, `Line`, export |
 | `pipeline=(from, to)`, childless pipelines | box from children only | `pipelineBox`, model |
 | `@map` title, style, stage names and boundaries, axis labels, `hidden` | hard-coded in `MapAxes.tsx` (`evolutionStages`, `stageBoundaries`) | settings store read by `MapAxes` and `mapSvg` |
-| Lints: unknown keys, bad values, duplicate names, braces on a user, two `@map` | parse errors and self-links | semantic pass |
+| Lints: unknown keys, bad values, duplicate names, links to undeclared components, braces on a user, two `@map` | parse errors and self-links | semantic pass |
 | OWM import | none | converter, menu and paste |
 | Formatter (commas, one argument per line over 80) | none | command |
 
@@ -249,7 +249,8 @@ These were gaps in the proposal. It now says:
 - **A name ends at** `]` and `}` as well as `[`, `{`, `--`, `//`, `;` and
   `"`, and can't start with `@`.
 - **A link to a component that isn't declared** is kept in the text and not
-  drawn. It isn't an error, so there's no lint warning for it.
+  drawn, with a lint warning on its line. A warning doesn't stop the map
+  drawing or the canvas acting on it, the same as today's self-link warning.
 - **Positions are written to one decimal place**, as `mapCoordinates` does
   now: `[98.3, 41.5]`.
 - **A component with no position** is drawn at `[10, 10]`, as today.

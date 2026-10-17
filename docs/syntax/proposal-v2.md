@@ -284,8 +284,9 @@ The needer is on the left and the needed on the right, as today. Spaces
 around `--` are optional. Arguments on a link describe the link, and only the
 link.
 
-A link can name a component that isn't declared. That's not an error: the
-link stays in the text, and is drawn once both components exist.
+A link can name a component that isn't declared. The editor warns about it,
+but the rest of the map still draws and can still be edited; the link stays
+in the text and is drawn once both components exist.
 
 | Key | Value | Meaning |
 | --- | --- | --- |
