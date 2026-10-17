@@ -123,12 +123,13 @@ function OverflowMenu({ onAbout, onDemo, onExport, onImport }: OverflowMenuProps
           onClick={() => openHelp()}
         />
         <MenuAction icon={MapIcon} label="Open the demo map" onClick={onDemo} />
-        <MenuAction
-          icon={ArrowDownTrayIcon}
-          label="Import from OnlineWardleyMaps…"
-          onClick={onImport}
-        />
         <MenuSeparator className="my-1.5 h-px bg-line" />
+        <MenuSection>
+          <MenuHeading className="px-2.5 pt-1 pb-1 text-xs font-medium text-ink-subtle">
+            Import
+          </MenuHeading>
+          <MenuAction icon={ArrowDownTrayIcon} label="OnlineWardleyMaps…" onClick={onImport} />
+        </MenuSection>
         <ExportSection onExport={onExport} />
         <MenuSeparator className="my-1.5 h-px bg-line" />
         <MenuItem>

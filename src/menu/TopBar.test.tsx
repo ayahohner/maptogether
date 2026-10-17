@@ -73,17 +73,18 @@ it("doesn't confirm a link the browser refused to copy", async () => {
   expect(logged).toHaveBeenCalled();
 });
 
-it("lists About, help, the demo map, export, feedback and the version in the overflow menu", async () => {
+it("lists About, help, the demo map, import, export, feedback and the version in the overflow menu", async () => {
   const labels = (await openMenu()).map((el) => el.textContent);
   expect(labels).toEqual([
     " About MapTogether",
     " Help and shortcuts",
     " Open the demo map",
-    " Import from OnlineWardleyMaps…",
+    " OnlineWardleyMaps…",
     " PNG image",
     " SVG vector image",
     " Send feedback",
   ]);
+  expect(document.body.textContent).toContain("Import");
   expect(document.body.textContent).toContain("Export");
   expect(document.body.textContent).toContain(`Version ${__APP_VERSION__}`);
 });
@@ -104,7 +105,7 @@ it("runs each menu action", async () => {
 const importDialog = () => document.querySelector<HTMLFormElement>("form")!;
 
 it("imports a map pasted into the import dialog", async () => {
-  await clickItem("Import");
+  await clickItem("OnlineWardleyMaps");
   const form = importDialog();
   const textarea = form.querySelector("textarea")!;
   const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
@@ -121,7 +122,7 @@ it("imports a map pasted into the import dialog", async () => {
 });
 
 it("closes the import dialog without importing", async () => {
-  await clickItem("Import");
+  await clickItem("OnlineWardleyMaps");
   const cancel = [...importDialog().querySelectorAll("button")].find(
     (b) => b.textContent === "Cancel",
   )!;
