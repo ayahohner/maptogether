@@ -56,11 +56,12 @@ class MapSingleton extends Application {
       }
     });
 
-    // Component labels are drawn from this atlas.
+    // Component labels are drawn from this atlas. It's white so each label
+    // can be tinted to its token, and it adds characters as text needs them.
     BitmapFont.install({
       name: "TitleFont",
       style: {
-        fill: "#000000",
+        fill: "#ffffff",
         fontFamily: LABEL_FONT,
         fontSize: 16,
         fontWeight: "normal",

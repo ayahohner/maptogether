@@ -3,9 +3,15 @@ import { beforeEach, expect, it, vi } from "vitest";
 const editor = vi.hoisted(() => ({
   appendText: vi.fn(),
   moveComponents: vi.fn(),
+  placeLabel: vi.fn(),
   renameComponent: vi.fn(),
 }));
-const graph = vi.hoisted(() => ({ hasNode: vi.fn((name: string) => name === "Kettle") }));
+// Kettle's label covers screen points with y under 3.
+const onLabel = vi.hoisted(() => vi.fn((p: { x: number; y: number }) => p.y < 3));
+const graph = vi.hoisted(() => ({
+  hasNode: vi.fn((name: string) => name === "Kettle"),
+  getNodeAttribute: vi.fn(() => ({ onLabel })),
+}));
 const store = vi.hoisted(() => ({
   clearSelection: vi.fn(),
   dragTo: vi.fn(),
@@ -13,7 +19,9 @@ const store = vi.hoisted(() => ({
   pressCanvas: vi.fn(),
   pressComponent: vi.fn(),
   pressEdge: vi.fn(),
+  pressLabel: vi.fn(),
   releaseDrag: vi.fn(() => [{ name: "Kettle", x: 1, y: 2 }]),
+  releaseLabel: vi.fn((): { name: string; x: number; y: number } | undefined => undefined),
   // One link, from (0, 100) to (200, 100) in world coordinates.
   edgeSegments: vi.fn(() => [
     { key: "Kettle->Power", start: { x: 0, y: 100 }, stop: { x: 200, y: 100 } },
@@ -79,6 +87,20 @@ it("presses and drags in world coordinates", () => {
   expect(store.dragTo).toHaveBeenCalledWith({ x: 20, y: 2 }, false);
   actions.release();
   expect(editor.moveComponents).toHaveBeenCalledWith([{ name: "Kettle", x: 1, y: 2 }]);
+});
+
+it("moves a label pressed on, and writes where it was put", () => {
+  const actions = canvasActions(map);
+  actions.press("Kettle", { x: 4, y: 2 }, false);
+  expect(store.pressLabel).toHaveBeenCalledWith("Kettle", { x: 4, y: 2 });
+  expect(store.pressComponent).not.toHaveBeenCalled();
+  store.releaseLabel.mockReturnValueOnce({ name: "Kettle", x: -40.4, y: 12 });
+  actions.release();
+  expect(editor.placeLabel).toHaveBeenCalledWith("Kettle", -40.4, 12);
+  expect(editor.moveComponents).not.toHaveBeenCalled();
+  // Adding to the selection picks the component, label or not.
+  actions.press("Kettle", { x: 4, y: 2 }, true);
+  expect(store.pressComponent).toHaveBeenCalledWith("Kettle", { x: 4, y: 2 }, true);
 });
 
 it("presses a link near the pointer, allowing for zoom", () => {

@@ -216,8 +216,33 @@ const DRAG_THRESHOLD = 3;
 const pastThreshold = (a: PointLike, b: PointLike) =>
   Math.abs(a.x - b.x) + Math.abs(a.y - b.y) >= DRAG_THRESHOLD;
 
-/** Pointer moved while pressed: continue the move or marquee it started. */
+/** A label being dragged: its component, the pointer's last point, and where the label is. */
+let labelDrag: { name: string; start: PointLike; last: PointLike; at?: PointLike } | undefined;
+
+/** Press on a component's label: select the component, and start moving the label. */
+export const pressLabel = (nodeKey: ComponentT["nodeKey"], point: PointLike) => {
+  replaceSelection([nodeKey]);
+  labelDrag = { name: nodeKey, start: point, last: point };
+};
+
+const dragLabel = (drag: NonNullable<typeof labelDrag>, point: PointLike) => {
+  if (!drag.at && !pastThreshold(drag.start, point)) return;
+  if (!graph.hasNode(drag.name)) return;
+  const component = graph.getNodeAttribute(drag.name, "component");
+  drag.at = component.moveLabelBy(point.x - drag.last.x, point.y - drag.last.y);
+  drag.last = point;
+};
+
+/** Ends a label drag; returns where the label was put (px from its component), if it moved. */
+export const releaseLabel = () => {
+  const drag = labelDrag;
+  labelDrag = undefined;
+  return drag?.at && { name: drag.name, ...drag.at };
+};
+
+/** Pointer moved while pressed: continue the label drag, move or marquee it started. */
 export const dragTo = (point: PointLike, additive: boolean) => {
+  if (labelDrag) return dragLabel(labelDrag, point);
   const { translationStartPoint } = state.translateDrag;
   if (translationStartPoint) return dragTranslation(translationStartPoint, point);
   const { selectionStartPoint } = state.selectDrag;

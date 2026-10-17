@@ -1,6 +1,6 @@
 import { graph, type NodeAttributes, redrawLinks } from "../state/Graph";
 import { parseMap } from "../parser/parse";
-import { buildModel, type MapModel } from "../model/model";
+import { buildModel, type ComponentModel, type MapModel } from "../model/model";
 import MapSingleton from "./components/MapSingleton";
 import { Component } from "./components/Component";
 import { Line } from "./components/Line";
@@ -12,15 +12,28 @@ const MAX_PROBLEMS = 50;
 /** A component's x in pixels, from its evolution. */
 const rendererX = (evolution: number) => MapSingleton.wardleyToRendererCoords(evolution, 0)[0];
 
-/** What the model puts on the map, in pixels. */
-const toConfigs = (model: MapModel) => {
-  const configs = new Map<string, ComponentConfig>();
-  for (const { name, visibility, evolution, inPipeline, pipeline } of model.components.values()) {
-    const [x, y] = MapSingleton.wardleyToRendererCoords(evolution, visibility);
-    configs.set(name, { name, x, y, inPipeline, pipeline: pipeline?.map(rendererX) });
-  }
-  return configs;
+/** A component as the canvas draws it, in pixels. */
+const toConfig = (component: ComponentModel): ComponentConfig => {
+  const { name, visibility, evolution, evolve, label, pipeline, form: _form, ...drawn } = component;
+  const [x, y] = MapSingleton.wardleyToRendererCoords(evolution, visibility);
+  return {
+    ...drawn,
+    name,
+    x,
+    y,
+    label: label === name ? undefined : label,
+    evolve: evolve && {
+      x: rendererX(evolve.evolution),
+      label: evolve.label,
+      sourcing: evolve.sourcing,
+    },
+    pipeline: pipeline?.map(rendererX),
+  };
 };
+
+/** What the model puts on the map, in pixels. */
+const toConfigs = (model: MapModel) =>
+  new Map([...model.components].map(([name, component]) => [name, toConfig(component)]));
 
 /**
  * Draws the map from its text, leaving out statements that don't parse.
@@ -35,7 +48,10 @@ export const drawMap = (text: string) => {
 
 const drawModel = (model: MapModel) => {
   try {
-    reconcile(toConfigs(model), model.links);
+    reconcile(
+      toConfigs(model),
+      model.links.map((link) => link.ends),
+    );
     MapSingleton.renderIndicator.reset();
   } catch (e) {
     console.error(e);
@@ -75,18 +91,19 @@ const placeComponent = (config: ComponentConfig) => {
   addComponent(config);
 };
 
-/** A pipeline's box, relative to the pipeline, as a string to compare. */
-const box = (config: ComponentConfig) => JSON.stringify(layoutComponent(config).pipe);
-
 /**
- * Whether a component can be moved to its new config rather than drawn anew:
- * in the same pipeline, the same marker, and for a pipeline, a box in the same
- * place relative to it.
+ * Everything drawn for a component but where it is, relative to it: its
+ * marker, label, decorations, its future, and for a pipeline, its box.
  */
-const sameShape = (a: ComponentConfig, b: ComponentConfig) =>
-  a.inPipeline === b.inPipeline &&
-  (a.pipeline === undefined) === (b.pipeline === undefined) &&
-  box(a) === box(b);
+const shapeKey = (config: ComponentConfig) => {
+  const { x, y, pipeline, evolve, ...drawn } = config;
+  const pipe = layoutComponent(config).pipe;
+  const future = evolve && { ...evolve, x: evolve.x - x };
+  return JSON.stringify({ ...drawn, pipeline: pipeline !== undefined, pipe, future });
+};
+
+/** Whether a component can be moved to its new config rather than drawn anew. */
+const sameShape = (a: ComponentConfig, b: ComponentConfig) => shapeKey(a) === shapeKey(b);
 
 const moveComponent = (node: NodeAttributes, config: ComponentConfig) => {
   const { x, y } = config;

@@ -43,6 +43,31 @@ describe("Component", () => {
     vi.restoreAllMocks();
   });
 
+  it("draws decorations behind and in front of the label, and the marker last", () => {
+    const poly = vi.spyOn(Graphics.prototype, "poly");
+    const kettle = Component({
+      name: "Kettle",
+      label: "Pot",
+      x: 40,
+      y: 60,
+      sourcing: "buy",
+      inertia: true,
+      evolve: { x: 200, label: "Smart Kettle" },
+    });
+    // Sourcing, the label and its backing, the bar and arrow, the future's label, the marker.
+    expect(kettle.children).toHaveLength(6);
+    expect(poly).toHaveBeenCalledOnce();
+    vi.restoreAllMocks();
+  });
+
+  it("moves its label, and knows where the label is", () => {
+    const kettle = Component({ name: "Kettle", x: 0, y: 0 });
+    expect(kettle.onLabel({ x: 20, y: -10 })).toBe(true);
+    expect(kettle.onLabel({ x: 0, y: 10 })).toBe(false);
+    expect(kettle.moveLabelBy(-30, 5)).toEqual({ x: -21, y: -11 });
+    expect(kettle.onLabel({ x: -10, y: -5 })).toBe(true);
+  });
+
   it("redraws a pipeline's box around its components as they move", () => {
     const tea = Component({ name: "Tea", x: 40, y: 60, pipeline: [20, 80] });
     const box = tea.children[0];

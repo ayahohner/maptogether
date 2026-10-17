@@ -1,38 +1,53 @@
-import { BitmapText, Container, Graphics } from "pixi.js";
+import { type BitmapText, Container, Graphics } from "pixi.js";
 
 import { state, subscribe } from "../../state/State";
 import {
-  BORDERS,
   type ComponentConfig,
   type InteractionMode,
   layoutComponent,
   modeOf,
   pipelineBox,
-  squareHalfSide,
 } from "./componentLayout";
+import { addShapes, drawShapes, drawText } from "./drawShapes";
 import MapSingleton from "./MapSingleton";
 import { drawPipe } from "./PipelineContainer";
 import { Rectangle } from "./Rectangle";
+import { decorations, markerShapes } from "./symbols";
 import type { ComponentT } from "./types";
 
-/** A circle for a component, or a square for a pipeline. */
-const drawMarker = (g: Graphics, square: boolean, mode: InteractionMode) => {
-  g.clear();
-  const half = squareHalfSide(mode);
-  if (square) g.rect(-half, -half, 2 * half, 2 * half);
-  else g.circle(0, 0, 6);
-  g.fill({ color: 0xffffff, alpha: 1 });
-  g.stroke({ ...BORDERS[mode], alpha: 1, alignment: 1 });
+/** The label, on a patch of the canvas colour so lines don't run through it. */
+const label = (
+  text: string,
+  { x, y, rotation }: { x: number; y: number; rotation: number },
+): [Graphics, BitmapText] => {
+  const drawn = drawText({ x, y, text, fill: "ink" });
+  drawn.rotation = rotation;
+  const backing = Rectangle(x, y, drawn.width, drawn.height);
+  backing.rotation = rotation;
+  return [backing, drawn];
 };
 
-/** The name, on a patch of the canvas colour so lines don't run through it. */
-const label = (name: string, { x, y, rotation }: { x: number; y: number; rotation: number }) => {
-  const text = new BitmapText({ text: name, style: { fontFamily: "TitleFont", fontSize: 16 } });
-  text.position.set(x, y);
-  text.rotation = rotation;
-  const backing = Rectangle(x, y, text.width, text.height);
-  backing.rotation = rotation;
-  return [backing, text];
+/**
+ * Adds the decorations behind the label, the label (which can be dragged),
+ * then those in front of it.
+ */
+const addLabelAndDecorations = (
+  component: ComponentT,
+  config: ComponentConfig,
+  at: ReturnType<typeof layoutComponent>["label"],
+) => {
+  const parts = decorations(config);
+  addShapes(component, parts.behind);
+  const [backing, text] = label(config.label ?? config.name, at);
+  component.addChild(backing, text);
+  component.onLabel = ({ x, y }) => backing.getBounds().containsPoint(x, y);
+  component.moveLabelBy = (x, y) => {
+    for (const part of [backing, text]) part.position.set(part.x + x, part.y + y);
+    MapSingleton.dirty = true;
+    return { x: text.x, y: text.y };
+  };
+  addShapes(component, parts.front);
+  for (const future of parts.texts) component.addChild(drawText(future));
 };
 
 export const Component = (config: ComponentConfig) => {
@@ -55,7 +70,7 @@ export const Component = (config: ComponentConfig) => {
     MapSingleton.dirty = true;
   };
 
-  component.addChild(...label(config.name, layout.label));
+  addLabelAndDecorations(component, config, layout.label);
 
   const marker = new Graphics();
   let drawnMode: InteractionMode | undefined;
@@ -63,7 +78,7 @@ export const Component = (config: ComponentConfig) => {
   const redrawMarker = () => {
     const mode = modeOf(state, config.name);
     if (mode === drawnMode) return;
-    drawMarker(marker, config.pipeline !== undefined, mode);
+    drawShapes(marker, markerShapes(config, mode));
     MapSingleton.dirty = true;
     drawnMode = mode;
   };

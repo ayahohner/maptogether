@@ -163,3 +163,43 @@ it("replaces a link written the other way round", () => {
   expect(line.removeFromParent).toHaveBeenCalled();
   expect(graph.getEdgeAttribute(graph.edges()[0], "nodeKey")).toBe("Power->Kettle");
 });
+
+it("draws a component anew when anything drawn for it changes, but only moves it otherwise", () => {
+  drawMap("Kettle [33, 50, evolve=80]");
+  const kettle = component("Kettle");
+  vi.clearAllMocks();
+  drawMap("Kettle [40, 50, evolve=80]");
+  expect(Component).not.toHaveBeenCalled();
+  for (const changed of [
+    "Kettle [40, 50, evolve=80, sourcing=buy]",
+    "Kettle [40, 50, evolve=80, sourcing=buy, inertia]",
+    "Kettle [40, 50, evolve=90, sourcing=buy, inertia]",
+    "Kettle [40, 60, evolve=90, sourcing=buy, inertia]",
+    'Kettle [40, 60, evolve=90, sourcing=buy, inertia, label="Pot"]',
+    "Kettle [40, 60, type=user]",
+  ]) {
+    vi.clearAllMocks();
+    drawMap(changed);
+    expect(Component, changed).toHaveBeenCalledOnce();
+    if (changed.endsWith("sourcing=buy]")) expect(kettle.removeFromParent).toHaveBeenCalled();
+  }
+});
+
+it("draws what the text says about a component, in pixels", () => {
+  drawMap(
+    'Kettle [33, 50, type=market, form=data, evolve=(80, label="Smart"), label=("Pot", 1, 2)]',
+  );
+  expect(vi.mocked(Component).mock.calls[0][0]).toEqual({
+    name: "Kettle",
+    x: 50,
+    y: 67,
+    symbol: "market",
+    sourcing: undefined,
+    inertia: false,
+    label: "Pot",
+    labelOffset: { x: 1, y: 2 },
+    evolve: { x: 80, label: "Smart", sourcing: undefined },
+    inPipeline: undefined,
+    pipeline: undefined,
+  });
+});

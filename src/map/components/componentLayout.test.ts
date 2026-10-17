@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import type { StateT } from "../../state/State";
-import { layoutComponent, modeOf, pipelineBox, squareHalfSide } from "./componentLayout";
+import {
+  type ComponentConfig,
+  layoutComponent,
+  modeOf,
+  pipelineBox,
+  squareHalfSide,
+} from "./componentLayout";
 
 describe("layoutComponent", () => {
   it("puts a component's label above and to its right", () => {
@@ -26,6 +32,27 @@ describe("layoutComponent", () => {
     const layout = layoutComponent({ x: 50, y: 40, name: "Tea", pipeline: [20, 80] });
     expect(layout.pipe).toEqual({ offset: -40, width: 80 });
     expect(layout.label.y).toBe(-18);
+  });
+
+  it("starts a label clear of sourcing and inertia, lifted over an arrow to the future", () => {
+    const label = (config: Partial<ComponentConfig>) =>
+      layoutComponent({ x: 50, y: 40, name: "Kettle", ...config }).label;
+    expect(label({ sourcing: "build" })).toMatchObject({ x: 17, y: -16 });
+    expect(label({ inertia: true })).toMatchObject({ x: 18 });
+    expect(label({ sourcing: "build", inertia: true })).toMatchObject({ x: 26 });
+    expect(label({ symbol: "market" })).toMatchObject({ x: 12, y: -19 });
+    expect(label({ evolve: { x: 80 } })).toMatchObject({ y: -22 });
+    expect(label({ evolve: { x: 20 } })).toMatchObject({ y: -16 });
+    expect(label({ inertia: true, labelOffset: { x: -40, y: 10 } })).toEqual({
+      x: -40,
+      y: 10,
+      rotation: 0,
+    });
+    expect(label({ inPipeline: "Tea", labelOffset: { x: 1, y: 2 } })).toEqual({
+      x: 1,
+      y: 2,
+      rotation: 0,
+    });
   });
 
   it("draws no box for a pipeline with no components", () => {

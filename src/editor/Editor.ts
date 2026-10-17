@@ -24,7 +24,7 @@ import {
 import MapSingleton from "../map/components/MapSingleton";
 import { togetherScriptLinter } from "./TogetherScriptLinter";
 import { deletionRanges } from "./deletions";
-import { moveChanges, renameChanges } from "./edits";
+import { labelChanges, moveChanges, renameChanges } from "./edits";
 import { generateRandomAnimal } from "../user/utilities/generateRandomAnimal";
 import { drawMap } from "../map/drawMap";
 import { linkEnds } from "../state/Graph";
@@ -188,6 +188,13 @@ export const moveComponents = (moves: Move[]) => {
 const toMapCoordinates = ({ name, x, y }: Move) => {
   const [evolution, visibility] = MapSingleton.rendererToWardleyCoords(x, y);
   return { name, coordinates: [visibility, evolution] as const };
+};
+
+/** Writes where a component's label was dragged to (px from it), as one undoable edit. */
+export const placeLabel = (name: string, x: number, y: number) => {
+  const offset = [String(Math.round(x)), String(Math.round(y))] as const;
+  const changes = labelChanges(editorView.state.doc.toString(), name, offset);
+  if (changes.length) editorView.dispatch({ changes });
 };
 
 /** Renames a component and its links, as one undoable edit. */

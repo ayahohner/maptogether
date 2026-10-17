@@ -1,5 +1,7 @@
 import { type ComponentConfig, layoutComponent } from "../map/components/componentLayout";
+import { decorations, markerShapes, type Shape, type TextShape } from "../map/components/symbols";
 import { evolutionStages, stageBoundaries, stageEdges } from "../map/MapAxes";
+import { MAP_TOKENS } from "../map/tokens";
 
 export interface TextMetrics {
   width: number;
@@ -29,10 +31,10 @@ export interface MapSvg {
   height: number;
 }
 
-/** The canvas's colours (see design.css and map.css). */
+/** The canvas's colours (see design.css, map.css and tokens.ts). */
 const COLORS = {
-  canvas: "#f7f7f8",
-  ink: "#000000",
+  canvas: MAP_TOKENS.canvas,
+  ink: MAP_TOKENS.ink,
   axis: "#a1a1aa",
   axisText: "#71717a",
   divider: "#c4c4c8",
@@ -64,7 +66,7 @@ type Point = [number, number];
 /** Where a component's label box's corners land, after its rotation. */
 const labelCorners = (config: ComponentConfig, measure: Measure): Point[] => {
   const { y, label } = layoutComponent(config);
-  const { width, ascent, descent } = measure(config.name, LABEL_SIZE);
+  const { width, ascent, descent } = measure(labelText(config), LABEL_SIZE);
   const [cos, sin] = [Math.cos(label.rotation), Math.sin(label.rotation)];
   const box: Point[] = [
     [0, 0],
@@ -78,16 +80,43 @@ const labelCorners = (config: ComponentConfig, measure: Measure): Point[] => {
   ]);
 };
 
-/** The corners of a component's marker and, for a pipeline, its box. */
-const shapeCorners = (config: ComponentConfig): Point[] => {
+const labelText = (config: ComponentConfig) => config.label ?? config.name;
+
+/** The corners of a shape's box, relative to its component. */
+const cornersOf = (shape: Shape): Point[] => {
+  switch (shape.kind) {
+    case "circle":
+      return [
+        [shape.x - shape.r, shape.y - shape.r],
+        [shape.x + shape.r, shape.y + shape.r],
+      ];
+    case "rect":
+      return [
+        [shape.x, shape.y],
+        [shape.x + shape.width, shape.y + shape.height],
+      ];
+    default: {
+      const [x1, y1, x2, y2] = shape.points;
+      return [
+        [x1, y1],
+        [x2, y2],
+      ];
+    }
+  }
+};
+
+/** The corners of everything drawn for a component but its label, and for a pipeline, its box. */
+const shapeCorners = (config: ComponentConfig, measure: Measure): Point[] => {
   const { y, pipe } = layoutComponent(config);
-  const corners: Point[] = [
-    [config.x - 6, y - 6],
-    [config.x + 6, y + 6],
-  ];
-  if (pipe)
-    corners.push([config.x + pipe.offset + pipe.width, y + 22], [config.x + pipe.offset, y]);
-  return corners;
+  const { behind, front, texts } = decorations(config);
+  const shapes = [...markerShapes(config, "default"), ...behind, ...front];
+  const corners = shapes.flatMap(cornersOf);
+  for (const text of texts) {
+    const { width, ascent, descent } = measure(text.text, LABEL_SIZE);
+    corners.push([text.x, text.y], [text.x + width, text.y + ascent + descent]);
+  }
+  if (pipe) corners.push([pipe.offset + pipe.width, 22], [pipe.offset, 0]);
+  return corners.map(([x, dy]) => [config.x + x, y + dy]);
 };
 
 /** The smallest box holding the map and everything drawn on it, labels included. */
@@ -95,7 +124,7 @@ const contentBounds = (scene: ExportScene, measure: Measure) => {
   const points: Point[] = [
     [0, 0],
     [scene.width, scene.height],
-    ...scene.components.flatMap((c) => [...labelCorners(c, measure), ...shapeCorners(c)]),
+    ...scene.components.flatMap((c) => [...labelCorners(c, measure), ...shapeCorners(c, measure)]),
   ];
   const xs = points.map(([x]) => x);
   const ys = points.map(([, y]) => y);
@@ -139,22 +168,55 @@ const axes = ({ width, height }: ExportScene) => {
 const link = ([ax, ay, bx, by]: ExportScene["links"][number]) =>
   `<line x1="${n(ax)}" y1="${n(ay)}" x2="${n(bx)}" y2="${n(by)}"/>`;
 
-/** The name, on a patch of the canvas colour so lines don't run through it. */
+/** The label, on a patch of the canvas colour so lines don't run through it. */
 const label = (config: ComponentConfig, measure: Measure) => {
   const { label: at } = layoutComponent(config);
-  const { width, ascent, descent } = measure(config.name, LABEL_SIZE);
+  const { width, ascent, descent } = measure(labelText(config), LABEL_SIZE);
   const rotation = n((at.rotation * 180) / Math.PI);
   return [
     `<g transform="translate(${n(at.x)} ${n(at.y)})${rotation ? ` rotate(${rotation})` : ""}">`,
     `<rect width="${n(width)}" height="${n(ascent + descent)}" fill="${COLORS.canvas}"/>`,
-    `<text y="${n(ascent)}" font-size="${LABEL_SIZE}">${escapeXml(config.name)}</text>`,
+    `<text y="${n(ascent)}" font-size="${LABEL_SIZE}">${escapeXml(labelText(config))}</text>`,
     "</g>",
   ].join("");
 };
 
+const paint = (shape: Shape) => {
+  const fill = "fill" in shape && shape.fill ? MAP_TOKENS[shape.fill] : "none";
+  const stroke =
+    "stroke" in shape && shape.stroke
+      ? ` stroke="${MAP_TOKENS[shape.stroke.role]}" stroke-width="${shape.stroke.width}"`
+      : "";
+  return `fill="${fill}"${stroke}`;
+};
+
+/** How far in an inside border's centre line sits. */
+const inset = (shape: Shape) =>
+  "stroke" in shape && shape.stroke?.inside ? shape.stroke.width / 2 : 0;
+
+/** A shape, its inside borders drawn inside it as on the canvas. */
+const svgShape = (shape: Shape) => {
+  const i = inset(shape);
+  switch (shape.kind) {
+    case "circle":
+      return `<circle cx="${n(shape.x)}" cy="${n(shape.y)}" r="${n(shape.r - i)}" ${paint(shape)}/>`;
+    case "rect":
+      return `<rect x="${n(shape.x + i)}" y="${n(shape.y + i)}" width="${n(shape.width - 2 * i)}" height="${n(shape.height - 2 * i)}" ${paint(shape)}/>`;
+    case "polygon":
+      return `<polygon points="${shape.points.map(n).join(" ")}" ${paint(shape)}/>`;
+    case "line": {
+      const [x1, y1, x2, y2] = shape.points.map(n);
+      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${paint(shape)}/>`;
+    }
+  }
+};
+
+const svgText = ({ x, y, text, fill }: TextShape, measure: Measure) =>
+  `<text x="${n(x)}" y="${n(y + measure(text, LABEL_SIZE).ascent)}" font-size="${LABEL_SIZE}" fill="${MAP_TOKENS[fill]}">${escapeXml(text)}</text>`;
+
 /**
- * A component: a circle, or for a pipeline a square and the box its
- * components sit in. Borders are drawn inside the shapes, as on the canvas.
+ * A component: its symbol, label and decorations, and for a pipeline the box
+ * its components sit in, in the order the canvas draws them.
  */
 const component = (config: ComponentConfig, measure: Measure) => {
   const { y, pipe } = layoutComponent(config);
@@ -162,10 +224,17 @@ const component = (config: ComponentConfig, measure: Measure) => {
   const box = pipe
     ? `<rect x="${n(pipe.offset + 0.5)}" y="2.5" width="${n(pipe.width - 1)}" height="19" fill="#ffffff" fill-opacity="0.1" ${outline}/>`
     : "";
-  const marker = config.pipeline
-    ? `<rect x="-4.5" y="-4.5" width="9" height="9" fill="#ffffff" ${outline}/>`
-    : `<circle r="5.5" fill="#ffffff" ${outline}/>`;
-  return `<g transform="translate(${n(config.x)} ${n(y)})">${box}${label(config, measure)}${marker}</g>`;
+  const { behind, front, texts } = decorations(config);
+  return [
+    `<g transform="translate(${n(config.x)} ${n(y)})">`,
+    box,
+    behind.map(svgShape).join(""),
+    label(config, measure),
+    front.map(svgShape).join(""),
+    texts.map((text) => svgText(text, measure)).join(""),
+    markerShapes(config, "default").map(svgShape).join(""),
+    "</g>",
+  ].join("");
 };
 
 /** The app's mark (public/favicon.svg), drawn 32 units square. */

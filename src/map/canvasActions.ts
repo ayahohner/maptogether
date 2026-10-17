@@ -1,4 +1,4 @@
-import { appendText, moveComponents, renameComponent } from "../editor/Editor";
+import { appendText, moveComponents, placeLabel, renameComponent } from "../editor/Editor";
 import { isComponentName, writeName } from "../parser/names";
 import { graph } from "../state/Graph";
 import {
@@ -9,7 +9,9 @@ import {
   pressCanvas,
   pressComponent,
   pressEdge,
+  pressLabel,
   releaseDrag,
+  releaseLabel,
   replaceSelection,
 } from "../state/State";
 import { activeTool, setTool } from "../state/Tools";
@@ -84,6 +86,17 @@ export function canvasActions(map: MapView): CanvasActions {
     if (link) pressEdge(link, world(p), additive);
     else pressCanvas(world(p), additive);
   };
+  /** A press on a label moves the label; anywhere else on a component, the component. */
+  const pressOn = (nodeKey: string, p: Point, additive: boolean) => {
+    const onLabel = !additive && graph.getNodeAttribute(nodeKey, "component").onLabel(p);
+    if (onLabel) pressLabel(nodeKey, world(p));
+    else pressComponent(nodeKey, world(p), additive);
+  };
+  const release = () => {
+    const label = releaseLabel();
+    if (label) placeLabel(label.name, label.x, label.y);
+    else moveComponents(releaseDrag());
+  };
   const tap = (p: Point, touch: boolean) => {
     const link = linkAt(p, touch);
     if (link) replaceSelection([], [link]);
@@ -93,9 +106,9 @@ export function canvasActions(map: MapView): CanvasActions {
     tool: () => activeTool(),
     hit: (p) => hitComponent(map.components(), p),
     press: (nodeKey, p, additive) =>
-      nodeKey ? pressComponent(nodeKey, world(p), additive) : pressEmpty(p, additive),
+      nodeKey ? pressOn(nodeKey, p, additive) : pressEmpty(p, additive),
     drag: (p, additive) => dragTo(world(p), additive),
-    release: () => moveComponents(releaseDrag()),
+    release,
     select: (nodeKey, p, touch) => (nodeKey ? replaceSelection([nodeKey]) : tap(p, touch)),
     link: (nodeKey) => {
       const link = linkTo(nodeKey);

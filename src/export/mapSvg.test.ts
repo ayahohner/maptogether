@@ -51,7 +51,34 @@ it("draws a component as a circle with its name on a patch of canvas", () => {
   expect(svg).toContain('<g transform="translate(100 200)">');
   expect(svg).toContain('<rect width="48" height="20" fill="#f7f7f8"/>');
   expect(svg).toContain('<text y="15" font-size="16">Kettle</text>');
-  expect(svg).toContain('<circle r="5.5"');
+  expect(svg).toContain('<circle cx="0" cy="0" r="5.5" fill="#ffffff" stroke="#000000"');
+});
+
+it("draws a component's type, label, sourcing, inertia and future as the canvas does", () => {
+  const components = [
+    {
+      name: "Kettle",
+      label: "Pot",
+      x: 100,
+      y: 200,
+      symbol: "user" as const,
+      sourcing: "buy" as const,
+      inertia: true,
+      evolve: { x: 300, label: "Smart Kettle" },
+    },
+  ];
+  const { svg } = mapSvg(scene({ components }), measure);
+  // A user is solid ink, on a mid-grey circle for buying it.
+  expect(svg).toContain('<circle cx="0" cy="0" r="5.5" fill="#000000"');
+  expect(svg).toContain('<circle cx="0" cy="0" r="14" fill="#a1a1aa"/>');
+  // The inertia bar, then the label clear of it, lifted over the arrow to the future.
+  expect(svg).toContain('<rect x="18" y="-12" width="5" height="24" fill="#000000"/>');
+  expect(svg).toContain('<g transform="translate(26 -22)">');
+  expect(svg).toContain(">Pot</text>");
+  // The future: a red circle 200 px along, a red arrow to it, and its own label.
+  expect(svg).toContain('<circle cx="200" cy="0" r="5.5" fill="#ffffff" stroke="#dc2626"');
+  expect(svg).toContain('<polygon points="192 0 185 -3.5 185 3.5" fill="#dc2626"/>');
+  expect(svg).toContain('fill="#dc2626">Smart Kettle</text>');
 });
 
 it("draws a pipeline as a square in a box, with its components' labels at an angle", () => {

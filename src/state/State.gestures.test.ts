@@ -46,7 +46,9 @@ import {
   pressCanvas,
   pressComponent,
   pressEdge,
+  pressLabel,
   releaseDrag,
+  releaseLabel,
   renameInSelection,
   replaceSelection,
   setInitialLinkTarget,
@@ -225,4 +227,23 @@ it("turns link mode on and off with the active tool, forgetting a half-made link
   setTool("select");
   expect(state.linking.isLinkModeEnabled).toBe(false);
   expect(state.linking.initialLinkTarget).toBeUndefined();
+});
+
+it("moves a pressed label once past the threshold, and gives where it was put", () => {
+  const moveLabelBy = vi.fn((x: number, y: number) => ({ x: 9 + x, y: -16 + y }));
+  graph.getNodeAttribute.mockReturnValue({ moveLabelBy } as never);
+  pressLabel("Kettle", { x: 0, y: 0 });
+  expect([...state.selection.selectionItems]).toEqual(["Kettle"]);
+  dragTo({ x: 1, y: 0 }, false);
+  expect(moveLabelBy).not.toHaveBeenCalled();
+  dragTo({ x: 10, y: 5 }, false);
+  expect(moveLabelBy).toHaveBeenLastCalledWith(10, 5);
+  expect(moveComponentsBy).not.toHaveBeenCalled();
+  expect(releaseLabel()).toEqual({ name: "Kettle", x: 19, y: -11 });
+  expect(releaseLabel()).toBeUndefined();
+
+  // A press that never moves puts nothing.
+  pressLabel("Kettle", { x: 0, y: 0 });
+  expect(releaseLabel()).toBeUndefined();
+  graph.getNodeAttribute.mockReturnValue({ x: 1, y: 2 });
 });

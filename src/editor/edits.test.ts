@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { type Change, coordinateChanges, moveChanges, renameChanges } from "./edits";
+import { type Change, coordinateChanges, labelChanges, moveChanges, renameChanges } from "./edits";
 
 const apply = (text: string, changes: Change[]) =>
   [...changes].reverse().reduce((t, c) => t.slice(0, c.from) + c.insert + t.slice(c.to), text);
@@ -88,5 +88,39 @@ describe("renameChanges", () => {
     expect(
       renameChanges('Cup of Tea [1, 2]\nCup of Tea -- Tea\n"Cup"\n@map', "Cup", "Mug"),
     ).toEqual([]);
+  });
+});
+
+describe("labelChanges", () => {
+  const place = (text: string, name: string) =>
+    apply(text, labelChanges(text, name, ["-40", "12"]));
+
+  it("writes the label's place, copying the name in, the first time it's dragged", () => {
+    expect(place("Kettle [33, 50]", "Kettle")).toBe('Kettle [33, 50, label=("Kettle", -40, 12)]');
+    expect(place("Kettle [33, 50, inertia] // boils", "Kettle")).toBe(
+      'Kettle [33, 50, inertia, label=("Kettle", -40, 12)] // boils',
+    );
+    expect(place("Kettle", "Kettle")).toBe('Kettle [label=("Kettle", -40, 12)]');
+    expect(place("Kettle []", "Kettle")).toBe('Kettle [label=("Kettle", -40, 12)]');
+    expect(place('`Say "hi"` [1, 2]', 'Say "hi"')).toBe(
+      '`Say "hi"` [1, 2, label=("Say \\"hi\\"", -40, 12)]',
+    );
+  });
+
+  it("keeps a label's text, and after the first drag changes only the numbers", () => {
+    expect(place('Kettle [33, 50, label="Pot", inertia]', "Kettle")).toBe(
+      'Kettle [33, 50, label=("Pot", -40, 12), inertia]',
+    );
+    const placed = 'Kettle [33, 50, label=("Pot", 1, 2)]';
+    expect(labelChanges(placed, "Kettle", ["-40", "12"])).toEqual([
+      { from: 30, to: 31, insert: "-40" },
+      { from: 33, to: 34, insert: "12" },
+    ]);
+  });
+
+  it("leaves a label it can't read, and components that aren't declared", () => {
+    expect(labelChanges("Kettle [label=(1, 2)]", "Kettle", ["1", "2"])).toEqual([]);
+    expect(labelChanges("Kettle [label=red]", "Kettle", ["1", "2"])).toEqual([]);
+    expect(labelChanges("Kettle -- Power", "Power", ["1", "2"])).toEqual([]);
   });
 });

@@ -1,6 +1,6 @@
 import { writeName } from "../parser/names";
 import { parseMap } from "../parser/parse";
-import type { Statement } from "../parser/syntax";
+import type { Statement, Value } from "../parser/syntax";
 import { declarations, walk } from "../parser/walk";
 
 export interface Change {
@@ -70,3 +70,50 @@ export const renameChanges = (text: string, oldName: string, newName: string): C
     .filter((name) => name.text === oldName)
     .map(({ from, to }) => ({ from, to, insert }));
 };
+
+/** `text` as a map string, in quotes. */
+const quoted = (text: string) =>
+  `"${text.replace(/[\\"\n]/g, (c) => (c === "\n" ? "\\n" : `\\${c}`))}"`;
+
+/**
+ * Places a component's label `x, y` px from it, wherever it's declared. Once
+ * placed, only the two numbers change, so someone retyping the text while
+ * another drags the label edit different characters.
+ */
+export const labelChanges = (text: string, name: string, [x, y]: readonly [string, string]) =>
+  declarations(parseMap(text).statements, name).flatMap((statement) =>
+    labelChangesIn(statement, name, x, y),
+  );
+
+function labelChangesIn({ head, args }: Statement, name: string, x: string, y: string): Change[] {
+  const label = args?.keywords.find((k) => k.key === "label");
+  if (!label) return newLabel(head, args, `label=(${quoted(name)}, ${x}, ${y})`);
+  return label.value ? relabel(label.value, x, y) : [];
+}
+
+/** Places a label that has text, keeping the text. */
+function relabel(value: Value, x: string, y: string): Change[] {
+  if (value.kind === "string") {
+    return [
+      { from: value.from, to: value.from, insert: "(" },
+      { from: value.to, to: value.to, insert: `, ${x}, ${y})` },
+    ];
+  }
+  const [, dx, dy] = value.kind === "tuple" ? value.args.positional : [];
+  if (dx?.kind !== "number" || dy?.kind !== "number") return [];
+  return [
+    { from: dx.from, to: dx.to, insert: x },
+    { from: dy.from, to: dy.to, insert: y },
+  ];
+}
+
+/** Adds `keyword` after a statement's last argument, or brackets for it. */
+function newLabel(head: Statement["head"], args: Statement["args"], keyword: string): Change[] {
+  if (!args) {
+    const end = head.kind === "component" ? head.name.to : 0;
+    return [{ from: end, to: end, insert: ` [${keyword}]` }];
+  }
+  const last = args.keywords.at(-1) ?? args.positional.at(-1);
+  if (!last) return [{ from: args.from + 1, to: args.from + 1, insert: keyword }];
+  return [{ from: last.to, to: last.to, insert: `, ${keyword}` }];
+}

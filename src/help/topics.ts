@@ -103,6 +103,30 @@ export const syntaxHelp: SyntaxExample[] = [
     explanation: "needer -- needed draws a line from a component to one it depends on.",
   },
   {
+    title: "Type",
+    code: "Business [95, 46, type=user]\nPower [10, 86, type=market]",
+    explanation:
+      "type=user, type=market or type=ecosystem changes a component's symbol. Leave it out for a plain component.",
+  },
+  {
+    title: "Sourcing and inertia",
+    code: "Staff [62, 28, sourcing=build, inertia]",
+    explanation:
+      "sourcing=build, buy or outsource shades a circle behind the component, darker the further it's sourced. inertia draws a bar: something resists the component evolving.",
+  },
+  {
+    title: "Evolve",
+    code: 'Kettle [33, 50, evolve=80]\nKettle [33, 50, evolve=(80, label="Smart Kettle")]',
+    explanation:
+      "Where a component is expected to move to, drawn in red with a dashed arrow. Give the future its own label or sourcing in brackets.",
+  },
+  {
+    title: "Label",
+    code: 'Kettle [33, 50, label=("Electric kettle", -40, 10)]',
+    explanation:
+      'label="text" changes the text drawn. Drag a label on the map to move it, which writes the tuple form with where it sits, in pixels from the component.',
+  },
+  {
     title: "Pipeline",
     code: "Tea [55, 73] {\n  Loose Leaf [55, 56]\n  Tea Bags [55, 90]\n}",
     explanation:
