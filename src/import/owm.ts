@@ -157,13 +157,24 @@ function readName(raw: string) {
 
 const DECORATION = new RegExp(`label\\s*${PAIR}|inertia|\\((\\w+)\\)|\\S+`, "g");
 
+/** Words in a component's decorations, as the v2 key they set and its value (the word, if unset). */
+const WORDS = new Map<string, [key: string, value?: string]>([
+  ["inertia", ["inertia", ""]],
+  ["build", ["sourcing"]],
+  ["buy", ["sourcing"]],
+  ["outsource", ["sourcing"]],
+  ["market", ["type"]],
+  ["ecosystem", ["type"]],
+]);
+
 /** What follows a component's position: its label's place, inertia, sourcing and type. */
 function decorate(reader: Reader, component: Component, rest: string) {
-  for (const [token, x, y, word] of rest.matchAll(DECORATION)) {
+  for (const [token, x, y, inParens] of rest.matchAll(DECORATION)) {
+    // Only inertia may go without parentheses.
+    const word = inParens ?? (token === "inertia" ? token : "");
+    const known = WORDS.get(word);
     if (x !== undefined) placeLabel(component, x, y);
-    else if (token === "inertia" || word === "inertia") component.keys.set("inertia", "");
-    else if (word && /^(build|buy|outsource)$/.test(word)) component.keys.set("sourcing", word);
-    else if (word && /^(market|ecosystem)$/.test(word)) component.keys.set("type", word);
+    else if (known) component.keys.set(known[0], known[1] ?? word);
     else
       reader.problems.push({
         line: reader.line,
@@ -210,35 +221,33 @@ function pipeline(reader: Reader, match: RegExpExecArray, code: string): Out[] {
 
 /** `pipeline Tea { component Loose Leaf [0.56] … }`: the components go inside Tea. */
 function readPipelineBlock(reader: Reader, lines: string[]): Out[] {
-  const head = new RegExp(`^pipeline\\s+(.+?)\\s*(?:${PAIR})?\\s*\\{?$`).exec(
-    splitComment(lines[0]).code,
-  );
+  const code = splitComment(lines[0]).code;
+  const head = new RegExp(`^pipeline\\s+(.+?)\\s*(?:${PAIR})?\\s*\\{?$`).exec(code);
   const target = head && reader.components.get(head[1]);
-  if (!head || !target) {
-    const code = splitComment(lines[0]).code;
-    return lines.map((line, i) =>
-      i
-        ? `// owm: ${line.trim()}`
-        : keep(
-            reader,
-            code,
-            `${head?.[1]} isn't a component, so its pipeline is kept as a comment.`,
-          ),
-    );
-  }
+  if (!head || !target) return keepPipelineBlock(reader, lines, code, head?.[1]);
   if (head[2] !== undefined)
     target.keys.set("pipeline", `(${percent(head[2])}, ${percent(head[3])})`);
-  const child = new RegExp(`^component\\s+(.+?)\\s*\\[\\s*(${NUMBER})\\s*\\](\\s.*)?$`);
-  for (const line of lines.slice(1, -1)) {
-    const match = child.exec(splitComment(line).code);
-    if (!match) continue;
-    const { name } = readName(match[1]);
-    const found: Component = { name, maturity: match[2], keys: new Map(), children: [] };
-    decorate(reader, found, match[3] ?? "");
-    target.children.push(found);
-    reader.components.set(name, found);
-  }
+  for (const line of lines.slice(1, -1)) readPipelineChild(reader, target, line);
   return [];
+}
+
+/** A pipeline block for no component, kept as comments. */
+function keepPipelineBlock(reader: Reader, lines: string[], code: string, name?: string) {
+  const message = `${name} isn't a component, so its pipeline is kept as a comment.`;
+  return lines.map((line, i) => (i ? `// owm: ${line.trim()}` : keep(reader, code, message)));
+}
+
+const PIPELINE_CHILD = new RegExp(`^component\\s+(.+?)\\s*\\[\\s*(${NUMBER})\\s*\\](\\s.*)?$`);
+
+/** `component Loose Leaf [0.56]` in a pipeline block: only its maturity is given. */
+function readPipelineChild(reader: Reader, target: Component, line: string) {
+  const match = PIPELINE_CHILD.exec(splitComment(line).code);
+  if (!match) return;
+  const { name } = readName(match[1]);
+  const found: Component = { name, maturity: match[2], keys: new Map(), children: [] };
+  decorate(reader, found, match[3] ?? "");
+  target.children.push(found);
+  reader.components.set(name, found);
 }
 
 /** `build Kettle` on its own line, folded into Kettle. */

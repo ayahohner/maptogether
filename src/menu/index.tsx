@@ -124,12 +124,7 @@ function OverflowMenu({ onAbout, onDemo, onExport, onImport }: OverflowMenuProps
         />
         <MenuAction icon={MapIcon} label="Open the demo map" onClick={onDemo} />
         <MenuSeparator className="my-1.5 h-px bg-line" />
-        <MenuSection>
-          <MenuHeading className="px-2.5 pt-1 pb-1 text-xs font-medium text-ink-subtle">
-            Import
-          </MenuHeading>
-          <MenuAction icon={ArrowDownTrayIcon} label="OnlineWardleyMaps…" onClick={onImport} />
-        </MenuSection>
+        <ImportSection onImport={onImport} />
         <ExportSection onExport={onExport} />
         <MenuSeparator className="my-1.5 h-px bg-line" />
         <MenuItem>
@@ -140,6 +135,17 @@ function OverflowMenu({ onAbout, onDemo, onExport, onImport }: OverflowMenuProps
         <p className="px-2.5 pt-1.5 pb-1 text-xs text-ink-subtle">{`Version ${__APP_VERSION__}`}</p>
       </MenuItems>
     </Menu>
+  );
+}
+
+function ImportSection({ onImport }: Pick<OverflowMenuProps, "onImport">) {
+  return (
+    <MenuSection>
+      <MenuHeading className="px-2.5 pt-1 pb-1 text-xs font-medium text-ink-subtle">
+        Import
+      </MenuHeading>
+      <MenuAction icon={ArrowDownTrayIcon} label="OnlineWardleyMaps…" onClick={onImport} />
+    </MenuSection>
   );
 }
 
