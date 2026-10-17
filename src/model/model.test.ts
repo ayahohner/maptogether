@@ -127,6 +127,15 @@ describe("buildModel", () => {
     ]);
   });
 
+  it("warns about a link written twice, either way round", () => {
+    expect(lintMessages("A\nB\nA -- B\nB -- A [flow]")).toEqual([
+      [
+        "warning",
+        "These two are already linked, so the map draws the first link and leaves out this one.",
+      ],
+    ]);
+  });
+
   it("warns about links to themselves and to undeclared components", () => {
     expect(lintMessages("A\nA -- A\nA -- Teapot")).toEqual([
       ["warning", "A component can't need itself, so the map leaves out this link."],

@@ -3,6 +3,7 @@ import { beforeEach, expect, it, vi } from "vitest";
 vi.mock("../map/components/MapSingleton", () => ({ default: { dirty: false } }));
 
 import type { ComponentConfig } from "../map/components/componentLayout";
+import { PLAIN_LINK } from "../map/components/symbols";
 import type { ComponentT } from "../map/components/types";
 import { graph, linkEnds, moveComponentsBy } from "./Graph";
 
@@ -63,7 +64,7 @@ it("moves a component dragged with its pipeline once, and skips components gone 
 });
 
 it("finds a link's components from its key, needer first", () => {
-  graph.addEdge("Leaf", "Tea", { nodeKey: "Leaf->Tea", component: {} as never });
+  graph.addEdge("Leaf", "Tea", { nodeKey: "Leaf->Tea", style: PLAIN_LINK, component: {} as never });
   expect(linkEnds("Leaf->Tea")).toEqual(["Leaf", "Tea"]);
   expect(linkEnds("Tea->Leaf")).toBeUndefined();
 });

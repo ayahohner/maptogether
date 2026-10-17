@@ -11,8 +11,10 @@ export type ComponentT = Container & {
   moveLabelBy: (x: number, y: number) => { x: number; y: number };
 };
 
-export type LineT = Graphics & {
+export type LineT = Container & {
   nodeKey: string;
+  /** The line itself, without its label. */
+  line: Graphics;
   /** Moves the line's ends. */
   updateLine: (ax: number, ay: number, bx: number, by: number) => void;
 };

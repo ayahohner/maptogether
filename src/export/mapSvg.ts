@@ -1,5 +1,12 @@
 import { type ComponentConfig, layoutComponent } from "../map/components/componentLayout";
-import { decorations, markerShapes, type Shape, type TextShape } from "../map/components/symbols";
+import {
+  decorations,
+  type LinkStyle,
+  linkShapes,
+  markerShapes,
+  type Shape,
+  type TextShape,
+} from "../map/components/symbols";
 import { evolutionStages, stageBoundaries, stageEdges } from "../map/MapAxes";
 import { MAP_TOKENS } from "../map/tokens";
 
@@ -20,8 +27,8 @@ export interface ExportScene {
   height: number;
   /** In drawing order: later ones paint over earlier ones. */
   components: ComponentConfig[];
-  /** Each link's ends: `[ax, ay, bx, by]`. */
-  links: [number, number, number, number][];
+  /** Each link's ends, `[ax, ay, bx, by]`, and how it's drawn. */
+  links: { ends: [number, number, number, number]; style: LinkStyle }[];
 }
 
 export interface MapSvg {
@@ -125,6 +132,7 @@ const contentBounds = (scene: ExportScene, measure: Measure) => {
     [0, 0],
     [scene.width, scene.height],
     ...scene.components.flatMap((c) => [...labelCorners(c, measure), ...shapeCorners(c, measure)]),
+    ...scene.links.flatMap((l) => linkCorners(l, measure)),
   ];
   const xs = points.map(([x]) => x);
   const ys = points.map(([, y]) => y);
@@ -165,8 +173,25 @@ const axes = ({ width, height }: ExportScene) => {
   ].join("");
 };
 
-const link = ([ax, ay, bx, by]: ExportScene["links"][number]) =>
-  `<line x1="${n(ax)}" y1="${n(ay)}" x2="${n(bx)}" y2="${n(by)}"/>`;
+/** A link's line, and its label on a patch of the canvas colour. */
+const link = ({ ends, style }: ExportScene["links"][number], measure: Measure) => {
+  const { line, text } = linkShapes(ends, style);
+  if (!text) return svgShape(line);
+  const { width, ascent, descent } = measure(text.text, LABEL_SIZE);
+  const backing = `<rect x="${n(text.x)}" y="${n(text.y)}" width="${n(width)}" height="${n(ascent + descent)}" fill="${COLORS.canvas}"/>`;
+  return svgShape(line) + backing + svgText(text, measure);
+};
+
+/** Where a link's label box's corners are. */
+const linkCorners = ({ ends, style }: ExportScene["links"][number], measure: Measure): Point[] => {
+  const { text } = linkShapes(ends, style);
+  if (!text) return [];
+  const { width, ascent, descent } = measure(text.text, LABEL_SIZE);
+  return [
+    [text.x, text.y],
+    [text.x + width, text.y + ascent + descent],
+  ];
+};
 
 /** The label, on a patch of the canvas colour so lines don't run through it. */
 const label = (config: ComponentConfig, measure: Measure) => {
@@ -276,7 +301,7 @@ export function mapSvg(scene: ExportScene, measure: Measure, fontCss = ""): MapS
     fontCss ? `<defs><style>${fontCss}</style></defs>` : "",
     `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="${COLORS.canvas}"/>`,
     stageDividers(scene),
-    `<g stroke="${COLORS.ink}" stroke-width="1">${scene.links.map(link).join("")}</g>`,
+    `<g>${scene.links.map((l) => link(l, measure)).join("")}</g>`,
     `<g fill="${COLORS.ink}">${scene.components.map((c) => component(c, measure)).join("")}</g>`,
     axes(scene),
     logotype(bounds.maxX, baseline, measure),

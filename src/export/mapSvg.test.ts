@@ -95,9 +95,18 @@ it("draws a pipeline as a square in a box, with its components' labels at an ang
   expect(svg).toContain("rotate(30)");
 });
 
-it("draws links between their ends", () => {
-  const { svg } = mapSvg(scene({ links: [[10, 20, 30.456, 40]] }), measure);
-  expect(svg).toContain('<line x1="10" y1="20" x2="30.46" y2="40"/>');
+it("draws links between their ends, in their style", () => {
+  const plain = { constraint: false, flow: false };
+  const links = [
+    { ends: [10, 20, 30.456, 40], style: plain },
+    { ends: [0, 0, 100, 40], style: { constraint: true, flow: true, label: "pays" } },
+  ] satisfies ExportScene["links"];
+  const { svg } = mapSvg(scene({ links }), measure);
+  expect(svg).toContain(
+    '<line x1="10" y1="20" x2="30.46" y2="40" fill="none" stroke="#000000" stroke-width="1"/>',
+  );
+  expect(svg).toContain('stroke="#2563eb" stroke-width="3"/>');
+  expect(svg).toMatch(/<text x="54" y="\d+" font-size="16" fill="#2563eb">pays<\/text>/);
 });
 
 it("escapes names for XML", () => {

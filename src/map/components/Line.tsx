@@ -1,14 +1,22 @@
-import { Graphics } from "pixi.js";
+import { Container, Graphics } from "pixi.js";
 
 import { state, subscribe } from "../../state/State";
+import { drawShapes, drawText } from "./drawShapes";
 import MapSingleton from "./MapSingleton";
+import { Rectangle } from "./Rectangle";
+import { type LinkStyle, linkShapes, PLAIN_LINK, type Shape } from "./symbols";
 import type { LineT } from "./types";
 
-const strokes = {
-  normal: { width: 1, color: 0x000000, alpha: 1 },
-  // The same colour as a selected component's border.
-  selected: { width: 2.5, color: 0x9b5af9, alpha: 1 },
-};
+/** A selected link, in the same colour as a selected component's border. */
+const SELECTED_WIDTH = 2.5;
+
+const selectedLine = (line: Shape): Shape =>
+  line.kind === "line"
+    ? {
+        ...line,
+        stroke: { role: "selected", width: Math.max(line.stroke.width, SELECTED_WIDTH) },
+      }
+    : line;
 
 export const Line = (
   componentAx: number,
@@ -16,24 +24,34 @@ export const Line = (
   componentBx: number,
   componentBy: number,
   nodeKey: string,
+  style: LinkStyle = PLAIN_LINK,
 ): LineT => {
-  const g = new Graphics() as LineT;
-  let ends = [componentAx, componentAy, componentBx, componentBy];
+  const link = new Container() as LineT;
+  const g = new Graphics();
+  link.addChild(g);
+  let ends: [number, number, number, number] = [componentAx, componentAy, componentBx, componentBy];
   let selected = state.selection.edgeItems.has(nodeKey);
 
+  const first = linkShapes(ends, style).text;
+  const label = first && drawText(first);
+  const backing = label && Rectangle(0, 0, label.width, label.height);
+  if (backing && label) link.addChild(backing, label);
+
   const draw = () => {
-    const [ax, ay, bx, by] = ends;
-    g.clear();
-    g.moveTo(ax, ay);
-    g.lineTo(bx, by);
-    g.stroke(selected ? strokes.selected : strokes.normal);
+    const { line, text } = linkShapes(ends, style);
+    drawShapes(g, [selected ? selectedLine(line) : line]);
+    if (text && label && backing) {
+      label.position.set(text.x, text.y);
+      backing.position.set(text.x, text.y);
+    }
   };
 
   draw();
-  g.zIndex = -1;
-  g.nodeKey = nodeKey;
+  link.zIndex = -1;
+  link.nodeKey = nodeKey;
+  link.line = g;
 
-  g.updateLine = (...next: number[]) => {
+  link.updateLine = (...next) => {
     ends = next;
     draw();
   };
@@ -45,10 +63,10 @@ export const Line = (
     MapSingleton.dirty = true;
   });
 
-  g.on("removed", () => {
+  link.on("removed", () => {
     unsubscribe();
-    g.destroy();
+    link.destroy({ children: true });
   });
 
-  return g;
+  return link;
 };

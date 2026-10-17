@@ -1,6 +1,7 @@
 import Graph from "graphology";
 import { expect, it } from "vitest";
 import type { ComponentConfig } from "../map/components/componentLayout";
+import { PLAIN_LINK } from "../map/components/symbols";
 import type { WardleyGraph } from "../state/Graph";
 import { sceneFromGraph } from "./scene";
 
@@ -16,7 +17,7 @@ const graphOf = (configs: ComponentConfig[], links: [string, string][]) => {
     });
   }
   for (const [a, b] of links)
-    graph.addEdge(a, b, { nodeKey: `${a}->${b}`, component: {} as never });
+    graph.addEdge(a, b, { nodeKey: `${a}->${b}`, style: PLAIN_LINK, component: {} as never });
   return graph;
 };
 
@@ -50,9 +51,9 @@ it("draws each link between its components' markers", () => {
     ],
   );
   expect(sceneFromGraph(graph, size).links).toEqual([
-    [500, 100, 300, 200],
+    { ends: [500, 100, 300, 200], style: PLAIN_LINK },
     // A pipeline's component sits 12 px below the row.
-    [500, 100, 250, 212],
+    { ends: [500, 100, 250, 212], style: PLAIN_LINK },
   ]);
 });
 

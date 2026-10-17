@@ -74,6 +74,8 @@ interface Builder {
   lints: Lint[];
   /** Types `@type` declares, and the built-in type each is drawn as. */
   types: Map<string, MapSymbol>;
+  /** Each pair of components linked so far, either way round. */
+  linked: Set<string>;
 }
 
 export function buildModel({ statements }: Pick<ParseResult, "statements">) {
@@ -81,6 +83,7 @@ export function buildModel({ statements }: Pick<ParseResult, "statements">) {
     model: { components: new Map(), links: [] },
     lints: [],
     types: declaredTypes(statements),
+    linked: new Set(),
   };
   for (const statement of statements) {
     if (statement.head.kind === "component") addComponent(builder, statement);
@@ -220,7 +223,7 @@ function position(lints: Lint[], { args }: Statement) {
   return { visibility: visibility.value, evolution: evolution.value };
 }
 
-function addLink({ model, lints }: Builder, statement: Statement) {
+function addLink({ model, lints, linked }: Builder, statement: Statement) {
   if (statement.head.kind !== "link") return;
   const { from, to } = statement.head;
   const keys = keysOf(lints, (found) => readLinkKeys(statement.args, found));
@@ -233,10 +236,16 @@ function addLink({ model, lints }: Builder, statement: Statement) {
     label: keys.label,
   });
   if (from.text === to.text) warning(lints, statement, SELF_LINK);
+  const pair = JSON.stringify([from.text, to.text].sort());
+  if (linked.has(pair)) warning(lints, { from: from.from, to: to.to }, REPEATED_LINK);
+  linked.add(pair);
   for (const end of [from, to]) {
     if (!model.components.has(end.text)) warning(lints, end, undeclared(end.text));
   }
 }
+
+const REPEATED_LINK =
+  "These two are already linked, so the map draws the first link and leaves out this one.";
 
 const undeclared = (name: string) =>
   `${name} isn't on the map, so this link isn't drawn until it is.`;

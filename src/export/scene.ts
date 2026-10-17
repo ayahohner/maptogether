@@ -32,9 +32,9 @@ export const sceneFromGraph = (
   const components = graph
     .mapNodes((_name, node) => drawnConfig(graph, node))
     .sort((a, b) => layoutComponent(a).zIndex - layoutComponent(b).zIndex);
-  const links = graph.mapEdges(
-    (_edge, _link, _a, _b, a, b) =>
-      [...markerAt(a), ...markerAt(b)] as ExportScene["links"][number],
-  );
+  const links = graph.mapEdges((_edge, link, _a, _b, a, b): ExportScene["links"][number] => ({
+    ends: [...markerAt(a), ...markerAt(b)],
+    style: link.style,
+  }));
   return { width: size.width, height: size.height, components, links };
 };

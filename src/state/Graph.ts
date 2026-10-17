@@ -2,6 +2,7 @@ import Graph from "graphology";
 
 import MapSingleton from "../map/components/MapSingleton";
 import type { ComponentConfig } from "../map/components/componentLayout";
+import type { LinkStyle } from "../map/components/symbols";
 import type { ComponentT, LineT } from "../map/components/types";
 
 export type NodeAttributes = {
@@ -16,6 +17,8 @@ export type NodeAttributes = {
 export type EdgeAttributes = {
   /** "needer->needed", as the link is first written. */
   nodeKey: string;
+  /** What the link was drawn from. */
+  style: LinkStyle;
   component: LineT;
 };
 

@@ -37,6 +37,7 @@ vi.mock("./components/Line", () => ({
 
 import { graph } from "../state/Graph";
 import { Component } from "./components/Component";
+import { Line } from "./components/Line";
 import { drawMap } from "./drawMap";
 
 /** What each component was drawn with, by name. */
@@ -154,6 +155,22 @@ it("keeps a pipeline when one of its components moves inside its box", () => {
   expect(Component).not.toHaveBeenCalled();
   expect(component("Tea")).toBe(tea);
   expect(component("Bag").position.x).toBe(70);
+});
+
+it("draws a link in its style, the first of a repeated link counting, and anew when its style changes", () => {
+  drawMap('Kettle\nPower\nKettle -- Power [flow, label="watts"]\nPower -- Kettle [constraint]');
+  const style = { constraint: false, flow: true, label: "watts" };
+  expect(vi.mocked(Line)).toHaveBeenCalledWith(10, 90, 10, 90, "Kettle->Power", style);
+  const line = link();
+  drawMap('Kettle\nPower\nKettle -- Power [flow, label="watts"]');
+  expect(link()).toBe(line);
+  drawMap("Kettle\nPower\nKettle -- Power [constraint]");
+  expect(line.removeFromParent).toHaveBeenCalled();
+  expect(graph.getEdgeAttribute(graph.edges()[0], "style")).toEqual({
+    constraint: true,
+    flow: false,
+    label: undefined,
+  });
 });
 
 it("replaces a link written the other way round", () => {

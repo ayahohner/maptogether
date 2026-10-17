@@ -185,3 +185,23 @@ export const decorations = (config: ComponentConfig): Decorations => {
   futureParts(config, parts);
   return parts;
 };
+
+/** How a link is drawn: `constraint` makes it thick, `flow` draws it in the flow colour. */
+export interface LinkStyle {
+  constraint: boolean;
+  flow: boolean;
+  label?: string;
+}
+
+export const PLAIN_LINK: LinkStyle = { constraint: false, flow: false };
+
+/** A link's line between its ends, and its label, above the middle. */
+export const linkShapes = (ends: [number, number, number, number], style: LinkStyle) => {
+  const [ax, ay, bx, by] = ends;
+  const stroke: Stroke = { role: style.flow ? "flow" : "ink", width: style.constraint ? 3 : 1 };
+  const line: Shape = { kind: "line", points: ends, stroke };
+  const text: TextShape | undefined = style.label
+    ? { x: (ax + bx) / 2 + 4, y: (ay + by) / 2 - 20, text: style.label, fill: stroke.role }
+    : undefined;
+  return { line, text };
+};

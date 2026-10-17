@@ -1,10 +1,11 @@
 import { graph, type NodeAttributes, redrawLinks } from "../state/Graph";
 import { parseMap } from "../parser/parse";
-import { buildModel, type ComponentModel, type MapModel } from "../model/model";
+import { buildModel, type ComponentModel, type LinkModel, type MapModel } from "../model/model";
 import MapSingleton from "./components/MapSingleton";
 import { Component } from "./components/Component";
 import { Line } from "./components/Line";
 import { type ComponentConfig, layoutComponent } from "./components/componentLayout";
+import type { LinkStyle } from "./components/symbols";
 
 /** Past this many problems the text is mostly not a map, so the last drawing stays. */
 const MAX_PROBLEMS = 50;
@@ -48,10 +49,7 @@ export const drawMap = (text: string) => {
 
 const drawModel = (model: MapModel) => {
   try {
-    reconcile(
-      toConfigs(model),
-      model.links.map((link) => link.ends),
-    );
+    reconcile(toConfigs(model), model.links);
     MapSingleton.renderIndicator.reset();
   } catch (e) {
     console.error(e);
@@ -62,24 +60,39 @@ const drawModel = (model: MapModel) => {
  * Brings the map's Pixi objects in line with the model: unchanged ones stay,
  * moved ones move, and only added or reshaped ones are drawn anew.
  */
-const reconcile = (components: Map<string, ComponentConfig>, links: [string, string][]) => {
+const reconcile = (components: Map<string, ComponentConfig>, links: LinkModel[]) => {
   for (const name of graph.filterNodes((name) => !components.has(name))) removeComponent(name);
   for (const config of components.values()) placeComponent(config);
   const wanted = linksToDraw(links, components);
-  for (const edge of graph.filterEdges((_edge, link) => !wanted.has(link.nodeKey))) {
+  const stale = (key: string, style: LinkStyle) =>
+    !wanted.has(key) || !sameStyle(wanted.get(key)!.style, style);
+  for (const edge of graph.filterEdges((_edge, link) => stale(link.nodeKey, link.style))) {
     graph.getEdgeAttribute(edge, "component").removeFromParent();
     graph.dropEdge(edge);
   }
-  for (const [a, b] of wanted.values()) addLink(a, b);
+  for (const link of wanted.values()) addLink(link);
   MapSingleton.dirty = true;
 };
 
-/** Each link once, by key, leaving out links to undeclared components and from a component to itself. */
-const linksToDraw = (links: [string, string][], components: Map<string, unknown>) => {
-  const wanted = new Map<string, [string, string]>();
-  for (const [a, b] of links) {
+/** A link as the canvas draws it. */
+interface DrawnLink {
+  ends: [string, string];
+  style: LinkStyle;
+}
+
+const sameStyle = (a: LinkStyle, b: LinkStyle) => JSON.stringify(a) === JSON.stringify(b);
+
+/**
+ * Each link once, by key, as first written either way round, leaving out
+ * links to undeclared components and from a component to itself.
+ */
+const linksToDraw = (links: LinkModel[], components: Map<string, unknown>) => {
+  const wanted = new Map<string, DrawnLink>();
+  for (const { ends, ...style } of links) {
+    const [a, b] = ends;
     const drawable = a !== b && components.has(a) && components.has(b);
-    if (drawable && !wanted.has(`${b}->${a}`)) wanted.set(`${a}->${b}`, [a, b]);
+    if (drawable && !wanted.has(`${b}->${a}`) && !wanted.has(`${a}->${b}`))
+      wanted.set(`${a}->${b}`, { ends, style });
   }
   return wanted;
 };
@@ -128,11 +141,11 @@ const removeComponent = (name: string) => {
   graph.dropNode(name);
 };
 
-const addLink = (a: string, b: string) => {
+const addLink = ({ ends: [a, b], style }: DrawnLink) => {
   if (graph.hasEdge(a, b)) return;
   const [from, to] = [graph.getNodeAttributes(a).component, graph.getNodeAttributes(b).component];
   const nodeKey = `${a}->${b}`;
-  const component = Line(from.x, from.y, to.x, to.y, nodeKey);
-  graph.addEdge(a, b, { nodeKey, component });
+  const component = Line(from.x, from.y, to.x, to.y, nodeKey, style);
+  graph.addEdge(a, b, { nodeKey, style, component });
   MapSingleton.graphContainer.addChild(component);
 };
