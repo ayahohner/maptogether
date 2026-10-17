@@ -1,7 +1,8 @@
 # Implementing syntax v2
 
-Status: plan, October 2026. Compares the code on `main` (as of `632a432`)
-with [proposal-v2.md](proposal-v2.md), and says where each change goes.
+Status: phases 1–4 done (5.0 to 5.3), October 2026; phase 5 is next. Compares
+the code on `main` (as of `632a432`) with [proposal-v2.md](proposal-v2.md),
+and says where each change goes, so "today" below means before phase 1.
 
 ## Where the code is today
 

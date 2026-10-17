@@ -31,6 +31,8 @@ a picture one person emails around.
   show where everyone is working. Hover the people count to see who's on the map.
 - **Export a picture.** Download the map as a PNG for slides and docs, or as an
   SVG that stays sharp at any size, from the **⋮** menu.
+- **Bring your OnlineWardleyMaps maps.** Paste one into the editor, or use
+  **⋮ → Import**, and it's converted to MapTogether's syntax.
 - **Saved automatically.** Maps save as you go, with a status light that only
   turns green once the save is confirmed.
 - **Speaks Wardley.** The evolution axis is marked Genesis, Custom, Product and

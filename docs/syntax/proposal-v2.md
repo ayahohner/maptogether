@@ -1,6 +1,8 @@
 # Proposal: MapTogether syntax v2
 
-Status: fourth draft for discussion, October 2026. Nothing here is implemented.
+Status: fourth draft, October 2026. Implemented in 5.0 to 5.3 (see
+[implementation-plan.md](implementation-plan.md)), except the formatter and
+the later items.
 
 This proposes one syntax that covers what's usually drawn on a Wardley map,
 plus map settings, extensions and nesting. It keeps what works in today's
