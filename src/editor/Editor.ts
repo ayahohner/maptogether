@@ -77,7 +77,9 @@ const userColors = [
 
 const userColor = userColors[Math.floor(Math.random() * userColors.length)];
 
-const yDoc = new Y.Doc();
+// Keeps deleted text, so earlier versions of the map can be rebuilt from
+// snapshots. The relay's copy keeps it too (relay/src/store.ts).
+const yDoc = new Y.Doc({ gc: false });
 const yText = yDoc.getText("maptogether");
 
 export const undoManager = new Y.UndoManager(yText, { captureTimeout: 350 });

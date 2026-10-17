@@ -17,6 +17,27 @@ const frame = (type: number, write: (e: encoding.Encoder) => void) => {
 };
 
 describe("MapStore", () => {
+  it("keeps deleted text, so earlier versions survive a save", () => {
+    const store = new MapStore();
+    const client = new Y.Doc({ gc: false });
+    const send = () =>
+      store.receive(
+        conn(),
+        frame(MESSAGE_SYNC, (e) => syncProtocol.writeUpdate(e, Y.encodeStateAsUpdate(client))),
+      );
+    client.getText("t").insert(0, "Kettle [33, 50]");
+    send();
+    const before = Y.snapshot(store.doc);
+    client.getText("t").delete(0, 6);
+    send();
+
+    const saved = new MapStore();
+    saved.load(store.snapshot());
+    const old = Y.createDocFromSnapshot(saved.doc, before);
+    expect(old.getText("t").toString()).toBe("Kettle [33, 50]");
+    expect(saved.doc.getText("t").toString()).toBe(" [33, 50]");
+  });
+
   it("starts a sync with each client", () => {
     const c = conn();
     new MapStore().join(c);

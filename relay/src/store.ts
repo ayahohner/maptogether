@@ -18,7 +18,8 @@ export interface StoreConn {
 const LOAD = Symbol("load");
 
 export class MapStore {
-  readonly doc = new Y.Doc();
+  /** Keeps deleted text, as clients do, so earlier versions can be rebuilt. */
+  readonly doc = new Y.Doc({ gc: false });
 
   constructor(private readonly onChange: () => void = () => {}) {
     this.doc.on("update", (_update: Uint8Array, origin: unknown) => {
