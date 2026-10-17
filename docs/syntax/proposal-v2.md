@@ -191,7 +191,7 @@ keyword       = key [ "=" value ] ;            (* no value: a boolean keyword, t
 value         = number | string | tuple | symbol ;
 block         = "{" { newline | statement } "}" ;
 
-name          = name-char { name-char | " " name-char }   (* no "--", "//", "[", "{", '"' or ";" *)
+name          = name-char { name-char | " " name-char }   (* no "--", "//", "[", "]", "{", "}", '"' or ";"; not starting with "@" *)
               | "`" { any char except "`" } "`" ;
 key           = word ;
 symbol        = word ;
@@ -201,10 +201,11 @@ escape        = '\"' | "\\" | "\n" ;
 comment       = "//" { any char } ;
 ```
 
-- **Names need no quotes.** A name ends at `[`, `{`, `--`, `//`, `;` or the
+- **Names need no quotes.** A name ends at `[`, `]`, `{`, `}`, `--`, `//`, `;` or the
   end of the line, and surrounding spaces are trimmed. If a name contains one
   of those, wrap it in backticks: `` `C#--IL` [40, 60] ``. Double quotes are
-  always prose, so `"Kettle"` is a note.
+  always prose, so `"Kettle"` is a note, and a leading `@` always starts a
+  directive.
 - **Newlines end statements**, except inside `[ ]` and `( )`. `;` separates
   statements on one line.
 
@@ -223,8 +224,9 @@ comment       = "//" { any char } ;
 
 **Position.** `[visibility, evolution]`, 0 to 100. That order is backwards
 from (x, y), but OnlineWardleyMaps, Mermaid and today's maps all use it, and
-changing it would quietly break every map anyone pastes in. A component with
-no position is placed automatically; dragging it writes one in.
+changing it would quietly break every map anyone pastes in. Positions are
+written to one decimal place: `[98.3, 41.5]`. A component with no position is
+drawn at `[10, 10]`, as today; dragging it writes one in.
 
 **Type.** `type=user`, `type=market`, `type=ecosystem`. Spelling out `type=`
 keeps every value behind a key, so `@type` can add new types without adding
@@ -281,6 +283,9 @@ Kettle--Power
 The needer is on the left and the needed on the right, as today. Spaces
 around `--` are optional. Arguments on a link describe the link, and only the
 link.
+
+A link can name a component that isn't declared. That's not an error: the
+link stays in the text, and is drawn once both components exist.
 
 | Key | Value | Meaning |
 | --- | --- | --- |
@@ -480,7 +485,9 @@ records. Applied to MapTogether:
 - **A snapshot** is the set of records available at a point. Yjs already has
   these (`Y.snapshot`, a state vector), so a **named snapshot** is a name
   attached to one: a tag, in Git terms. Showing it means rendering the text as
-  of that snapshot. No syntax.
+  of that snapshot. No syntax. Yjs can only rebuild an old version if its
+  garbage collection is off (`new Y.Doc({ gc: false })`), on clients and the
+  relay; otherwise deleted text is thrown away.
 - **A scenario** is a counterfactual: start from a snapshot and add different
   records. That's a branch, made by forking the room's history. Comparing two
   scenarios is a diff of their texts, drawn on the canvas. No syntax.
@@ -514,9 +521,8 @@ fact stays on its own line with the thing it describes.
 | `government:2` | `government 2 [label="government"]` | no definition IDs |
 | `name^` | `evolve=` | |
 
-The current parser reads the old syntax, so the upgrade can be automatic:
-detect a v1 map (an `a.b` link or a `(…)` argument block), rewrite it once,
-and keep the old text in the room's history.
+There's no compatibility layer: nothing reads v1 after the switch, and the
+few existing maps are converted by hand.
 
 ### Importing OnlineWardleyMaps
 
