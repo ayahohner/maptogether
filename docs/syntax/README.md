@@ -10,6 +10,8 @@ draws today.
   notes, and a map header. Its second half is earlier experiments.
 - [`proposal-v2.md`](proposal-v2.md): a 2026 proposal for a revised syntax
   covering every Wardley map element, settings, extensions and nesting.
+- [`implementation-plan.md`](implementation-plan.md): what the code does
+  today against the proposal, and the order to build it in.
 - [`lots-of-components.mt`](lots-of-components.mt): a map with about 100
   components and the draft header, for trying the editor and map with a large
   map.
