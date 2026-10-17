@@ -102,7 +102,7 @@ fits the same grammar, so it can be added later without breaking maps.
 | Links: `--`, `constraint`, `flow`, `label` | Areas |
 | Pipelines, including `pipeline=` bounds | Numbered annotations |
 | Notes | Accelerators and deaccelerators |
-| `@map` settings | `@type` for new component types |
+| `@map` settings | `@type` for new component types; `@style` for a team's colours |
 | | Lines of the future; snapshots and scenarios (history, not syntax) |
 
 ## Terms
@@ -425,6 +425,72 @@ type to fall back on:
 
 FCA [70, 40, type=regulator]
 ```
+
+### Types, styles and design tokens
+
+Design systems split appearance into three tiers of
+[design tokens](https://www.designtokens.org/tr/drafts/format/), and each
+tier refers only to the one below it:
+
+| Tier | Says | Example token | In MapTogether |
+| --- | --- | --- | --- |
+| primitive | what values exist | `violet.600 = #6d4aff` | the palette, inside the app |
+| semantic | what a value is for | `accent = {violet.600}` | map roles: `ink`, `paper`, `future`, `flow`, `inertia`, `sourcing.buy` |
+| component | how one thing uses it | `button.background = {accent}` | each `type`: its shape, fill and stroke |
+
+A **style** (`style=wardley`, `dark`, `plain`) is a mode: one set of
+values for the semantic tier. Swapping the style changes every map role at
+once, and nothing above it needs to know.
+
+That gives the rule for the map text: **it says what things are, never what
+colour they are.** A component names a type; a type names a shape and a
+role; the style decides the colours.
+
+```
+@type regulator [base=component, shape=hexagon, tone=warning]
+FCA [70, 40, type=regulator]
+```
+
+- `shape` is one of a fixed set of symbols (`circle`, `square`, `hexagon`,
+  `triangle`, `diamond`), so the canvas and the SVG export draw the same thing.
+- `tone` is a semantic role: `neutral` (default), `accent`, `positive`,
+  `warning`, `danger`. Each style gives each role a fill and a stroke that
+  meet contrast on that style's paper. A raw colour such as `fill="#ff0000"`
+  is not accepted: it would be unreadable in `dark`, and it can't follow a
+  later change of style.
+- Wardley's own colours are semantic already: red is the future (`evolve`,
+  `future`), blue is `flow`, black bars are `inertia`. They're roles in the
+  semantic tier, so `dark` can redraw them without the map changing.
+
+Principles that follow from design systems practice:
+
+1. **Intent over value.** Text names roles; values live in one place.
+2. **Meaning never by colour alone** ([WCAG 1.4.1](https://www.w3.org/WAI/WCAG22/Understanding/use-of-color)).
+   Types differ by shape, the future by a dashed line as well as red, and
+   sourcing by a pattern as well as shade, so maps survive printing in
+   black and white and readers who can't tell red from green.
+3. **Few choices, all good.** A short list of shapes and tones, each tested
+   for contrast in every style, beats an open palette people misuse.
+4. **One source for every surface.** The app's chrome already keeps its
+   tokens in Tailwind's `@theme` (`src/app/design.css`), but the canvas
+   hard-codes hex values (`0x9b5af9` in `componentLayout.ts`, `0x000000` in
+   `Line.tsx`). Moving the map roles into one token file, read by Pixi, the
+   SVG export and the CSS, keeps all three in step and lets a style be a file.
+
+**Bringing a team's own design system.** The one place a literal colour can
+appear is a style definition, the primitive tier, overriding roles of a
+built-in style:
+
+```
+@style acme [base=colour, accent="#0a66c2", warning="#b45309"]
+@map [style=acme]
+```
+
+So a brand's palette is set once, at the top, and components and types keep
+naming roles. Importing a [DTCG](https://www.designtokens.org) token file by
+URL would fit the same slot (`@style acme [tokens="https://…"]`), but it
+fetches from an outside address on every load, so it waits until there's a
+reason.
 
 ### Areas
 
