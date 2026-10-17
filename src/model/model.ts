@@ -4,12 +4,14 @@
  * mean.
  */
 import type { Name, ParseResult, Span, Statement, Value } from "../parser/syntax";
+import { noteKey, notes } from "../parser/walk";
 import {
   type ComponentKeys,
   type Future,
   type KeyLint,
   readComponentKeys,
   readLinkKeys,
+  readNoteKeys,
   type Sourcing,
 } from "./keys";
 
@@ -54,11 +56,20 @@ export interface LinkModel {
   label?: string;
 }
 
+export interface NoteModel {
+  /** Its key on the canvas (see noteKey). */
+  key: string;
+  text: string;
+  visibility: number;
+  evolution: number;
+}
+
 export interface MapModel {
   /** Each component where it's first written. */
   components: Map<string, ComponentModel>;
   /** In the order written, links to undeclared components included. */
   links: LinkModel[];
+  notes: NoteModel[];
 }
 
 export interface Lint extends Span {
@@ -82,7 +93,7 @@ interface Builder {
 
 export function buildModel({ statements }: Pick<ParseResult, "statements">) {
   const builder: Builder = {
-    model: { components: new Map(), links: [] },
+    model: { components: new Map(), links: [], notes: [] },
     lints: [],
     types: declaredTypes(statements),
     linked: new Set(),
@@ -93,6 +104,7 @@ export function buildModel({ statements }: Pick<ParseResult, "statements">) {
   for (const statement of statements) {
     if (statement.head.kind === "link") addLink(builder, statement);
   }
+  for (const [i, note] of notes(statements).entries()) addNote(builder, note, i);
   return { model: builder.model, lints: builder.lints };
 }
 
@@ -236,8 +248,7 @@ function ignored(lints: Lint[], extra: Value[], message: string) {
   warning(lints, { from: extra[0].from, to: extra[extra.length - 1].to }, message);
 }
 
-const POSITION =
-  "A component's position is two numbers, [visibility, evolution], so this is ignored.";
+const POSITION = "A position is two numbers, [visibility, evolution], so this is ignored.";
 
 /** `[visibility, evolution]`; anything else without a key is linted. */
 function position(lints: Lint[], { args }: Statement) {
@@ -249,6 +260,13 @@ function position(lints: Lint[], { args }: Statement) {
   }
   ignored(lints, positional.slice(2), POSITION);
   return { visibility: visibility.value, evolution: evolution.value };
+}
+
+function addNote({ model, lints }: Builder, statement: Statement, index: number) {
+  if (statement.head.kind !== "note") return;
+  keysOf(lints, (found) => readNoteKeys(statement.args, found));
+  const { visibility, evolution } = position(lints, statement);
+  model.notes.push({ key: noteKey(index), text: statement.head.text.value, visibility, evolution });
 }
 
 function addLink({ model, lints, linked }: Builder, statement: Statement) {

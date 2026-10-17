@@ -37,6 +37,11 @@ describe("deletionRanges", () => {
     );
   });
 
+  it("deletes a note by its key", () => {
+    const text = '"Hot" [1, 2]\nKettle\n"Cold" [3, 4]';
+    expect(remove(text, { components: ['"note 2"'] })).toBe('"Hot" [1, 2]\nKettle');
+  });
+
   it("deletes a pipeline child without breaking the pipeline", () => {
     expect(remove(map, { components: ["Loose Leaf"] })).toContain(
       "Tea [55, 73] {\n  Tea Bags [55, 90]\n}",

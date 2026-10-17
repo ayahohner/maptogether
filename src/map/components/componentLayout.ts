@@ -24,6 +24,8 @@ export interface ComponentConfig {
   pipeline?: number[];
   /** For a pipeline, the least its box spans (px), from `pipeline=(from, to)`. */
   bounds?: [number, number];
+  /** A note: its label is its text, drawn without a marker, and `name` is its key. */
+  note?: boolean;
 }
 
 /** How a component's marker is drawn, from what is being done on the canvas. */
@@ -106,8 +108,9 @@ export const layoutComponent = (config: ComponentConfig) => {
   return inPipeline ? { y: y + 12, zIndex: 1, pipe, label } : { y, zIndex: 0, pipe, label };
 };
 
-/** Where a label goes until it's placed: right of everything beside the component. */
+/** Where a label goes until it's placed: right of everything beside the component. A note's text starts at it. */
 const defaultLabel = (config: ComponentConfig, boxed: boolean) => {
+  if (config.note) return { x: 0, y: -8, rotation: 0 };
   const x = reachOf(config).right + 3;
   if (config.inPipeline) return { x, y: 10, rotation: Math.PI / 6 };
   if (boxed) return { x, y: -18, rotation: 0 };

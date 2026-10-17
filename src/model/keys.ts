@@ -183,3 +183,8 @@ export interface LinkKeys {
 
 export const readLinkKeys = (args: Args | undefined, lints: KeyLint[]) =>
   readKeys(args, LINK_KEYS, "A link", lints) as LinkKeys;
+
+/** Notes take no keys yet; `on=`, for numbered annotations, comes later (proposal-v2.md). */
+export const readNoteKeys = (args: Args | undefined, lints: KeyLint[]) => {
+  readKeys(args, {}, "A note", lints);
+};

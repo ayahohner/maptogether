@@ -6,6 +6,7 @@ vi.mock("pixi.js", async (importOriginal) => {
   const pixi = await importOriginal<typeof import("pixi.js")>();
   // Measuring text needs a canvas, which happy-dom lacks.
   class BitmapText extends pixi.Container {
+    style = { fill: 0 };
     override get width() {
       return 50;
     }
@@ -40,6 +41,20 @@ describe("Component", () => {
     expect(tea.children).toHaveLength(4);
     expect(rect).toHaveBeenCalledWith(-5, -5, 10, 10);
     expect(circle).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+
+  it("draws a note as its text alone, which shows it's selected and moves the note", async () => {
+    const circle = vi.spyOn(Graphics.prototype, "circle");
+    const note = Component({ name: '"note 1"', label: "Hot water", x: 40, y: 60, note: true });
+    expect(circle).not.toHaveBeenCalled();
+    expect(note.onLabel({ x: 41, y: 55 })).toBe(false);
+    const text = note.children[1] as unknown as { style: { fill: number } };
+    expect(text.style.fill).toBe(0x000000);
+    replaceSelection(['"note 1"']);
+    await settle();
+    expect(text.style.fill).toBe(0x9b5af9);
+    clearSelection();
     vi.restoreAllMocks();
   });
 

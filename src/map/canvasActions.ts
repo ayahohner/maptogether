@@ -1,5 +1,12 @@
-import { appendText, moveComponents, placeLabel, renameComponent } from "../editor/Editor";
+import {
+  appendText,
+  editNote,
+  moveComponents,
+  placeLabel,
+  renameComponent,
+} from "../editor/Editor";
 import { isComponentName, writeName } from "../parser/names";
+import { isNoteKey } from "../parser/walk";
 import { graph } from "../state/Graph";
 import {
   clearSelection,
@@ -72,6 +79,23 @@ const rename = (map: MapView, nodeKey: string, p: Point) =>
     (name) => nameProblem(name, nodeKey),
   );
 
+/** Rewrites a note's text where it's drawn. */
+const editNoteText = (map: MapView, key: string, p: Point) =>
+  FloatingTextInput(
+    map.element,
+    p.x,
+    p.y,
+    (text) => editNote(key, text),
+    graph.getNodeAttribute(key, "config").label ?? "",
+    (text) => (text.trim() ? undefined : "A note needs some text"),
+  );
+
+/** Edits what was double-clicked: a component's name or a note's text, or names a new component. */
+const edit = (map: MapView, nodeKey: string | undefined, p: Point) => {
+  if (!nodeKey) return create(map, p);
+  return isNoteKey(nodeKey) ? editNoteText(map, nodeKey, p) : rename(map, nodeKey, p);
+};
+
 const vibrate = () => navigator.vibrate?.(10);
 
 /** How far (screen px) from a link a press still picks it. */
@@ -111,10 +135,11 @@ export function canvasActions(map: MapView): CanvasActions {
     release,
     select: (nodeKey, p, touch) => (nodeKey ? replaceSelection([nodeKey]) : tap(p, touch)),
     link: (nodeKey) => {
-      const link = linkTo(nodeKey);
+      // A note is prose, not a component, so nothing links to it.
+      const link = nodeKey && isNoteKey(nodeKey) ? undefined : linkTo(nodeKey);
       if (link) appendText(`\n${writeName(link.from)} -- ${writeName(link.to)}`);
     },
-    edit: (nodeKey, p) => (nodeKey ? rename(map, nodeKey, p) : create(map, p)),
+    edit: (nodeKey, p) => edit(map, nodeKey, p),
     place: (p) => {
       setTool("select");
       create(map, p);

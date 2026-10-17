@@ -16,7 +16,7 @@ describe("buildModel", () => {
       { name: "Odd", visibility: 10, evolution: 10 },
     ]);
     expect(lints.map((l) => l.message)).toEqual([
-      "A component's position is two numbers, [visibility, evolution], so this is ignored.",
+      "A position is two numbers, [visibility, evolution], so this is ignored.",
     ]);
   });
 
@@ -71,10 +71,7 @@ describe("buildModel", () => {
       "A [type=robot]",
       "robot isn't a type: use component, user, market or ecosystem, or add it with @type robot.",
     ],
-    [
-      "A [1, 2, 3]",
-      "A component's position is two numbers, [visibility, evolution], so this is ignored.",
-    ],
+    ["A [1, 2, 3]", "A position is two numbers, [visibility, evolution], so this is ignored."],
     ["A [type=user] {\n  B\n}", "A user can't hold components, so these aren't drawn."],
     ["A\nB\nA -- B [1]", "A link takes only keys, such as flow, so this is ignored."],
   ])("lints %j", (text, message) => {
@@ -143,6 +140,15 @@ describe("buildModel", () => {
       { ends: ["A", "B"], constraint: false, flow: true, label: "£1" },
       { ends: ["B", "A"], constraint: true, flow: false, label: undefined },
     ]);
+  });
+
+  it("reads the map's notes, keyed by their place among them", () => {
+    const { model, lints } = build('"Hot water" [48, 85]\nA {\n  "inside"\n}\n"Cold" [x=1]');
+    expect(model.notes).toEqual([
+      { key: '"note 1"', text: "Hot water", visibility: 48, evolution: 85 },
+      { key: '"note 2"', text: "Cold", visibility: 10, evolution: 10 },
+    ]);
+    expect(lints.map((l) => l.message)).toEqual(["A note doesn't take x, so it's ignored."]);
   });
 
   it("warns about a link written twice, either way round", () => {

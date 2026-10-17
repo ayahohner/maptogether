@@ -24,7 +24,7 @@ import {
 import MapSingleton from "../map/components/MapSingleton";
 import { togetherScriptLinter } from "./TogetherScriptLinter";
 import { deletionRanges } from "./deletions";
-import { labelChanges, moveChanges, renameChanges } from "./edits";
+import { labelChanges, moveChanges, noteTextChanges, renameChanges } from "./edits";
 import { generateRandomAnimal } from "../user/utilities/generateRandomAnimal";
 import { drawMap } from "../map/drawMap";
 import { linkEnds } from "../state/Graph";
@@ -201,6 +201,12 @@ export const placeLabel = (name: string, x: number, y: number) => {
 export const renameComponent = (oldName: string, newName: string) => {
   renameInSelection(oldName, newName);
   const changes = renameChanges(editorView.state.doc.toString(), oldName, newName);
+  if (changes.length) editorView.dispatch({ changes });
+};
+
+/** Rewrites a note's text, as one undoable edit. */
+export const editNote = (key: string, note: string) => {
+  const changes = noteTextChanges(editorView.state.doc.toString(), key, note);
   if (changes.length) editorView.dispatch({ changes });
 };
 

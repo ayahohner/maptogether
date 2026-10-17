@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { type Change, coordinateChanges, labelChanges, moveChanges, renameChanges } from "./edits";
+import {
+  type Change,
+  coordinateChanges,
+  labelChanges,
+  moveChanges,
+  noteTextChanges,
+  renameChanges,
+} from "./edits";
 
 const apply = (text: string, changes: Change[]) =>
   [...changes].reverse().reduce((t, c) => t.slice(0, c.from) + c.insert + t.slice(c.to), text);
@@ -122,5 +129,20 @@ describe("labelChanges", () => {
     expect(labelChanges("Kettle [label=(1, 2)]", "Kettle", ["1", "2"])).toEqual([]);
     expect(labelChanges("Kettle [label=red]", "Kettle", ["1", "2"])).toEqual([]);
     expect(labelChanges("Kettle -- Power", "Power", ["1", "2"])).toEqual([]);
+  });
+});
+
+describe("notes", () => {
+  const text = '"Hot water" [1, 2]\nKettle\n"Cold"';
+
+  it("moves a note by its key, giving it a position if it has none", () => {
+    expect(move(text, '"note 1"', ["5", "6"])).toBe('"Hot water" [5, 6]\nKettle\n"Cold"');
+    expect(move(text, '"note 2"', ["5", "6"])).toBe('"Hot water" [1, 2]\nKettle\n"Cold" [5, 6]');
+  });
+
+  it("rewrites a note's text, escaping its quotes", () => {
+    expect(apply(text, noteTextChanges(text, '"note 2"', 'Say "hi"'))).toBe(
+      '"Hot water" [1, 2]\nKettle\n"Say \\"hi\\""',
+    );
   });
 });

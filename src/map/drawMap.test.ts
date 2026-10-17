@@ -222,6 +222,18 @@ it("draws what the text says about a component, in pixels", () => {
   });
 });
 
+it("draws notes as text, keyed by their place among the notes", () => {
+  drawMap('"Hot water" [48, 85]\nKettle');
+  expect(vi.mocked(Component)).toHaveBeenCalledWith({
+    name: '"note 1"',
+    x: 85,
+    y: 52,
+    label: "Hot water",
+    note: true,
+  });
+  expect(graph.hasNode('"note 1"')).toBe(true);
+});
+
 it("draws a pipeline's bounds in pixels", () => {
   drawMap("Pay [40, 60, pipeline=(20, 80)]");
   expect(vi.mocked(Component).mock.calls[0][0]).toMatchObject({ pipeline: [], bounds: [20, 80] });

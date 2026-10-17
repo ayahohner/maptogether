@@ -5,12 +5,15 @@ const editor = vi.hoisted(() => ({
   moveComponents: vi.fn(),
   placeLabel: vi.fn(),
   renameComponent: vi.fn(),
+  editNote: vi.fn(),
 }));
 // Kettle's label covers screen points with y under 3.
 const onLabel = vi.hoisted(() => vi.fn((p: { x: number; y: number }) => p.y < 3));
 const graph = vi.hoisted(() => ({
   hasNode: vi.fn((name: string) => name === "Kettle"),
-  getNodeAttribute: vi.fn(() => ({ onLabel })),
+  getNodeAttribute: vi.fn((_key: string, attribute?: string) =>
+    attribute === "config" ? { label: "Hot water" } : { onLabel },
+  ),
 }));
 const store = vi.hoisted(() => ({
   clearSelection: vi.fn(),
@@ -151,6 +154,18 @@ it("renames a component, unless the name is taken", () => {
   actions.edit("Urn", { x: 5, y: 5 });
   submit("Kettle");
   expect(editor.renameComponent).toHaveBeenCalledOnce();
+});
+
+it("rewrites a note's text, which can't be blank, and never links a note", () => {
+  const actions = canvasActions(map);
+  actions.edit('"note 1"', { x: 5, y: 5 });
+  expect(field().value).toBe("Hot water");
+  submit("  ");
+  expect(editor.editNote).not.toHaveBeenCalled();
+  submit("Cold water");
+  expect(editor.editNote).toHaveBeenCalledWith('"note 1"', "Cold water");
+  actions.link('"note 1"');
+  expect(store.linkTo).not.toHaveBeenCalled();
 });
 
 it("won't name a component what the text can't hold", () => {

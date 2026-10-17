@@ -40,9 +40,15 @@ function positionChanges(
     const rest = args.keywords.length ? ", " : "";
     return [{ from: args.from + 1, to: args.from + 1, insert: position + rest }];
   }
-  const end = head.kind === "component" ? head.name.to : 0;
+  const end = headEnd(head);
   return [{ from: end, to: end, insert: ` [${position}]` }];
 }
+
+/** Where a component's name or a note's text ends. */
+const headEnd = (head: Statement["head"]) => {
+  if (head.kind === "component") return head.name.to;
+  return head.kind === "note" ? head.text.to : 0;
+};
 
 /** A component's new coordinates, `[visibility, evolution]`. */
 export interface Placement {
@@ -74,6 +80,12 @@ export const renameChanges = (text: string, oldName: string, newName: string): C
 /** `text` as a map string, in quotes. */
 const quoted = (text: string) =>
   `"${text.replace(/[\\"\n]/g, (c) => (c === "\n" ? "\\n" : `\\${c}`))}"`;
+
+/** Rewrites a note's text; `key` is the note's key on the canvas. */
+export const noteTextChanges = (text: string, key: string, note: string): Change[] =>
+  declarations(parseMap(text).statements, key).flatMap(({ head }) =>
+    head.kind === "note" ? [{ from: head.text.from, to: head.text.to, insert: quoted(note) }] : [],
+  );
 
 /**
  * Places a component's label `x, y` px from it, wherever it's declared. Once
@@ -110,7 +122,7 @@ function relabel(value: Value, x: string, y: string): Change[] {
 /** Adds `keyword` after a statement's last argument, or brackets for it. */
 function newLabel(head: Statement["head"], args: Statement["args"], keyword: string): Change[] {
   if (!args) {
-    const end = head.kind === "component" ? head.name.to : 0;
+    const end = headEnd(head);
     return [{ from: end, to: end, insert: ` [${keyword}]` }];
   }
   const last = args.keywords.at(-1) ?? args.positional.at(-1);

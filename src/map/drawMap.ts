@@ -1,6 +1,12 @@
 import { graph, type NodeAttributes, redrawLinks } from "../state/Graph";
 import { parseMap } from "../parser/parse";
-import { buildModel, type ComponentModel, type LinkModel, type MapModel } from "../model/model";
+import {
+  buildModel,
+  type ComponentModel,
+  type LinkModel,
+  type MapModel,
+  type NoteModel,
+} from "../model/model";
 import MapSingleton from "./components/MapSingleton";
 import { Component } from "./components/Component";
 import { Line } from "./components/Line";
@@ -43,9 +49,18 @@ const toConfig = (component: ComponentModel): ComponentConfig => {
   };
 };
 
+/** A note as the canvas draws it: a component that is only its text, keyed by its key. */
+const noteConfig = ({ key, text, visibility, evolution }: NoteModel): ComponentConfig => {
+  const [x, y] = MapSingleton.wardleyToRendererCoords(evolution, visibility);
+  return { name: key, x, y, label: text, note: true };
+};
+
 /** What the model puts on the map, in pixels. */
 const toConfigs = (model: MapModel) =>
-  new Map([...model.components].map(([name, component]) => [name, toConfig(component)]));
+  new Map([
+    ...[...model.components].map(([name, component]) => [name, toConfig(component)] as const),
+    ...model.notes.map((note) => [note.key, noteConfig(note)] as const),
+  ]);
 
 /**
  * Draws the map from its text, leaving out statements that don't parse.

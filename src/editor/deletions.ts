@@ -1,9 +1,9 @@
 import { parseMap } from "../parser/parse";
 import type { Span, Statement } from "../parser/syntax";
-import { walk } from "../parser/walk";
+import { declarations, isNoteKey, walk } from "../parser/walk";
 
 export interface Deletion {
-  /** Component names: each goes with its links (and a pipeline with its children). */
+  /** Component names, or notes' keys: each goes with its links (and a pipeline with its children). */
   components: readonly string[];
   /** Links as `[needer, needed]`; a link written the other way round goes too. */
   edges: readonly (readonly [string, string])[];
@@ -15,12 +15,14 @@ export type Range = Span;
 function doomedStatements(statements: readonly Statement[], { components, edges }: Deletion) {
   const names = new Set(components);
   const links = new Set(edges.flatMap(([a, b]) => [`${a}\n${b}`, `${b}\n${a}`]));
-  return [...walk(statements)].filter(({ head }) => {
+  const notes = components.filter(isNoteKey).flatMap((key) => declarations(statements, key));
+  const doomed = [...walk(statements)].filter(({ head }) => {
     if (head.kind === "component") return names.has(head.name.text);
     if (head.kind !== "link") return false;
     const [a, b] = [head.from.text, head.to.text];
     return names.has(a) || names.has(b) || links.has(`${a}\n${b}`);
   });
+  return [...doomed, ...notes];
 }
 
 const ONLY_A_COMMENT = /^[ \t]*(?:\/\/[^\n]*)?\n?$/;

@@ -100,6 +100,7 @@ const FILL: Record<MapSymbol, Role> = {
 /** The marker: a symbol's shape with a border for the mode, or a pipeline's square. */
 export const markerShapes = (config: ComponentConfig, mode: InteractionMode): Shape[] => {
   const border = { ...BORDERS[mode], inside: true };
+  if (config.note) return [];
   if (config.pipeline) {
     const half = squareHalfSide(mode);
     return [
@@ -169,6 +170,7 @@ const futureParts = (config: ComponentConfig, parts: Decorations) => {
 /** Sourcing circles, the inertia bar, and the future. */
 export const decorations = (config: ComponentConfig): Decorations => {
   const parts: Decorations = { behind: [], front: [], texts: [] };
+  if (config.note) return parts;
   const reach = reachOf(config);
   if (config.sourcing) parts.behind.push(sourcingCircle(reach.circle, config.sourcing));
   if (reach.bar !== undefined) {
