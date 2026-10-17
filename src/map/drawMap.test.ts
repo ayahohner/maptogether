@@ -218,5 +218,11 @@ it("draws what the text says about a component, in pixels", () => {
     evolve: { x: 80, label: "Smart", sourcing: undefined },
     inPipeline: undefined,
     pipeline: undefined,
+    bounds: undefined,
   });
+});
+
+it("draws a pipeline's bounds in pixels", () => {
+  drawMap("Pay [40, 60, pipeline=(20, 80)]");
+  expect(vi.mocked(Component).mock.calls[0][0]).toMatchObject({ pipeline: [], bounds: [20, 80] });
 });

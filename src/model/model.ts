@@ -42,6 +42,8 @@ export interface ComponentModel {
   inPipeline?: string;
   /** For a pipeline, its components' evolutions. A pipeline in a pipeline is drawn empty. */
   pipeline?: number[];
+  /** For a pipeline, the evolutions its box spans at least, from `pipeline=(from, to)`. */
+  bounds?: [number, number];
 }
 
 export interface LinkModel {
@@ -134,8 +136,7 @@ function addComponent(builder: Builder, statement: Statement, parent?: Component
   const keys = keysOf(builder.lints, (lints) => readComponentKeys(statement.args, lints));
   const component = describe(builder, statement, keys, parent);
   const children = mapChildren(builder, statement, component);
-  if (statement.children && component.symbol === "component")
-    component.pipeline = parent ? [] : children.map((c) => position([], c).evolution);
+  pipelineOf(builder, statement, keys, component, children);
   declare(builder, name, component);
   for (const child of children) addComponent(builder, child, component);
 }
@@ -190,6 +191,33 @@ function mapChildren(builder: Builder, statement: ComponentStatement, component:
     warning(builder.lints, statement.head.name, message);
   }
   return [];
+}
+
+/**
+ * Makes a component with braces or `pipeline=` a pipeline: one in a pipeline
+ * is drawn empty, and another type can't be one.
+ */
+function pipelineOf(
+  builder: Builder,
+  statement: ComponentStatement,
+  keys: ComponentKeys,
+  component: ComponentModel,
+  children: Statement[],
+) {
+  const nested = component.inPipeline !== undefined;
+  if (component.symbol === "component" && (statement.children || keys.pipeline))
+    component.pipeline = nested ? [] : children.map((c) => position([], c).evolution);
+  if (component.pipeline && !nested) component.bounds = keys.pipeline;
+  else if (keys.pipeline) notAPipeline(builder, statement, component);
+}
+
+/** Warns about `pipeline=` where it can't be drawn: on another type, or in a pipeline. */
+function notAPipeline(builder: Builder, statement: ComponentStatement, component: ComponentModel) {
+  const keyword = statement.args!.keywords.find((k) => k.key === "pipeline")!;
+  const message = component.inPipeline
+    ? "A pipeline inside a pipeline is drawn without its box, so pipeline= is ignored."
+    : `A ${component.symbol} can't be a pipeline, so pipeline= is ignored.`;
+  warning(builder.lints, keyword, message);
 }
 
 /** Adds a component where it's first written; a second one is an error. */

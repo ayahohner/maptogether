@@ -22,6 +22,8 @@ export interface ComponentConfig {
   inPipeline?: string;
   /** Set for a pipeline: the x of each component it holds. */
   pipeline?: number[];
+  /** For a pipeline, the least its box spans (px), from `pipeline=(from, to)`. */
+  bounds?: [number, number];
 }
 
 /** How a component's marker is drawn, from what is being done on the canvas. */
@@ -51,11 +53,15 @@ export const modeOf = (state: StateT, name: string): InteractionMode => {
 /** Space between a pipeline's box and its outermost components. */
 const PIPE_PADDING = 10;
 
-/** A pipeline's box, from the pipeline's x and its components' x, relative to the pipeline. */
-export const pipelineBox = (x: number, childXs: number[]) => {
-  const left = Math.min(x, ...childXs);
-  const right = Math.max(x, ...childXs);
-  return { offset: left - x - PIPE_PADDING, width: right - left + 2 * PIPE_PADDING };
+/**
+ * A pipeline's box, relative to the pipeline: around the pipeline and its
+ * components at `childXs`, and at least across its bounds.
+ */
+export const pipelineBox = (x: number, childXs: number[], bounds?: [number, number]) => {
+  const left = Math.min(x - PIPE_PADDING, ...childXs.map((at) => at - PIPE_PADDING));
+  const right = Math.max(x + PIPE_PADDING, ...childXs.map((at) => at + PIPE_PADDING));
+  const [from, to] = bounds ?? [left, right];
+  return { offset: Math.min(left, from) - x, width: Math.max(right, to) - Math.min(left, from) };
 };
 
 /** A marker's radius: markets and ecosystems are drawn larger, as they hold more. */
@@ -93,8 +99,9 @@ export const futureOf = (config: ComponentConfig) => {
  * been placed.
  */
 export const layoutComponent = (config: ComponentConfig) => {
-  const { x, y, inPipeline, pipeline, labelOffset } = config;
-  const pipe = pipeline?.length ? pipelineBox(x, pipeline) : undefined;
+  const { x, y, inPipeline, pipeline, bounds, labelOffset } = config;
+  const pipe =
+    pipeline && (pipeline.length || bounds) ? pipelineBox(x, pipeline, bounds) : undefined;
   const label = labelOffset ? { ...labelOffset, rotation: 0 } : defaultLabel(config, !!pipe);
   return inPipeline ? { y: y + 12, zIndex: 1, pipe, label } : { y, zIndex: 0, pipe, label };
 };

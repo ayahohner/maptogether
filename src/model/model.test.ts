@@ -105,6 +105,24 @@ describe("buildModel", () => {
     expect(components.get("Dust")).toMatchObject({ visibility: 55, inPipeline: "Bags" });
   });
 
+  it("reads a pipeline's bounds, with or without components", () => {
+    const { components } = build(
+      "Tea [55, 73, pipeline=(10, 95)] {\n  Leaf [1, 56]\n}\nPay [pipeline=(20, 80)]",
+    ).model;
+    expect(components.get("Tea")).toMatchObject({ pipeline: [56], bounds: [10, 95] });
+    expect(components.get("Pay")).toMatchObject({ pipeline: [], bounds: [20, 80] });
+  });
+
+  it("warns about bounds where no box is drawn", () => {
+    expect(lintMessages("U [type=user, pipeline=(1, 2)]\nT {\n  P [pipeline=(1, 2)]\n}")).toEqual([
+      ["warning", "A user can't be a pipeline, so pipeline= is ignored."],
+      [
+        "warning",
+        "A pipeline inside a pipeline is drawn without its box, so pipeline= is ignored.",
+      ],
+    ]);
+  });
+
   it("keeps the first of two components with the same name", () => {
     const { model, lints } = build("Kettle [1, 2]\nKettle [3, 4]");
     expect(model.components.get("Kettle")).toMatchObject({ visibility: 1 });

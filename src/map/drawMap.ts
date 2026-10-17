@@ -15,7 +15,17 @@ const rendererX = (evolution: number) => MapSingleton.wardleyToRendererCoords(ev
 
 /** A component as the canvas draws it, in pixels. */
 const toConfig = (component: ComponentModel): ComponentConfig => {
-  const { name, visibility, evolution, evolve, label, pipeline, form: _form, ...drawn } = component;
+  const {
+    name,
+    visibility,
+    evolution,
+    evolve,
+    label,
+    pipeline,
+    bounds,
+    form: _form,
+    ...drawn
+  } = component;
   const [x, y] = MapSingleton.wardleyToRendererCoords(evolution, visibility);
   return {
     ...drawn,
@@ -29,6 +39,7 @@ const toConfig = (component: ComponentModel): ComponentConfig => {
       sourcing: evolve.sourcing,
     },
     pipeline: pipeline?.map(rendererX),
+    bounds: bounds && [rendererX(bounds[0]), rendererX(bounds[1])],
   };
 };
 

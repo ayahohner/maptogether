@@ -69,6 +69,11 @@ describe("pipelineBox", () => {
     expect(pipelineBox(10, [30, 70])).toEqual({ offset: -10, width: 80 });
     expect(pipelineBox(90, [30, 70])).toEqual({ offset: -70, width: 80 });
   });
+
+  it("covers its bounds at least, and its components where they lie outside them", () => {
+    expect(pipelineBox(50, [], [0, 200])).toEqual({ offset: -50, width: 200 });
+    expect(pipelineBox(50, [40, 250], [0, 200])).toEqual({ offset: -50, width: 260 });
+  });
 });
 
 const stateWith = (linking: Partial<StateT["linking"]>, selected: string[] = []) =>

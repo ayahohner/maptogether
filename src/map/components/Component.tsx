@@ -66,7 +66,7 @@ export const Component = (config: ComponentConfig) => {
   }
   component.fitPipe = (childXs) => {
     if (!layout.pipe) return;
-    drawPipe(pipe, pipelineBox(component.x, childXs));
+    drawPipe(pipe, pipelineBox(component.x, childXs, config.bounds));
     MapSingleton.dirty = true;
   };
 
