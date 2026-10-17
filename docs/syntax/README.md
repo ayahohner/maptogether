@@ -45,6 +45,6 @@ needs only drawing code.
 
 [`examples/owm/`](../../examples/owm) holds maps in OnlineWardleyMaps' syntax
 (`component Name [visibility, evolution]`, values 0–1, links `A->B`).
-`src/parser/WardleyParser.ts` reads that syntax; the app doesn't use it yet.
-They are a starting point for importing OnlineWardleyMaps maps, and for the
+`src/import/owm.ts` converts that syntax to MapTogether's, and its tests
+convert every map here. They are also a starting point for the
 syntax and templates pages in [`../seo-strategy.md`](../seo-strategy.md).

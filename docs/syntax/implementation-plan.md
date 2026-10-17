@@ -26,8 +26,9 @@ Other places that know the syntax:
 - `nameProblem` in `canvasActions.ts`, with `isComponentName`, which came from `main`
 - about 18 test files with map text in them; `drawMap.test.ts`, `edits.test.ts` and `deletions.test.ts` have the most
 
-`src/parser/WardleyParser.ts` reads a sliver of OnlineWardleyMaps (components,
-pipelines, `->`). Only `cst.test.ts` uses it.
+`src/parser/WardleyParser.ts` read a sliver of OnlineWardleyMaps (components,
+pipelines, `->`), and only `cst.test.ts` used it. Phase 4 replaced both with
+`src/import/owm.ts`.
 
 ## The diff, feature by feature
 

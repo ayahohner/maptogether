@@ -180,46 +180,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@chevrotain/cst-dts-gen@npm:13.2.0":
-  version: 13.2.0
-  resolution: "@chevrotain/cst-dts-gen@npm:13.2.0"
-  dependencies:
-    "@chevrotain/gast": "npm:13.2.0"
-    "@chevrotain/types": "npm:13.2.0"
-  checksum: 10c0/844c3bbed4b55e428597dca6e33d34073971c2a0d28a1e804995a89581d2de598d9823a44b6b45651aa8364fe46495fbe31074a319b99fb53123870b898c8718
-  languageName: node
-  linkType: hard
-
-"@chevrotain/gast@npm:13.2.0":
-  version: 13.2.0
-  resolution: "@chevrotain/gast@npm:13.2.0"
-  dependencies:
-    "@chevrotain/types": "npm:13.2.0"
-  checksum: 10c0/57b87780cb8941fa04781177fc73b40adc091b0daf822d45124bd1096f8b7b1c936013222e2f29cdb847bcb09e36586e8eb04710a8b8c9b65c91842e8bd5e703
-  languageName: node
-  linkType: hard
-
-"@chevrotain/regexp-to-ast@npm:13.2.0":
-  version: 13.2.0
-  resolution: "@chevrotain/regexp-to-ast@npm:13.2.0"
-  checksum: 10c0/ddba2885059d83b6cb56df12b6b30d96bcd8c90f1b43f541d8a9e9eeafcba37c7542ecf17b1a15d5a8f2ea9c969717523069bf034cf931003e91a2039c1c06e1
-  languageName: node
-  linkType: hard
-
-"@chevrotain/types@npm:13.2.0":
-  version: 13.2.0
-  resolution: "@chevrotain/types@npm:13.2.0"
-  checksum: 10c0/89375750866db94ff957bc1468bad71c7522fe46f314c395d81fa748f71f80b249cb09073de4def3de81a9bc98b2c4533d634845be0400bf7710901d831ca505
-  languageName: node
-  linkType: hard
-
-"@chevrotain/utils@npm:13.2.0":
-  version: 13.2.0
-  resolution: "@chevrotain/utils@npm:13.2.0"
-  checksum: 10c0/4d87dd83f865d2a868d0eeca36f330dd397967f224505b6aaf4492703b3f385646378c4a905594a483d1b7d9651e000292253ca4e1e17c521811b23f6a06fec8
-  languageName: node
-  linkType: hard
-
 "@cloudflare/kv-asset-handler@npm:0.5.0":
   version: 0.5.0
   resolution: "@cloudflare/kv-asset-handler@npm:0.5.0"
@@ -2514,19 +2474,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chevrotain@npm:^13.2.0":
-  version: 13.2.0
-  resolution: "chevrotain@npm:13.2.0"
-  dependencies:
-    "@chevrotain/cst-dts-gen": "npm:13.2.0"
-    "@chevrotain/gast": "npm:13.2.0"
-    "@chevrotain/regexp-to-ast": "npm:13.2.0"
-    "@chevrotain/types": "npm:13.2.0"
-    "@chevrotain/utils": "npm:13.2.0"
-  checksum: 10c0/f7384a69c4ef7d43be6fd63a9447af5877de7b66842638d8568a85e7f404a278495d68f0fd9024f12aec886aee9b888c544734549b9c95e03f6e4c6e87fcb1cf
-  languageName: node
-  linkType: hard
-
 "chownr@npm:^3.0.0":
   version: 3.0.0
   resolution: "chownr@npm:3.0.0"
@@ -3386,7 +3333,6 @@ __metadata:
     "@vitest/coverage-v8": "npm:^5.0.2"
     "@vitest/ui": "npm:^5.0.2"
     autoprefixer: "npm:^10.6.1"
-    chevrotain: "npm:^13.2.0"
     codemirror: "npm:^6.0.2"
     graphology: "npm:^0.26.0"
     graphology-types: "npm:^0.24.8"
