@@ -23,6 +23,7 @@ import {
 } from "../state/State";
 import MapSingleton from "../map/components/MapSingleton";
 import { togetherScriptLinter } from "./TogetherScriptLinter";
+import { owmPasteOffer } from "./owmPaste";
 import { deletionRanges } from "./deletions";
 import { labelChanges, moveChanges, noteTextChanges, renameChanges } from "./edits";
 import { generateRandomAnimal } from "../user/utilities/generateRandomAnimal";
@@ -139,6 +140,7 @@ const startState = EditorState.create({
     lintGutter(),
     EditorView.lineWrapping,
     Theme,
+    owmPasteOffer(),
     yCollab(yText, awareness, { undoManager }),
     EditorView.updateListener.of((e) => {
       if (e.docChanged) {

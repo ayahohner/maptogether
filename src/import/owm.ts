@@ -305,3 +305,14 @@ function writeString(text: string) {
 function writeName(name: string) {
   return /--|\/\/|[;"[\]{}`]|^@/.test(name) ? `\`${name.replace(/`/g, "'")}\`` : name;
 }
+
+const OWM_COMPONENT = new RegExp(String.raw`^\s*(component|anchor|market|ecosystem)\s+.+?${PAIR}`);
+
+/** Whether text reads as OnlineWardleyMaps: two or more components placed with 0–1 coordinates. */
+export function looksLikeOwm(text: string) {
+  const placed = text
+    .split(/\r?\n/)
+    .map((line) => OWM_COMPONENT.exec(line))
+    .filter((match) => match && Number(match[2]) <= 1 && Number(match[3]) <= 1);
+  return placed.length >= 2;
+}

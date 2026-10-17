@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildModel } from "../model/model";
 import { parseMap } from "../parser/parse";
-import { importOwm } from "./owm";
+import { importOwm, looksLikeOwm } from "./owm";
 
 const convert = (...lines: string[]) => importOwm(lines.join("\n")).text;
 
@@ -136,4 +136,14 @@ describe("importOwm", () => {
       expect(buildModel(parseMap(text)).model.components.size).toBeGreaterThan(30);
     },
   );
+});
+
+it.each([
+  ["two placed components", "component Kettle [0.43, 0.35]\ncomponent Power [0.1, 0.7]", true],
+  ["anchors and markets", "anchor Business [0.95, 0.63]\nmarket Shops [0.5, 0.5]", true],
+  ["one component", "component Kettle [0.43, 0.35]", false],
+  ["MapTogether's coordinates", "component Kettle [43, 35]\ncomponent Power [10, 70]", false],
+  ["MapTogether text", "Kettle [43, 35]\nPower [10, 70]", false],
+])("tells OnlineWardleyMaps text by %s", (_, text, owm) => {
+  expect(looksLikeOwm(text)).toBe(owm);
 });
