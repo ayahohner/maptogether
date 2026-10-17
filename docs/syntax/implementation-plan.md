@@ -49,9 +49,7 @@ pipelines, `->`). Only `cst.test.ts` uses it.
 | `constraint`, `flow`, `label` on links | none | `EdgeAttributes`, `Line`, export |
 | `pipeline=(from, to)`, childless pipelines | box from children only | `pipelineBox`, model |
 | `@map` title, style, stage names and boundaries, axis labels, `hidden` | hard-coded in `MapAxes.tsx` (`evolutionStages`, `stageBoundaries`) | settings store read by `MapAxes` and `mapSvg` |
-| No position: placed automatically | drawn at `[10, 10]` | layout rule |
 | Lints: unknown keys, bad values, duplicate names, braces on a user, two `@map` | parse errors and self-links | semantic pass |
-| v1 → v2 upgrade | none | converter, run once per map |
 | OWM import | none | converter, menu and paste |
 | Formatter (commas, one argument per line over 80) | none | command |
 
@@ -120,8 +118,9 @@ indentation. The 50-retry limit can stay.
 
 ## Plan
 
-Each phase leaves the app working and shippable. Phase 1 has to ship as one
-release, because it changes the link operator under existing maps.
+Each phase leaves the app working and shippable. There's no backwards
+compatibility: v1 stops being read at the switch, and the few existing maps
+are converted by hand.
 
 ### Phase 1: the switch
 
@@ -130,9 +129,7 @@ No new drawing. The app draws exactly what it draws today, from v2 text.
 1. **Grammar** (`src/parser/TogetherParser.ts`, rewritten). Tokens and rules
    for the four heads, `[ ]` and `( )` argument lists, strings with escapes,
    backtick names, `;` and comments. `//` inside a string is not a comment,
-   which matters for `url="https://…"`. Keep v1's lexer and parser in a
-   separate `src/parser/v1/` for the converter in step 5, then delete it once
-   no stored maps are v1.
+   which matters for `url="https://…"`. v1's grammar is deleted.
 2. **Statements and model** (`src/model/statements.ts`, `src/model/model.ts`,
    both new). The record above, then a `MapModel` with what's drawn today:
    names, positions, pipelines and links.
@@ -141,49 +138,12 @@ No new drawing. The app draws exactly what it draws today, from v2 text.
    `edgeEnds` and the internal `"A->B"` keys can stay, since they never reach
    the text.
 4. **Lenient parsing by statement** (`src/parser/lenient.ts`).
-5. **v1 → v2 converter** (`src/migrate/v1.ts`, new). It must not import DOM or Pixi
-   code, so the relay can bundle it too: Wrangler bundles imports from
-   outside `relay/`, and `relay/tsconfig.json` needs the path added to
-   `include`. It rewrites line by line from
-   v1's parse:
-
-   | v1 | v2 |
-   | --- | --- |
-   | `a.b` | `a -- b` |
-   | `a.(t=constraint)b` | `a -- b [constraint]` |
-   | `(label=…)` | merged into `[ ]` |
-   | `#` notes | `"…"` |
-   | `/mapstyle(…)` | `@map [ ]` |
-   | `government:2` | `government 2 [label="government"]` |
-   | `name^` | `evolve=` |
-
-   Text that doesn't parse as v1 is left alone.
-6. **Run the migration once per map, in the relay**
-   (`relay/src/store.ts`). The relay keeps a Y.Doc per map
-   (`MapStore.doc`). When it loads a saved map, it can check the text and
-   convert it, with a flag in a `Y.Map` (`meta.syntax = 2`), before any client
-   syncs.
-
-   One writer avoids the failure you'd get from each browser migrating
-   itself. Two clients replacing the same text at once in Yjs both insert,
-   which leaves the map written twice. Clients that open a map offline, and
-   drafts that were never saved, migrate on the client, also guarded by the
-   flag.
-7. **Name rules** (`isComponentName`, `nameProblem`). Names may now hold
+5. **Name rules** (`isComponentName`, `nameProblem`). Names may now hold
    `. ( ) , : # ^ = < > /`. The message lists what's still excluded:
-   `--`, `//`, `[`, `{`, `"`, `;`.
-8. **Text people see.** Update `syntaxHelp`, `examples/*.mt`,
+   `--`, `//`, `[`, `]`, `{`, `}`, `"`, `;`, and a leading `@`.
+6. **Text people see.** Update `syntaxHelp`, `examples/*.mt`,
    `docs/syntax/lots-of-components.mt`, `docs/syntax/README.md` and the
    test fixtures.
-9. **Lint for leftover v1.** A component with no position whose name is
-   `A.B`, where `A` and `B` are both components, is almost certainly a pasted
-   v1 link. In v2 it would be drawn as a strange new component at the default
-   position. Warn, with a quick fix to `A -- B`.
-
-Old cached clients are the risk here. A browser still running v1 code would
-write `a.b` into a v2 map. The relay could refuse peers that don't send a new
-enough version when they connect. It checks no versions today. Or the app can
-reload itself when the map's `meta.syntax` is newer than it knows.
 
 ### Phase 2: components
 
@@ -210,7 +170,6 @@ changing one won't redraw.
    It needs the number-only edit from the range edits.
 6. `form`: stored, with nothing drawn. `MapAxes`' stage names by form
    (`alternatives`) could later read it.
-7. No position: placed automatically instead of `[10, 10]`.
 
 **Label glyphs.** `MapSingleton` installs a `BitmapFont` with an ASCII
 character list. `main` now allows names in any script, and labels, notes and
@@ -283,24 +242,90 @@ row, then model, drawing, export and help.
 Each one also turns its `// owm:` comments into real statements: the
 importer can convert those lines again as each feature lands.
 
-## Gaps the diff found in the proposal
+## Decided since
 
-- **Characters that end a name.** The grammar lists `[`, `{`, `--`, `//`,
-  `;` and `"`. It should add `]` and `}` too: otherwise `Tea { Leaf }` on
-  one line reads `Leaf }` as a name. A leading `@` should also be excluded,
-  since that starts a directive.
-- **Links to components that don't exist.** Today they're left off the map,
-  silently. The proposal should say so, and the linter should warn.
-- **Rounding.** The canvas writes positions to one decimal place
-  (`mapCoordinates`). The proposal could say that's the canonical precision.
-- **Position omitted.** "Placed automatically" needs a rule: a free spot
-  near the components it links to, or a fixed spot as today.
+These were gaps in the proposal. It now says:
+
+- **A name ends at** `]` and `}` as well as `[`, `{`, `--`, `//`, `;` and
+  `"`, and can't start with `@`.
+- **A link to a component that isn't declared** is kept in the text and not
+  drawn. It isn't an error, so there's no lint warning for it.
+- **Positions are written to one decimal place**, as `mapCoordinates` does
+  now: `[98.3, 41.5]`.
+- **A component with no position** is drawn at `[10, 10]`, as today.
+
+## History, and whether to make the core an edit log
+
+The question: should the core be an append-only log of what people do, with
+both the text and the map materialised from it? That would make time travel
+easier, and clients would only forward their own actions.
+
+**Most of that is already true, because Yjs is that log.** In the terms of
+[the universal theory](https://innerlattice.com/universal-theory-of-interactive-software):
+
+- A Yjs update is a record. Each item has an id (`clientID`, `clock`) and is
+  never changed. A delete marks items; it doesn't remove them.
+- Clients already forward only their own records, and replicas merge them by
+  union.
+- The text is a function of the records, and the map is a function of the
+  text (`drawMap`).
+
+Two things are missing:
+
+1. **Garbage collection is on.** Both `new Y.Doc()` calls
+   (`src/editor/Editor.ts:80`, `relay/src/store.ts:21`) throw deleted text
+   away, so past versions can't be rebuilt.
+2. **A canvas action is stored only as its text patch.** A drag is recorded as
+   characters changing, not as "Aya moved Kettle".
+
+**A full action log is a large change, and I don't think it's better.**
+Typing is a record of characters; a drag is a record of meaning. To
+materialise one text from both, a deterministic function has to apply "move
+Kettle" to text that someone may be typing into at the same moment. The
+theory calls that order-coupled: it needs a sequencer (the relay), with
+provisional local state and rollback while you wait. That means writing the
+merge Yjs already does.
+
+The other route is to parse every keystroke into actions. That can't represent
+half-typed lines, comments or someone's formatting, and printing the text back
+from actions would rewrite other people's lines as they type. [The languages
+article](https://innerlattice.com/universal-languages-for-interactive-software)
+keeps the text as the program and derives everything from it, which is this
+app's design already (principle 2 in the proposal).
+
+**What to do instead, all Yjs-native:**
+
+| Step | Change | When |
+| --- | --- | --- |
+| Keep history | `new Y.Doc({ gc: false })` in both places | now: every day with GC on loses history for good |
+| Named snapshots | a `Y.Array` of `{name, snapshot: Y.encodeSnapshot(Y.snapshot(doc)), by, at}` | any time |
+| Time travel | `Y.createDocFromSnapshot(doc, snapshot)` → text → `drawMap`, read-only | any time |
+| Scenarios | a new room started from `Y.encodeStateAsUpdate` of a snapshot | any time |
+| Who did what | a `Y.Map` from `clientID` to the person's name | any time |
+| Intent records | canvas actions append `{kind: "move", name, to, by}` to a `Y.Array`, in the same transaction as their text patch | after the language |
+
+With intent records, the text patch stays the materialised effect, and the
+record says what the person did. That gives history like "Aya moved Kettle",
+and replay, without making the text derived.
+
+Intents come after the language because they name statements and keys, and
+the v2 statement record is what they'd point at. Meanwhile, keep canvas edits
+as pure functions of `(text, intent)` → changes, as `moveChanges` already is.
+That's the function that would materialise an intent if this ever goes
+further.
+
+**Cost of keeping history.** The relay caps a saved map at about 2 MB
+(`MAX_DOC_BYTES`). Maps are a few KB, and a drag rewrites about ten
+characters, so it would take a very long history to reach the cap. When one
+does, compacting means starting a fresh doc from the current text and keeping
+the old one as an archive. The theory article lists compaction against replay
+as an open problem too.
 
 ## Order and size
 
 | Phase | Depends on | Size |
 | --- | --- | --- |
-| 1. The switch | — | large: grammar, model, edits, lenient parsing, migration, about 18 test files |
+| 1. The switch | — | large: grammar, model, edits, lenient parsing, about 18 test files |
 | 2. Components | 1 | medium; the label drag is the biggest part |
 | 3. Links, pipelines, notes, settings | 1 | medium |
 | 4. OWM import | 1; more of it maps after 2 and 3 | small to medium |
