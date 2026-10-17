@@ -21,7 +21,7 @@ const collaborator = (peer: Y.Doc, text: string) => {
 };
 
 it("sends a move of several components to peers as one edit, undone in one step", () => {
-  const text = "Power [10, 86]\nKettle [33, 50]\nKettle.Power\nCup [80, 20]";
+  const text = "Power [10, 86]\nKettle [33, 50]\nKettle -- Power\nCup [80, 20]";
   const peer = new Y.Doc();
   const { view, undoManager } = collaborator(peer, text);
 
@@ -33,7 +33,7 @@ it("sends a move of several components to peers as one edit, undone in one step"
     ]),
   });
 
-  const moved = "Power [1, 2]\nKettle [40, 60]\nKettle.Power\nCup [5, 6]";
+  const moved = "Power [1, 2]\nKettle [40, 60]\nKettle -- Power\nCup [5, 6]";
   expect(view.state.doc.toString()).toBe(moved);
   expect(peer.getText("maptogether").toString()).toBe(moved);
   undoManager.undo();

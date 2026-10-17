@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { deletionRanges, edgeEnds, type Deletion } from "./deletions";
+import { deletionRanges, type Deletion } from "./deletions";
 
 /** The text left after deleting. */
 const remove = (text: string, deletion: Partial<Deletion>) => {
@@ -14,14 +14,17 @@ const map = [
   "  Loose Leaf [55, 56]",
   "  Tea Bags [55, 90]",
   "}",
-  "Kettle [33, 50]",
-  "Cup of Tea.Tea",
-  "Cup of Tea.Kettle // boils",
-  "Kettle.Power",
+  "Kettle [",
+  "  33, 50,",
+  "  inertia,",
+  "]",
+  "Cup of Tea -- Tea",
+  "Cup of Tea -- Kettle // boils",
+  "Kettle -- Power",
 ].join("\n");
 
 describe("deletionRanges", () => {
-  it("deletes a component's line and its links, leaving no blank lines", () => {
+  it("deletes a component's lines and its links, leaving no blank lines", () => {
     expect(remove(map, { components: ["Kettle"] })).toBe(
       [
         "Cup of Tea [80, 62]",
@@ -29,7 +32,7 @@ describe("deletionRanges", () => {
         "  Loose Leaf [55, 56]",
         "  Tea Bags [55, 90]",
         "}",
-        "Cup of Tea.Tea",
+        "Cup of Tea -- Tea",
       ].join("\n"),
     );
   });
@@ -42,30 +45,42 @@ describe("deletionRanges", () => {
 
   it("deletes a pipeline with its children", () => {
     expect(remove(map, { components: ["Tea"] })).toBe(
-      ["Cup of Tea [80, 62]", "Kettle [33, 50]", "Cup of Tea.Kettle // boils", "Kettle.Power"].join(
-        "\n",
-      ),
+      [
+        "Cup of Tea [80, 62]",
+        "Kettle [",
+        "  33, 50,",
+        "  inertia,",
+        "]",
+        "Cup of Tea -- Kettle // boils",
+        "Kettle -- Power",
+      ].join("\n"),
     );
   });
 
-  it("ignores braces and comment marks in quotes, and braces in comments", () => {
-    // The apostrophes are part of a name and a comment, not a quote.
-    expect(remove("Bob's { // Bob's stages\n  C\n}\nB", { components: ["Bob's"] })).toBe("B");
-    expect(remove('A (note="{")\nB [1, 2]', { components: ["A"] })).toBe("B [1, 2]");
-    expect(remove("A (note='}') {\n  C\n}\nB", { components: ["A"] })).toBe("B");
-    expect(remove('A (note="//") {\n  C\n}\nB', { components: ["A"] })).toBe("B");
+  it("ignores braces and comment marks in strings, and braces in comments", () => {
+    expect(remove('A [note="{"]\nB [1, 2]', { components: ["A"] })).toBe("B [1, 2]");
+    expect(remove('A [note="//"] {\n  C\n}\nB', { components: ["A"] })).toBe("B");
     expect(remove("A // {\nB", { components: ["A"] })).toBe("B");
   });
 
-  it("deletes a link written either way round, with attributes or a comment", () => {
-    expect(remove(map, { edges: ["Kettle->Cup of Tea"] })).not.toContain("Cup of Tea.Kettle");
-    expect(remove("A [1, 2]\nA.(weight=2)B\nB [3, 4]", { edges: ["A->B"] })).toBe(
+  it("deletes a link written either way round, with arguments or a comment", () => {
+    expect(remove(map, { edges: [["Kettle", "Cup of Tea"]] })).not.toContain(
+      "Cup of Tea -- Kettle",
+    );
+    expect(remove("A [1, 2]\nA -- B [flow]\nB [3, 4]", { edges: [["A", "B"]] })).toBe(
       "A [1, 2]\nB [3, 4]",
     );
   });
 
   it("leaves other links alone", () => {
-    expect(remove("A.B\nA.BC\nAB.B", { edges: ["A->B"] })).toBe("A.BC\nAB.B");
+    expect(remove("A -- B\nA -- BC\nAB -- B", { edges: [["A", "B"]] })).toBe("A -- BC\nAB -- B");
+  });
+
+  it("deletes a statement that shares its line, with one ; beside it", () => {
+    expect(remove("A; B; C", { components: ["B"] })).toBe("A; C");
+    expect(remove("A; B", { components: ["B"] })).toBe("A");
+    expect(remove("Tea { A; B }", { components: ["B"] })).toBe("Tea { A }");
+    expect(remove("Tea { A }", { components: ["A"] })).toBe("Tea {  }");
   });
 
   it("takes the newline before a deletion at the very end", () => {
@@ -74,14 +89,9 @@ describe("deletionRanges", () => {
     expect(remove("A [1, 2]", { components: ["A"] })).toBe("");
   });
 
-  it("finds nothing to delete for unknown names", () => {
-    expect(deletionRanges(map, { components: ["Teapot"], edges: ["X->Y"] })).toEqual([]);
-  });
-});
-
-describe("edgeEnds", () => {
-  it("splits a link key at the first arrow", () => {
-    expect(edgeEnds("Cup of Tea->Tea")).toEqual(["Cup of Tea", "Tea"]);
-    expect(edgeEnds("A-->B")).toEqual(["A-", "B"]);
+  it("finds nothing to delete for unknown names, or for notes and directives", () => {
+    expect(
+      deletionRanges(`${map}\n"Kettle"\n@map`, { components: ["Teapot"], edges: [["X", "Y"]] }),
+    ).toEqual([]);
   });
 });

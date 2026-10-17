@@ -74,19 +74,21 @@ Tea [55, 73] {
 Kettle [33, 50]
 Power [10, 86]
 
-Business.Cup of Tea
-Public.Cup of Tea
-Cup of Tea.Tea
-Cup of Tea.Kettle
-Kettle.Power
+Business -- Cup of Tea
+Public -- Cup of Tea
+Cup of Tea -- Tea
+Cup of Tea -- Kettle
+Kettle -- Power
 ```
 
 The text syntax is small:
 
 - `name [visibility, evolution]` places a component. Both numbers run from 0 to
   100: visibility from hidden infrastructure (0) up to the user (100), and
-  evolution from genesis (0) across to commodity (100).
-- `needer.needed` draws a dependency between two components.
+  evolution from genesis (0) across to commodity (100). Without them a
+  component starts at `[10, 10]`. Names can hold spaces and punctuation; put a
+  name in backticks if it holds `--`, `//`, brackets, braces, quotes or `;`.
+- `needer -- needed` draws a dependency between two components.
 - `name [v, e] { ... }` makes a pipeline: put one child component per line
   inside the braces, each at its own evolution. Children sit on the pipeline's
   row, so their visibility is ignored, and they move with it when you drag it.

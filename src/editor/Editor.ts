@@ -27,6 +27,7 @@ import { deletionRanges } from "./deletions";
 import { moveChanges, renameChanges } from "./edits";
 import { generateRandomAnimal } from "../user/utilities/generateRandomAnimal";
 import { drawMap } from "../map/drawMap";
+import { linkEnds } from "../state/Graph";
 import { mapLifecycle, resolveRoom } from "../app/room";
 import { keepMapOutOfSearch } from "../app/seo";
 
@@ -200,7 +201,7 @@ export const renameComponent = (oldName: string, newName: string) => {
 export const deleteSelection = () => {
   const changes = deletionRanges(editorView.state.doc.toString(), {
     components: [...state.selection.selectionItems],
-    edges: [...state.selection.edgeItems],
+    edges: [...state.selection.edgeItems].map(linkEnds).filter((ends) => ends !== undefined),
   });
   clearSelection();
   if (changes.length) editorView.dispatch({ changes });

@@ -1,80 +1,73 @@
-import {
-  bracesOpened,
-  matchComponentRegex,
-  matchEdgeBetweenRegex,
-  matchEdgeRegex,
-} from "../parser/TogetherParser";
+import { parseMap } from "../parser/parse";
+import type { Span, Statement } from "../parser/syntax";
+import { walk } from "../parser/walk";
 
 export interface Deletion {
   /** Component names: each goes with its links (and a pipeline with its children). */
   components: readonly string[];
-  /** Link keys, "needer->needed". */
-  edges: readonly string[];
+  /** Links as `[needer, needed]`; a link written the other way round goes too. */
+  edges: readonly (readonly [string, string])[];
 }
 
-export interface Range {
-  from: number;
-  to: number;
-}
+export type Range = Span;
 
-/** A link's key ("A->B") as its two components. Names can't contain ">". */
-export const edgeEnds = (key: string): [string, string] => {
-  const i = key.indexOf("->");
-  return [key.slice(0, i), key.slice(i + 2)];
-};
-
-const patterns = ({ components, edges }: Deletion) =>
-  [
-    ...components.flatMap((name) => [matchComponentRegex(name), matchEdgeRegex(name)]),
-    ...edges.map((key) => matchEdgeBetweenRegex(...edgeEnds(key))),
-  ].map((pattern) => new RegExp(pattern));
-
-/** Indexes of the lines to delete: matches, and the rest of any pipeline a match opens. */
-function doomedLines(lines: readonly string[], deletion: Deletion) {
-  const tests = patterns(deletion);
-  const doomed = new Set<number>();
-  for (let i = 0; i < lines.length; i++) {
-    if (!tests.some((test) => test.test(lines[i]))) continue;
-    let depth = 0;
-    do {
-      doomed.add(i);
-      depth += bracesOpened(lines[i]);
-    } while (depth > 0 && ++i < lines.length);
-  }
-  return doomed;
-}
-
-/** Each line's offset in the text the lines were split from. */
-export const lineStarts = (lines: readonly string[]) => {
-  let offset = 0;
-  return lines.map((line) => {
-    const start = offset;
-    offset += line.length + 1;
-    return start;
+/** The statements a deletion removes. A pipeline's children go with it, in its range. */
+function doomedStatements(statements: readonly Statement[], { components, edges }: Deletion) {
+  const names = new Set(components);
+  const links = new Set(edges.flatMap(([a, b]) => [`${a}\n${b}`, `${b}\n${a}`]));
+  return [...walk(statements)].filter(({ head }) => {
+    if (head.kind === "component") return names.has(head.name.text);
+    if (head.kind !== "link") return false;
+    const [a, b] = [head.from.text, head.to.text];
+    return names.has(a) || names.has(b) || links.has(`${a}\n${b}`);
   });
-};
+}
 
-/** Whole-line ranges for the given lines, with neighbours merged. */
-function lineRanges(starts: readonly number[], doomed: Set<number>, length: number) {
-  const ranges: Range[] = [];
-  for (const i of [...doomed].sort((x, y) => x - y)) {
-    const to = starts[i + 1] ?? length;
-    const last = ranges.at(-1);
-    if (last?.to === starts[i]) last.to = to;
-    else ranges.push({ from: starts[i], to });
+const ONLY_A_COMMENT = /^[ \t]*(?:\/\/[^\n]*)?\n?$/;
+
+/**
+ * The text to remove for one statement: its whole lines when it has them to
+ * itself, or else the statement and a `;` beside it.
+ */
+function statementRange(text: string, { from, to }: Span): Range {
+  const lineFrom = text.lastIndexOf("\n", from - 1) + 1;
+  const newline = text.indexOf("\n", to);
+  const lineTo = newline === -1 ? text.length : newline + 1;
+  const [before, after] = [text.slice(lineFrom, from), text.slice(to, lineTo)];
+  if (!before.trim() && ONLY_A_COMMENT.test(after)) return { from: lineFrom, to: lineTo };
+  const semicolonAfter = /^[ \t]*;[ \t]*/.exec(after)?.[0].length;
+  if (semicolonAfter) return { from, to: to + semicolonAfter };
+  const semicolonBefore = /[ \t]*;[ \t]*$/.exec(before)?.[0].length ?? 0;
+  return { from: from - semicolonBefore, to };
+}
+
+/** Ranges in order, with overlapping and touching ones merged. */
+function merged(ranges: Range[]) {
+  const out: Range[] = [];
+  for (const range of [...ranges].sort((a, b) => a.from - b.from)) {
+    const last = out.at(-1);
+    if (last && range.from <= last.to) last.to = Math.max(last.to, range.to);
+    else out.push({ ...range });
   }
-  return ranges;
+  return out;
 }
 
 /**
- * The text to remove to delete components and links: whole lines, so no
- * blank lines are left behind. Ranges don't overlap and are in order.
+ * The text to remove to delete components and links: whole lines where it
+ * can, so no blank lines are left behind. Ranges don't overlap and are in order.
  */
 export function deletionRanges(text: string, deletion: Deletion): Range[] {
-  const lines = text.split("\n");
-  const ranges = lineRanges(lineStarts(lines), doomedLines(lines, deletion), text.length);
+  const doomed = doomedStatements(parseMap(text).statements, deletion);
+  const ranges = merged(doomed.map((statement) => statementRange(text, statement)));
   // A deletion at the very end takes the newline before it instead of after.
   const end = ranges.at(-1);
-  if (end?.to === text.length && end.from > 0 && !text.endsWith("\n")) end.from--;
+  if (
+    end?.to === text.length &&
+    end.from > 0 &&
+    text[end.from - 1] === "\n" &&
+    !text.endsWith("\n")
+  ) {
+    end.from--;
+  }
   return ranges;
 }

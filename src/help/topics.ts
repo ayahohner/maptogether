@@ -99,8 +99,8 @@ export const syntaxHelp: SyntaxExample[] = [
   },
   {
     title: "Dependency",
-    code: "Cup of Tea.Kettle",
-    explanation: "needer.needed draws a line from a component to one it depends on.",
+    code: "Cup of Tea -- Kettle",
+    explanation: "needer -- needed draws a line from a component to one it depends on.",
   },
   {
     title: "Pipeline",

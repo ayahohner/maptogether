@@ -52,30 +52,30 @@ describe("Editor", () => {
   });
 
   it("writes moves, renames and deletions into the text, each as one undoable edit", () => {
-    replaceText("Kettle [33, 50]\nPower [10, 86]\nKettle.Power");
+    replaceText("Kettle [33, 50]\nPower [10, 86]\nKettle -- Power");
     undoManager.stopCapturing();
 
     moveComponents([
       { name: "Kettle", x: 60, y: 30 },
       { name: "Power", x: 20, y: 90 },
     ]);
-    expect(text()).toBe("Kettle [70.0, 60.0]\nPower [10.0, 20.0]\nKettle.Power");
+    expect(text()).toBe("Kettle [70.0, 60.0]\nPower [10.0, 20.0]\nKettle -- Power");
     undoManager.undo();
-    expect(text()).toBe("Kettle [33, 50]\nPower [10, 86]\nKettle.Power");
+    expect(text()).toBe("Kettle [33, 50]\nPower [10, 86]\nKettle -- Power");
     // A component that isn't in the text moves nothing.
     const edits = undoManager.undoStack.length;
     moveComponents([{ name: "Cup", x: 1, y: 1 }]);
     expect(undoManager.undoStack).toHaveLength(edits);
 
     renameComponent("Kettle", "Pot");
-    expect(text()).toBe("Pot [33, 50]\nPower [10, 86]\nPot.Power");
+    expect(text()).toBe("Pot [33, 50]\nPower [10, 86]\nPot -- Power");
     undoManager.stopCapturing();
 
     replaceSelection(["Power"]);
     deleteSelection();
     expect(text()).toBe("Pot [33, 50]");
     undoManager.undo();
-    expect(text()).toBe("Pot [33, 50]\nPower [10, 86]\nPot.Power");
+    expect(text()).toBe("Pot [33, 50]\nPower [10, 86]\nPot -- Power");
   });
 
   it("redraws the map once typing settles, tinting the editor when the map can't follow", async () => {

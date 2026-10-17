@@ -84,7 +84,7 @@ it("draws a pipeline nested in another without its components", () => {
 });
 
 it("draws links after every component, whichever comes first in the text", () => {
-  drawMap("Kettle.Power\nKettle [33, 50]\nPower [10, 86]");
+  drawMap("Kettle -- Power\nKettle [33, 50]\nPower [10, 86]");
   expect(graph.edges().map((e: string) => graph.getEdgeAttribute(e, "nodeKey"))).toEqual([
     "Kettle->Power",
   ]);
@@ -97,7 +97,7 @@ it("draws a component written twice once, where it is first written", () => {
 });
 
 it("skips links to undeclared components, to the component itself, and repeated links", () => {
-  drawMap("Kettle\nPower\nKettle.Power\nPower.Kettle\nKettle.Water\nKettle.Kettle");
+  drawMap("Kettle\nPower\nKettle -- Power\nPower -- Kettle\nKettle -- Water\nKettle -- Kettle");
   expect(graph.size).toBe(1);
 });
 
@@ -110,11 +110,11 @@ it("leaves the last drawing, and returns false, when the text can't be read", ()
 });
 
 it("keeps what is unchanged, moves what moved with its links, and removes what went", () => {
-  drawMap("Kettle [33, 50]\nPower [10, 86]\nKettle.Power");
+  drawMap("Kettle [33, 50]\nPower [10, 86]\nKettle -- Power");
   const [kettle, power, line] = [component("Kettle"), component("Power"), link()];
   vi.clearAllMocks();
 
-  drawMap("Kettle [40, 60]\nPower [10, 86]\nKettle.Power");
+  drawMap("Kettle [40, 60]\nPower [10, 86]\nKettle -- Power");
   expect(Component).not.toHaveBeenCalled();
   expect([component("Kettle"), component("Power"), link()]).toEqual([kettle, power, line]);
   expect(kettle.position).toMatchObject({ x: 60, y: 60 });
@@ -157,9 +157,9 @@ it("keeps a pipeline when one of its components moves inside its box", () => {
 });
 
 it("replaces a link written the other way round", () => {
-  drawMap("Kettle\nPower\nKettle.Power");
+  drawMap("Kettle\nPower\nKettle -- Power");
   const line = link();
-  drawMap("Kettle\nPower\nPower.Kettle");
+  drawMap("Kettle\nPower\nPower -- Kettle");
   expect(line.removeFromParent).toHaveBeenCalled();
   expect(graph.getEdgeAttribute(graph.edges()[0], "nodeKey")).toBe("Power->Kettle");
 });

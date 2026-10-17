@@ -4,7 +4,7 @@ vi.mock("../map/components/MapSingleton", () => ({ default: { dirty: false } }))
 
 import type { ComponentConfig } from "../map/components/componentLayout";
 import type { ComponentT } from "../map/components/types";
-import { graph, moveComponentsBy } from "./Graph";
+import { graph, linkEnds, moveComponentsBy } from "./Graph";
 
 /** Puts a component on the map, drawn by a stand-in that records its box. */
 const add = (config: ComponentConfig) => {
@@ -60,4 +60,10 @@ it("moves a component dragged with its pipeline once, and skips components gone 
     { x: 80, y: 45 },
   ]);
   expect(fitPipe("Tea")).toHaveBeenCalledOnce();
+});
+
+it("finds a link's components from its key, needer first", () => {
+  graph.addEdge("Leaf", "Tea", { nodeKey: "Leaf->Tea", component: {} as never });
+  expect(linkEnds("Leaf->Tea")).toEqual(["Leaf", "Tea"]);
+  expect(linkEnds("Tea->Leaf")).toBeUndefined();
 });

@@ -24,6 +24,12 @@ export type WardleyGraph = Graph<NodeAttributes, EdgeAttributes>;
 /** The components and links on the map, with the Pixi objects that draw them (see drawMap.ts). */
 export const graph: WardleyGraph = new Graph({ type: "undirected" });
 
+/** A link's two components, needer first, from its key; undefined if it's left the map. */
+export const linkEnds = (key: string): [string, string] | undefined => {
+  const edge = graph.findEdge((_edge, link) => link.nodeKey === key);
+  return edge === undefined ? undefined : [graph.source(edge), graph.target(edge)];
+};
+
 /**
  * Moves components by (x, y) px, as a drag does: a pipeline's components keep
  * to its row as it moves, and its box keeps around them. A selected component

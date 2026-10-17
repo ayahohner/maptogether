@@ -1,5 +1,5 @@
 import { appendText, moveComponents, renameComponent } from "../editor/Editor";
-import { isComponentName } from "../parser/TogetherParser";
+import { isComponentName, writeName } from "../parser/names";
 import { graph } from "../state/Graph";
 import {
   clearSelection,
@@ -42,7 +42,7 @@ export const mapCoordinates = (map: MapView, p: Point) => {
 export const nameProblem = (name: string, current?: string) => {
   if (name !== current && graph.hasNode(name)) return `${name} is already on the map`;
   if (!isComponentName(name))
-    return "A name can't use # ( ) , . / : < = > [ ] ^ { }, or be only a number";
+    return "A name can't use -- // [ ] { } \" ; or `, start with @, or start or end with a space";
 };
 
 /** Names a new component where the user pressed. */
@@ -99,7 +99,7 @@ export function canvasActions(map: MapView): CanvasActions {
     select: (nodeKey, p, touch) => (nodeKey ? replaceSelection([nodeKey]) : tap(p, touch)),
     link: (nodeKey) => {
       const link = linkTo(nodeKey);
-      if (link) appendText(`\n${link.from}.${link.to}`);
+      if (link) appendText(`\n${writeName(link.from)} -- ${writeName(link.to)}`);
     },
     edit: (nodeKey, p) => (nodeKey ? rename(map, nodeKey, p) : create(map, p)),
     place: (p) => {

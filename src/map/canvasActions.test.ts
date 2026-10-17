@@ -102,7 +102,7 @@ it("selects one component, a link or nothing on a tap, and links", () => {
   expect(store.clearSelection).toHaveBeenCalled();
   actions.link("Kettle");
   expect(store.linkTo).toHaveBeenCalledWith("Kettle");
-  expect(editor.appendText).toHaveBeenCalledWith("\nCup.Kettle");
+  expect(editor.appendText).toHaveBeenCalledWith("\nCup -- Kettle");
   store.linkTo.mockReturnValueOnce(undefined);
   actions.link("Cup");
   expect(editor.appendText).toHaveBeenCalledTimes(1);
@@ -133,7 +133,7 @@ it("renames a component, unless the name is taken", () => {
 
 it("won't name a component what the text can't hold", () => {
   canvasActions(map).edit(undefined, { x: 100, y: 50 });
-  submit("Node.js");
+  submit("Node//js");
   expect(editor.appendText).not.toHaveBeenCalled();
   expect(field().getAttribute("aria-invalid")).toBe("true");
 });
@@ -143,7 +143,9 @@ it("says why a name won't do", () => {
   expect(nameProblem("Café")).toBeUndefined();
   expect(nameProblem("Kettle")).toBe("Kettle is already on the map");
   expect(nameProblem("Kettle", "Kettle")).toBeUndefined();
-  expect(nameProblem("C#")).toMatch(/can't use #/);
+  expect(nameProblem("C#")).toBeUndefined();
+  expect(nameProblem("A -- B")).toMatch(/can't use --/);
+  expect(nameProblem("@home")).toMatch(/start with @/);
 });
 
 it("places a component with the component tool, then goes back to select", () => {
