@@ -33,7 +33,10 @@ const readAsDataUrl = (blob: Blob) =>
 
 let fontCss: Promise<string> | undefined;
 
-/** The label typeface as an @font-face rule, fetched once, the first time a map is exported. */
+/**
+ * The label typeface as an @font-face rule, fetched once, the first time a map
+ * is exported; and again next time, if that fetch failed.
+ */
 export const embeddedFont = (fetchFont = () => fetch(fontUrl)) => {
   fontCss ??= fetchFont()
     .then((response) => response.blob())
@@ -41,7 +44,11 @@ export const embeddedFont = (fetchFont = () => fetch(fontUrl)) => {
     .then(
       (url) =>
         `@font-face{font-family:"Instrument Sans";src:url(${url}) format("woff2");font-weight:400 700}`,
-    );
+    )
+    .catch((error) => {
+      fontCss = undefined;
+      throw error;
+    });
   return fontCss;
 };
 

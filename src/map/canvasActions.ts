@@ -1,4 +1,5 @@
 import { appendText, moveComponents, renameComponent } from "../editor/Editor";
+import { isComponentName } from "../parser/TogetherParser";
 import { graph } from "../state/Graph";
 import {
   clearSelection,
@@ -37,11 +38,25 @@ export const mapCoordinates = (map: MapView, p: Point) => {
   return `[${visibility}, ${evolution}]`;
 };
 
+/** Why a component can't be named `name`, if it can't; `current` is its name now. */
+export const nameProblem = (name: string, current?: string) => {
+  if (name !== current && graph.hasNode(name)) return `${name} is already on the map`;
+  if (!isComponentName(name))
+    return "A name can't use # ( ) , . / : < = > [ ] ^ { }, or be only a number";
+};
+
 /** Names a new component where the user pressed. */
 const create = (map: MapView, p: Point) =>
-  FloatingTextInput(map.element, p.x, p.y, (name) => {
-    if (!graph.hasNode(name)) appendText(`\n${name} ${mapCoordinates(map, p)}`);
-  });
+  FloatingTextInput(
+    map.element,
+    p.x,
+    p.y,
+    (name) => {
+      if (!graph.hasNode(name)) appendText(`\n${name} ${mapCoordinates(map, p)}`);
+    },
+    "",
+    nameProblem,
+  );
 
 const rename = (map: MapView, nodeKey: string, p: Point) =>
   FloatingTextInput(
@@ -52,6 +67,7 @@ const rename = (map: MapView, nodeKey: string, p: Point) =>
       if (!graph.hasNode(name)) renameComponent(nodeKey, name);
     },
     nodeKey,
+    (name) => nameProblem(name, nodeKey),
   );
 
 const vibrate = () => navigator.vibrate?.(10);

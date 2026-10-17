@@ -1,8 +1,12 @@
 export type OnSubmitHandler = (value: string) => void;
 
+/** What's wrong with a value, if anything. */
+export type Problem = (value: string) => string | undefined;
+
 /**
  * A text field over the map, for naming a new component or renaming one.
- * Enter or clicking away submits; Escape cancels.
+ * Enter or clicking away submits; Escape cancels. A value with a `problem`
+ * is marked as it is typed, and is never submitted.
  *
  * Focuses synchronously, so call it from the input event itself: iOS only
  * opens the keyboard for a focus that happens inside a user gesture.
@@ -13,6 +17,7 @@ export const FloatingTextInput = (
   y: number,
   onSubmit: OnSubmitHandler,
   initialText = "",
+  problem: Problem = () => undefined,
 ): HTMLInputElement => {
   const container = document.createElement("div");
   container.className = "componentInputContainer";
@@ -28,24 +33,38 @@ export const FloatingTextInput = (
   container.append(input);
   mountPoint.append(container);
 
+  const value = () => input.value.trim();
+  const valid = () => !problem(value());
+
   let finished = false;
   const finish = (submit: boolean) => {
     if (finished) return;
     finished = true; // removing the field blurs it; don't finish twice
     container.remove();
-    if (submit && input.value) onSubmit(input.value);
+    if (submit && value() && valid()) onSubmit(value());
   };
 
-  input.addEventListener("input", () => fitToText(input));
+  const check = () => showProblem(input, value() && problem(value()));
+
+  input.addEventListener("input", () => {
+    fitToText(input);
+    check();
+  });
   input.addEventListener("blur", () => finish(true));
   input.addEventListener("keydown", (e) => {
     if (e.isComposing) return;
-    if (e.key === "Enter" || e.key === "Escape") finish(e.key === "Enter");
+    if (e.key === "Escape") finish(false);
+    else if (e.key === "Enter") valid() ? finish(true) : check();
   });
 
   input.focus();
   input.select();
   return input;
+};
+
+const showProblem = (input: HTMLInputElement, problem: string | undefined) => {
+  input.setAttribute("aria-invalid", String(Boolean(problem)));
+  input.title = problem ?? "";
 };
 
 /** Fallback sizing where CSS `field-sizing: content` isn't supported. */

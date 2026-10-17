@@ -51,6 +51,17 @@ FRAGMENT("BraceClose", "\\}");
 FRAGMENT("BracketOpen", "\\[");
 FRAGMENT("BracketClose", "\\]");
 FRAGMENT("IdentifierSymbols", `'"~\`!@$%&\\*\\-_+\\|\\\\;\\?`);
+// Letters and digits in any script: Latin-1 on (but not the punctuation,
+// symbols and spaces from U+2000, or the byte order mark), and characters
+// beyond U+FFFF, which are written as surrogate pairs.
+FRAGMENT(
+  "IdentifierLetters",
+  "a-zA-Z0-9\\u00C0-\\u1FFF\\u2C00-\\uD7FF\\uF900-\\uFEFE\\uFF00-\\uFFEF",
+);
+FRAGMENT(
+  "IdentifierChar",
+  `(?:[${C("IdentifierLetters")}${C("IdentifierSymbols")}]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF])`,
+);
 
 const StringLiteral = createComposableToken({
   name: "StringLiteral",
@@ -145,9 +156,7 @@ const AttributeIdentifier = createToken({
 const Identifier = createToken({
   name: "Identifier",
   // Words of letters, digits and IdentifierSymbols, separated by spaces.
-  pattern: new RegExp(
-    `[a-zA-Z0-9${C("IdentifierSymbols")}]+([ ]+[a-zA-Z0-9${C("IdentifierSymbols")}]+)*`,
-  ),
+  pattern: new RegExp(`${C("IdentifierChar")}+([ ]+${C("IdentifierChar")}+)*`),
 });
 
 // After Identifier, which longer_alt refers to: "2nd hand" is a name, not a number.
@@ -412,6 +421,17 @@ export const tryParse = (text: string): ParseResult => {
   // The parser's rules all return CstNode; the default rule's is a DefaultCstNode.
   const cst = parserInstance.default() as DefaultCstNode;
   return { cst, problems: parserInstance.errors.map(problemAt) };
+};
+
+/** Whether `name` can be written as a component's name, as it is. */
+export const isComponentName = (name: string) => {
+  const { tokens, errors } = TogetherLexer.tokenize(name);
+  return (
+    errors.length === 0 &&
+    tokens.length === 1 &&
+    tokens[0].tokenType === Identifier &&
+    tokens[0].image === name
+  );
 };
 
 /** Braces a line leaves open, as the lexer reads it: not those in a name, quotes or a comment. */

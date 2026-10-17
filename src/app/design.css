@@ -41,6 +41,9 @@
   --color-link: #059669;
   --color-link-soft: #e7f7f0;
 
+  /* Problems: red, as the editor tints lines that don't parse. */
+  --color-danger: #dc2626;
+
   --radius-control: 10px;
   --radius-panel: 16px;
   --radius-dialog: 24px;
